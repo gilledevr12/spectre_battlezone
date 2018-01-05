@@ -11,7 +11,7 @@ void mac_eth0(unsigned char MAC_str[13])
     int s,i;
     struct ifreq ifr;
     s = socket(AF_INET, SOCK_DGRAM, 0);
-    strcpy(ifr.ifr_name, "wlp1s0");
+    strcpy(ifr.ifr_name, "eth0");
     ioctl(s, SIOCGIFHWADDR, &ifr);
     for (i=0; i<HWADDR_len; i++)
         sprintf(&MAC_str[i*2],"%02X",((unsigned char*)ifr.ifr_hwaddr.sa_data)[i]);
