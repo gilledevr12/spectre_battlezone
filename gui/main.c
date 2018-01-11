@@ -3,11 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "play.h"
 #include "setup.h"
 #include "layout.h"
 
 typedef enum { false, true } bool;
+
+void wait(int seconds){
+    time_t start = time(0);
+    while(time(0)-start<seconds);
+}
 
 int main(int argc, char *argv[]){
     bool setupMode = false;
@@ -40,7 +46,11 @@ int main(int argc, char *argv[]){
                 break;
         }
     }
-    printMap();
+    refreshScreen();
+    while(1){
+        wait(5);
+        refreshScreen();
+    }
     return 0;
 }
 
