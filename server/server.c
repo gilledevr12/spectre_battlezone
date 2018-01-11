@@ -44,8 +44,10 @@ int main(int argc, char const *argv[]){
 		exit(EXIT_FAILURE);
 	}
 
-	valread = read( new_socket , buffer, 1024);
-	printf("%s\n",buffer );
+	while(1) {
+		valread = read( new_socket , buffer, 1024);
+		printf("%s\n",buffer );
+	}
   
 	send(new_socket, server_resp, strlen(server_resp) , 0 );
 	printf("Packet received from server\n");
