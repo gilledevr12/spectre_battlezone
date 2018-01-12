@@ -5,8 +5,8 @@ CFLAGS  = -g -Wall
 default: laser-brains
 
 # For the laser-brains executable, list here all object files to be included
-laser-brains:  client.o lsm303.o
-	$(CC) $(CFLAGS) -o laser-brains client.o lsm303.o
+laser-brains:  main.o client.o lsm303.o
+	$(CC) $(CFLAGS) -o laser-brains main.o client.o lsm303.o
 
 # Generate the unique device idenitfiier based on the mac address
 gen_mac: gen_mac.o
@@ -21,6 +21,9 @@ gen_mac.o: gen_mac.c
 
 lsm303.o: lsm303.c lsm303.h
 	$(CC) $(CFLAGS) -c lsm303.c
+
+main.o: main.c
+		$(CC) $(CFLAGS) -c main.c
 
 clean:
 	$(RM) laser-brains *.o *~

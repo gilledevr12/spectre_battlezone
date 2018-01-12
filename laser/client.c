@@ -1,66 +1,77 @@
-// Client side C/C++ program to demonstrate Socket programming
-#include <stdio.h>
-#include <sys/socket.h>
-#include <stdlib.h>
 #include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "client.h"
-#include "DEVICE_MAC.h"
-#include "lsm303.h"
 
-#define PORT 8080
+#define SERVER_PORT (int) 8080
 #define SERVER_IP "192.168.0.5"
 
-struct int_x3 ACCEL, MAGNETOM;
+char DEVICE_MAC[13];
+int SOCK;
 
-int main(int argc, char const *argv[]){
-    struct sockaddr_in address;
-    int sock = 0, valread;
-    struct sockaddr_in serv_addr;
-    char *client_packet = "Client packet data";
-    char buffer[1024] = {0};
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        printf("\n Socket creation error \n");
-        return -1;
+void config_client_socket(){
+    struct sockaddr_in sock_in;
+
+    /*Build address data structure*/
+    sock_in.sin_family = AF_INET;
+    inet_aton(SERVER_IP, &(sock_in.sin_addr));
+    sock_in.sin_port = htons(SERVER_PORT);
+
+    /*Active open*/
+    if ((SOCK = socket(PF_INET, SOCK_STREAM, 0)) < 0)
+    {
+      perror("client: error creating socket\n");
+      close(SOCK);
+      exit(1);
     }
 
-    memset(&serv_addr, '0', sizeof(serv_addr));
+    /*Connect to server*/
+    if (connect(SOCK, (struct sockaddr*) &sock_in, sizeof(sock_in)) < 0)
+    {
+      perror("client: error establishing connection to server\n");
+      close(SOCK);
+      exit(1);
+    }
+}
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+void send_status(struct int_x3 acc, struct int_x3 mag){
+    /*Main loop: get/send lines of text*/
+    int packet_length;
+    char packet_buffer[75];
+    sprintf(packet_buffer, "%lu %i %i %i %i %i %i", DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z);
 
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr)<=0){
-        printf("\nInvalid address/ Address not supported \n");
-        return -1;
+    if(DEBUG)
+        printf("Sending client packet: %s\n", packet_buffer);
+
+    packet_length = strlen(packet_buffer) + 1;
+
+    if(send(SOCK, packet_buffer, packet_length, 0) <= 0)
+    {
+        /*close(s);*/
+        perror("client: error sending packet \n");
+        exit(1);
+    }
+}
+
+void close_client_socket(){
+    close(SOCK);
+}
+
+int pull_DEVICE_MAC(){
+    FILE* fin;
+    fin = fopen("DEVICE_MAC", "r");
+    if(fin < 0){
+        perror("Run gen_mac_file.sh before launching this program. Quitting..\n");
+        return 0;
     }
 
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
-        printf("\nConnection Failed \n");
-        return -1;
-    }
-
-    char packet_buffer[100];
-
-    int I2C_PORT = open_I2C_port("/dev/i2c-1");
-    config_LSM303(I2C_PORT);
-    ACCEL = get_accel(I2C_PORT);
-    MAGNETOM = get_magnetom(I2C_PORT);
-
-        sprintf(packet_buffer, "MAC: %lu", DEVICE_MAC);
-        send(sock, packet_buffer, strlen(client_packet), 0);
-	usleep(50);
-
-        sprintf(packet_buffer, "ACC: %i %i %i", ACCEL.x, ACCEL.y, ACCEL.z);
-        send(sock, packet_buffer, strlen(client_packet), 0);
-	usleep(50);
-
-        sprintf(packet_buffer, "MAG: %i %i %i", MAGNETOM.x, MAGNETOM.y, MAGNETOM.z);
-        send(sock, packet_buffer, strlen(client_packet), 0);
-
-    // printf("Client packet sent\n");
-    valread = read( sock, buffer, 1024);
-    printf("%s\n", buffer);
-    return 0;
+    fgets(DEVICE_MAC, 13, fin);
+    if(DEBUG)
+        printf("Pulled mac: %s\n", DEVICE_MAC);
+    fclose(fin);
+    return 1;
 }

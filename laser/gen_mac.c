@@ -11,7 +11,7 @@ void mac_eth0(unsigned char MAC_str[13])
     int s,i;
     struct ifreq ifr;
     s = socket(AF_INET, SOCK_DGRAM, 0);
-    strcpy(ifr.ifr_name, "wlan0");
+    strcpy(ifr.ifr_name, "wlp1s0");
     ioctl(s, SIOCGIFHWADDR, &ifr);
     for (i=0; i<HWADDR_len; i++)
         sprintf(&MAC_str[i*2],"%02X",((unsigned char*)ifr.ifr_hwaddr.sa_data)[i]);
@@ -23,17 +23,13 @@ int main(int argc, char *argv[])
     unsigned char mac[13];
 
     mac_eth0(mac);
-    printf("MAC Found\nDEVICE_MAC.h created!\nMAC: ");
+    printf("MAC found: ");
     puts(mac);
 
     FILE* fout;
-    fout = fopen("DEVICE_MAC.h", "w");
-    fprintf(fout, "#ifndef DEVICE_MAC_H\n");
-    fprintf(fout, "#define DEVICE_MAC_H\n");
-
-    fprintf(fout, "const unsigned long DEVICE_MAC = 0x%s;\n", mac);
-
-    fprintf(fout, "#endif //DEVICE_MAC_H\n");
+    fout = fopen("DEVICE_MAC", "w");
+    fprintf(fout, "%s\n", mac);
+    fclose(fout);
 
     return 0;
 }
