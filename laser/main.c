@@ -1,5 +1,6 @@
 // Client side C/C++ program to demonstrate Socket programming
 #include <stdio.h>
+#include <unistd.h>
 
 #include "main.h"
 
@@ -41,7 +42,16 @@ int main(){
         MAGNETOM.x = 400;
         MAGNETOM.y = 500;
         MAGNETOM.z = 600;
-        send_status(ACCEL, MAGNETOM);
+
+        float SLEEP_DELAY = 0.5;
+        int count = 0;
+
+        //send_status(ACCEL, MAGNETOM, HOTS_FIRED, FIRE_WEIGHT, 6, 1);
+        while(count++ < 20){
+            send_status(ACCEL, MAGNETOM, 0, count);
+            sleep(SLEEP_DELAY);
+        }
+
         close_client_socket();
     #endif
 
