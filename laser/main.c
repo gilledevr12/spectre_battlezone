@@ -32,8 +32,6 @@ int main(){
         int ret = pull_DEVICE_MAC();
         if(!ret)
             return 1;
-        //config connection to serverip
-        config_client_socket();
 
         //send test packet
         ACCEL.x = 100;
@@ -43,13 +41,14 @@ int main(){
         MAGNETOM.y = 500;
         MAGNETOM.z = 600;
 
-        float SLEEP_DELAY = 0.5;
+        float SLEEP_DELAY = 0.1;
         int count = 0;
 
         //send_status(ACCEL, MAGNETOM, HOTS_FIRED, FIRE_WEIGHT, 6, 1);
         while(count++ < 20){
+            open_client_socket();
             send_status(ACCEL, MAGNETOM, 0, count);
-            sleep(SLEEP_DELAY);
+            close_client_socket();
         }
 
         close_client_socket();

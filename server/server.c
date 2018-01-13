@@ -36,7 +36,7 @@ int main(int argc, char const *argv[]){
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
-	if (listen(server_fd, 3) < 0){
+	if (listen(server_fd, 5) < 0){
 		perror("listen");
 		exit(EXIT_FAILURE);
 	}

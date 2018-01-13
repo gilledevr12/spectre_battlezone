@@ -8,19 +8,18 @@
 #include "client.h"
 
 #define SERVER_PORT (int) 8080
-//#define SERVER_IP "192.168.0.5"
-#define SERVER_IP "144.39.166.226"
+#define SERVER_IP "192.168.0.5"
 
 char DEVICE_MAC[13];
 int SOCK;
 
-void config_client_socket(){
-    struct sockaddr_in sock_in;
+void open_client_socket(){
+    struct sockaddr_in cli_addr;
 
     /*Build address data structure*/
-    sock_in.sin_family = AF_INET;
-    inet_aton(SERVER_IP, &(sock_in.sin_addr));
-    sock_in.sin_port = htons(SERVER_PORT);
+    cli_addr.sin_family = AF_INET;
+    inet_aton(SERVER_IP, &(cli_addr.sin_addr));
+    cli_addr.sin_port = htons(SERVER_PORT);
 
     /*Active open*/
     if ((SOCK = socket(PF_INET, SOCK_STREAM, 0)) < 0)
@@ -31,7 +30,7 @@ void config_client_socket(){
     }
 
     /*Connect to server*/
-    if (connect(SOCK, (struct sockaddr*) &sock_in, sizeof(sock_in)) < 0)
+    if (connect(SOCK, (struct sockaddr*) &cli_addr, sizeof(cli_addr)) < 0)
     {
       perror("client: error establishing connection to server\n");
       close(SOCK);

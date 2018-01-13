@@ -1,0 +1,27 @@
+struct sockaddr_in new_addr;    //define a new internet socket address struct as defined in <netinet/in.h>
+struct sockaddr_in {
+   short   sin_family;
+   u_short sin_port;
+   struct  in_addr sin_addr;
+   char    sin_zero[8];
+};
+
+new_addr.sin_family = AF_INET;                  //whatever this is, should always be set as such
+new_addr.sin_port = htons(port_number (int));   //define port number to communicate with
+serv_addr.sin_addr.s_addr = INADDR_ANY;         //define the IP of the host, use flag INADDR_ANY
+
+int (file_descriptor) socket(socket_address, socket_type, protocol_type)
+    socket_address - client or server address being instantiated
+    socket_type - stream or datagram (SOCK_STREAM vs SOCK_DGRAM)
+    protocol_type - leave field at 0 to let OS decide
+
+    file_descriptor - used for all subsequent calls to socket
+
+bind(socket_file_descriptor, (struct sockaddr *) &new_addr, sizeof(new_addr))
+    used to bind the server socket to a port_number
+    cast the sockaddr_in to sockaddr
+
+listen(socket_file_descriptor, 5)
+    allows the process to listen on the socket for connections.
+    the integer 5 represents the number of connections that can be waiting while the process
+        is handling a particular connection
