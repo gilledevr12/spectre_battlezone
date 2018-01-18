@@ -41,17 +41,16 @@ int main(){
         MAGNETOM.y = 500;
         MAGNETOM.z = 600;
 
-        float SLEEP_DELAY = 0.1;
-        int count = 0;
+        int SLEEP_DELAY = 250;
 
         //send_status(ACCEL, MAGNETOM, HOTS_FIRED, FIRE_WEIGHT, 6, 1);
-        while(count++ < 20){
+        while(1){
             open_client_socket();
             send_status(ACCEL, MAGNETOM, 0, count);
             close_client_socket();
+            usleep(SLEEP_DELAY);
         }
 
-        close_client_socket();
     #endif
 
     return 0;
