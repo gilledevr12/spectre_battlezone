@@ -47,19 +47,9 @@ int main(int argc, char const *argv[]){
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
-<<<<<<< HEAD
 		read(new_socket, buffer, MAX_BUFFER_LENGTH);
 		printf("Received packet: %s\n",buffer );
-
-		}
-
-=======
-
-		read(new_socket, buffer, MAX_BUFFER_LENGTH);
-		printf("Received packet: %s\n",buffer );
-		// printf("Packets received: %i\n", count++);
 	}
->>>>>>> 1400775ad886e48b14720f3097b17fc4d213741f
 
 //	send(new_socket, server_resp, strlen(server_resp) , 0 );
   return 0;
