@@ -48,8 +48,8 @@ int main(){
         while(count++ < 20){
             open_client_socket();
             send_status(ACCEL, MAGNETOM, 0, count);
-	    close_client_socket();
-	    sleep(SLEEP_DELAY);
+    	    close_client_socket();
+    	    sleep(SLEEP_DELAY);
         }
 
         close_client_socket();

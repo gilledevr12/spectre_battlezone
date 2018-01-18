@@ -47,14 +47,14 @@ int main(int argc, char const *argv[]){
 
 	int count = 0;
 	while(1){
-		int len = 0;
-		ioctl(new_socket, FIONREAD, &len);
-		if (len > 0)
-		{
-			read(new_socket, buffer, MAX_BUFFER_LENGTH);
-			//printf("Received packet: %s\n",buffer );
-			printf("Packets received: %i\n", count++);
+		if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0){
+			perror("accept");
+			exit(EXIT_FAILURE);
 		}
+
+		read(new_socket, buffer, MAX_BUFFER_LENGTH);
+		printf("Received packet: %s\n",buffer );
+		// printf("Packets received: %i\n", count++);
 	}
 
 //	send(new_socket, server_resp, strlen(server_resp) , 0 );

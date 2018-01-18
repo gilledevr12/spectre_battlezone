@@ -42,7 +42,7 @@ void send_status(struct int_x3 acc, struct int_x3 mag, int shot, int weight){
     /*Main loop: get/send lines of text*/
     int packet_length;
     char packet_buffer[100];
-    sprintf(packet_buffer, "%s %i %i %i %i %i %i, %i, %i", DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, shot, weight);
+    sprintf(packet_buffer, "%s %i %i %i %i %i %i %i %i", DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, shot, weight);
 
     if(DEBUG)
         printf("Sending client packet: %s\n", packet_buffer);
