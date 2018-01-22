@@ -43,7 +43,7 @@ int main(){
 
         int count = 0, SLEEP_DELAY = 250;
 
-        //send_status(ACCEL, MAGNETOM, HOTS_FIRED, FIRE_WEIGHT, 6, 1);
+        //send_status(ACCEL, MAGNETOM, SHOTS_FIRED, FIRE_WEIGHT, Player Status);
         while(1){
             open_client_socket();
             send_status(ACCEL, MAGNETOM, 0, count++);
