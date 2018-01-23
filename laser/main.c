@@ -4,7 +4,6 @@
 
 #include "main.h"
 
-
 struct int_x3 ACCEL, MAGNETOM;
 
 int main(){
@@ -17,12 +16,12 @@ int main(){
         char packet_buffer[100];
 
         int I2C_PORT = open_I2C_port("/dev/i2c-1");
-        config_LSM303(I2C_PORT);
-        ACCEL = get_accel(I2C_PORT);
-        MAGNETOM = get_magnetom(I2C_PORT);
+        // config_LSM303(I2C_PORT);
+        // ACCEL = get_accel(I2C_PORT);
+        // MAGNETOM = get_magnetom(I2C_PORT);
     #else
-    if(DEBUG)
-        printf("Skipping the I2C methods\n");
+      if(DEBUG)
+          printf("Skipping the I2C methods\n");
     #endif
 
     #ifdef CLIENT_ENABLE
