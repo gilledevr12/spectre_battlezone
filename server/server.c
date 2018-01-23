@@ -5,11 +5,19 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <pthread.h>
+
+pthread_t server_thread, gameplay_display_thread;
 
 #define PORT 8080
 #define MAX_BUFFER_LENGTH 1024
 
-int main(int argc, char const *argv[]){
+void gameplay_display_loop(){
+	//do nothing for now
+	while(1);
+}
+
+void server_loop(){
 	int server_fd, new_socket;
 	struct sockaddr_in address;
 	int opt = 1;
@@ -49,8 +57,20 @@ int main(int argc, char const *argv[]){
 		}
 		read(new_socket, buffer, MAX_BUFFER_LENGTH);
 		printf("Received packet: %s\n",buffer );
-	}
 
-//	send(new_socket, server_resp, strlen(server_resp) , 0 );
+		//	send(new_socket, server_resp, strlen(server_resp) ,0 );
+	}
+}
+
+int main(){
+
+	// This thread receives raw data, computes and generates valid data, sends out response
+	pthread_create(&server_thread,NULL,server_loop,NULL);
+
+	//build
+	//pthread_create(&gameplay_display_thread,NULL,gameplay_display_loop,NULL);
+
+	while(1);
+
   return 0;
 }
