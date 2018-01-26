@@ -41,7 +41,7 @@ int main(){
         MAGNETOM.y = 500;
         MAGNETOM.z = 600;
 
-        int count = 0, SLEEP_DELAY = 250;
+        int count = 0, SLEEP_DELAY = 25000;
 
         //send_status(ACCEL, MAGNETOM, HOTS_FIRED, FIRE_WEIGHT, 6, 1);
         while(1){
