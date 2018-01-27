@@ -1,11 +1,7 @@
 #ifndef LSM303_H
 #define LSM303_H
 
-struct int_x3 {
-    int x;
-    int y;
-    int z;
-};
+#include "main.h"
 
 int open_I2C_port(char* path);
 
