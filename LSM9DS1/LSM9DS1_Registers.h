@@ -79,7 +79,7 @@ Distributed as-is; no warranty is given.
 #define INT_GEN_DUR_G		0x37
 
 ///////////////////////////////
-// LSM9DS1 Magneto Registers //
+// LSM9DS1 Magnetom Registers//
 ///////////////////////////////
 #define OFFSET_X_REG_L_M	0x05
 #define OFFSET_X_REG_H_M	0x06
