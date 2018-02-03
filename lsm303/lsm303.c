@@ -7,6 +7,9 @@
 #define ACCELERO_SLAVE_ADDR 0x19
 #define MAGNETOM_SLAVE_ADDR 0x1E
 
+#define WHO_AM_I_AG_RSP   0x68
+#define WHO_AM_I_M_RSP    0x3D
+
 int open_I2C_port(char* path){
   return open(path, O_RDWR);
 }

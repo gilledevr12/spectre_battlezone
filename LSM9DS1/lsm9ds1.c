@@ -9,7 +9,7 @@
 #include "LSM9DS1_Registers.h"
 
 //Development Commands
-//#define DEBUG
+#define DEBUG
 
 //IMU Declarations
 #define IMU_XG_ADDR         0x6B
