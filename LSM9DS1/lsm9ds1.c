@@ -18,6 +18,9 @@
 int GYRO_BIAS[3] = {0, 0, 0};
 int ACCEL_BIAS[3] = {0, 0, 0};
 int MAG_BIAS[3] = {0, 0, 0};
+//I2C Declarations
+#define I2C_SLAVE 0x0703
+
 //Gyroscope Declarations
 #define GYRO_SAMPLE_RATE    6           //952
 #define GYRO_SCALE          245
@@ -41,39 +44,43 @@ const float MAG_RES     =   0.00014;
 const char* I2C_PORT_NAME = "/dev/i2c-1";
 int IMU_BUS;
 
+//I2C Read/Write Structs
+union i2c_smbus_data
+{
+  uint8_t  byte ;
+  uint16_t word ;
+  uint8_t  block [34] ;	// block [0] is used for length + one more for PEC
+} ;
+
 /* GYROSCOPE Functions */
 void init_gyro(){
     //set sample rate, scale, bandwidth
-    unsigned char data[2] = {CTRL_REG1_G, 0};
-    data[1] = ((GYRO_SAMPLE_RATE & 0x07) << 5);
+    unsigned char data = 0;
+    data = ((GYRO_SAMPLE_RATE & 0x07) << 5);
     if(GYRO_SCALE == 500)
-        data[1] |= (1 << 3);
+        data |= (1 << 3);
     else if(GYRO_SCALE == 2000)
-        data[1] |= (3 << 3);
+        data |= (3 << 3);
     else
-        data[1] = data[1];
-    data[1] |= (GYRO_BANDWIDTH & 3);
-    write(IMU_BUS, data, 2);
+        data = data;
+    data |= (GYRO_BANDWIDTH & 3);
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG1_G, data);
 
     //setup not using interrupt
-    data[0] = CTRL_REG2_G;
-    data[1] =  0x00;
-    write(IMU_BUS, data, 2);
+    data =  0x00;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG2_G, data);
 
     //set low power disable and HPF disable
-    data[0] = CTRL_REG3_G;
-    data[1] = 0x00;
-    write(IMU_BUS, data, 2);
+    data = 0x00;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG3_G, data);
 
     //enable x y z axis, latched interrupt = true
-    data[0] = CTRL_REG4;
-    data[1] = 0x3A;
-    write(IMU_BUS, data, 2);
+    data = 0x3A;
+    imu_write_byte(IMU_XG_ADDR,CTRL_REG4, data);
 
     //configure orientation flip
-    data[0] = ORIENT_CFG_G;
-    data[1] = 0x00;
-    write(IMU_BUS, data, 2);
+    data = 0x00;
+    imu_write_byte(IMU_BUS, ORIENT_CFG_G, data);
     
     #ifdef DEBUG
         printf("Init GYRO complete\n");
@@ -104,30 +111,28 @@ int* read_gyro(){
 /* ACCELEROMETER Functions */
 void init_accel(){
     //Enable x, y, z axis
-    unsigned char data[2] = {CTRL_REG5_XL, 0x38};
-    write(IMU_BUS, data, 2);
+    unsigned char data = 0x38;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG5_XL, data);
 
     //Enable accel, set scale, bandwidth
-    data[0] = CTRL_REG6_XL;
-    data[1] = (ACCEL_SAMPLE_RATE & 0x7) << 5;
+    data = (ACCEL_SAMPLE_RATE & 0x7) << 5;
     if(ACCEL_SCALE == 4)
-        data[1] |= (2 << 3);
+        data |= (2 << 3);
     else if(ACCEL_SCALE == 8)
-        data[1] |= (3 << 3);
+        data |= (3 << 3);
     else if(ACCEL_SCALE == 16)
-        data[1] |= (1 << 3);
+        data |= (1 << 3);
     else
-        data[1] = data[1];
+        data = data;
     if(ACCEL_BANDWIDTH >= 0){
-        data[1] |= 1 << 2;
-        data[1] |= (ACCEL_BANDWIDTH & 0x3);
+        data |= 1 << 2;
+        data |= (ACCEL_BANDWIDTH & 0x3);
     }
-    write(IMU_BUS, data, 2);
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG6_XL, data);
 
     //disable high resolution
-    data[0] = CTRL_REG7_XL;
-    data[1] = 0x00;
-    write(IMU_BUS, data, 2);
+    data = 0x00;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG7_XL, data);
     
     #ifdef DEBUG
         printf("Init ACCEL complete\n");
@@ -158,33 +163,30 @@ int* read_accel(){
 /* MAGNETOMETER Functions */
 void init_mag(){
     //Set xzy performance level and sample rate
-    unsigned char data[2] = {CTRL_REG1_M, 0x0};
+    unsigned char data = 0x00;
     if(MAG_TEMP_COMP_EN)
-        data[1] |= (1 << 7);
-    data[1] |= ((MAG_PERFORMANCE & 3) << 5) | ((MAG_SAMPLE_RATE & 7) << 2);
-    write(IMU_BUS, data, 2);
+        data |= (1 << 7);
+    data |= ((MAG_PERFORMANCE & 3) << 5) | ((MAG_SAMPLE_RATE & 7) << 2);
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG1_M, data);
 
     //Set scale
-    data[0] = CTRL_REG2_M;
     if(MAG_SCALE == 8)
-        data[1] =  (1 << 5);
+        data = (1 << 5);
     else if(MAG_SCALE == 12)
-        data[1] =  (2 << 5);
+        data = (2 << 5);
     else if(MAG_SCALE == 8)
-        data[1] =  (3 << 16);
+        data = (3 << 16);
     else
-        data[1] = 0;
-    write(IMU_BUS, data, 2);
+        data = 0;
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, data);
 
     //disable low power and continuous operation mode
-    data[0] = CTRL_REG4_M;
-    data[1] = 0x00;
-    write(IMU_BUS, data, 2);
+    data = 0x00;
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG4_M, data);
 
     //set z axis mode to ultra high performance
-    data[0] = CTRL_REG5_M;
-    data[1] = (MAG_PERFORMANCE & 3) << 2;
-    write(IMU_BUS, data, 2);
+    data = (MAG_PERFORMANCE & 3) << 2;
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG4_M, data);
 
     #ifdef DEBUG
         printf("Init MAG complete\n");
@@ -213,25 +215,61 @@ int* read_mag(){
 }
 
 /* IMU Functions */
-unsigned char read_byte(unsigned char addr){
+unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
+    int fd = open("/dev/i2c-1");
+    ioctl(fd, I2C_SLAVE, addr);
+    union i2c_smbus_data data;
+    data.value = val;
+    struct i2c_smbus_ioctl_data io_data;
+    io_data.read_write = 1;
+    io_data.command = sub_addr;
+    io_data.size = 2;
+    io_data.data = data;
+    ioctl(fd, I2C_SMBUS, &io_data);
+    /*
     unsigned char temp[1] = {addr};
     write(IMU_BUS, temp, 1);
    #ifdef DEBUG
         printf("IMU Read from %02x: ", temp[0]);
     #endif
     read(IMU_BUS, temp, 1);
+    */
     #ifdef DEBUG
-        printf(" %02x\n", temp[0]);
+        if(addr == IMU_XG_ADDR)
+            printf("Reading XG ");
+        else
+            printf("Reading MAG ");
+        printf("reg %02x: %02x\n", sub_addr, data.byte & 0xFF);
     #endif
-    return temp[0];
+    
+
+
+    return data.byte & 0xFF;
 }
 
-void write_byte(unsigned char addr, unsigned char val){
-    unsigned char temp[2] = {addr, val};
-    write(IMU_BUS, temp, 2);
+//write byte to i2c: device addr, reg addr, value to be written
+void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char val){
+    int fd = open("/dev/i2c-1");
+    ioctl(fd, I2C_SLAVE, addr);
+    union i2c_smbus_data data;
+    data.byte = val;
+    struct i2c_smbus_ioctl_data io_data;
+    io_data.read_write = 0;
+    io_data.command = sub_addr;
+    io_data.size = 2;
+    io_data.data = &data;
+    ioctl(fd, I2C_SMBUS, &io_data);
+
+    // unsigned char temp[2] = {addr, val};
+    // write(IMU_BUS, temp, 2);
     #ifdef DEBUG
-        printf("IMU write %02x: %02x\n", temp[0], temp[1]);
+        if(addr == IMU_XG_ADDR)
+            printf("Writing XG ");
+        else
+            printf("Writing MAG ");
+        printf("reg %02x with value %02x\n", sub_addr, val);
     #endif
+    
     return;
 }
 
@@ -239,10 +277,39 @@ void calibrate_IMU(){
     printf("Calibration imcomplete. Proceed with caution...\n");
 
     //enable FIFO and set length 0x1F
-    unsigned char temp = read_byte(0x23);
+    unsigned char temp = imu_read_byte(IMU_XG_ADDR, CTRL_REG9);
     temp |= 2;
-    write_byte(0x23, temp);
-    write_byte(0x2E, 0x3F);
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG9, temp);
+    imu_write_byte(IMU_XG_ADDR, FIFO_CTRL, 0x3F);
+
+    unsigned char sample_count = 0;
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+
+    //disable FIFO and set length back to 0
+    temp = imu_read_byte(IMU_XG_ADDR, CTRL_REG9);
+    temp &= ~2;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG9, temp);
+    imu_write_byte(IMU_XG_ADDR, FIFO_CTRL, 0x00);
+    return 1;
 
     //pull back the number of stored sampled
     #ifdef DEBUG
@@ -303,39 +370,41 @@ void calibrate_IMU(){
 
 char init_IMU(){
     //Open I2C Port
-    IMU_BUS = open(I2C_PORT_NAME, O_RDWR);
-    if(IMU_BUS < 0)
-    {
-        fprintf(stderr, "Failed to open the bus. \n");
-        return(1);
-    }
+    //this was moved to the read/write function calls
+    // IMU_BUS = open(I2C_PORT_NAME, O_RDWR);
+    // if(IMU_BUS < 0)
+    // {
+    //     fprintf(stderr, "Failed to open the bus. \n");
+    //     return(1);
+    // }
 
     //validate connection
-    unsigned char READ_GX[1] = {0x0F}, READ_MAG[1] = {0x0F};
-    unsigned char gx_resp[1] = {0}, mag_resp[1] = {0};
+    unsigned char READ_XG = 0x0F, READ_MAG = 0x0F;
+    unsigned char xg_resp = 0, mag_resp = {0};
 
 	//Read GYRO / ACCEL Response
-    ioctl(IMU_BUS, I2C_SLAVE, IMU_XG_ADDR);
-    write(IMU_BUS, READ_GX, 1);
-    if(read(IMU_BUS, gx_resp, 1) != 1){
-	    fprintf(stderr, "Error: I/O error on GX_RESP\n");
-	    return 1;
-    }
+    // ioctl(IMU_BUS, I2C_SLAVE, IMU_XG_ADDR);
+    //write(IMU_BUS, READ_GX, 1);
+    // if(read(IMU_BUS, gx_resp, 1) != 1){
+	//     fprintf(stderr, "Error: I/O error on GX_RESP\n");
+	//     return 1;
+    // }
+    xg_resp = imu_read_byte(IMU_XG_ADDR, READ_XG);
     #ifdef DEBUG
-        printf("GX  response: %02x\t Expected response: %02x\n", gx_resp[0], 0x68);
+        printf("XG response: %02x\t Expected response: %02x\n", xg_resp, 0x68);
     #endif
 
     //Read MAG Response
-    ioctl(IMU_BUS, I2C_SLAVE, IMU_MAG_ADDR);
-    write(IMU_BUS, READ_MAG, 1);
-    if(read(IMU_BUS, mag_resp, 1) != 1){
-	    fprintf(stderr, "Error: I/O error on MAG_RESP\n");
-	    return 1;
-    }
+    // ioctl(IMU_BUS, I2C_SLAVE, IMU_MAG_ADDR);
+    mag_resp = imu_read_byte(IMU_MAG_ADDR, READ_MAG);
+    // if(read(IMU_BUS, mag_resp, 1) != 1){
+	//     fprintf(stderr, "Error: I/O error on MAG_RESP\n");
+	//     return 1;
+    // }
     #ifdef DEBUG
-        printf("MAG response: %02x\t Expected response: %02x\n", mag_resp[0], 0x3d);
+        printf("MAG response: %02x\t Expected response: %02x\n", mag_resp, 0x3d);
     #endif
-    if((mag_resp[0] | gx_resp[0] << 8) != 0x683D) {
+    if((mag_resp | xg_resp << 8) != 0x683D) {
         fprintf(stderr, "Could not establish connection with LSM9DS1. Quitting\n");
         return 1;
     }
