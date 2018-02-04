@@ -15,3 +15,13 @@ imu.begin()
     initMag():
 
 imu.calibrate()
+
+i2c_write_byte()
+    writes for both xg and mag (0x6b and 0x1e)
+    fd=wiringpisetup using(device address)
+        calls setup_i2c_device():
+            fd = open("/dev/i2c-1", O_RDWR);
+            ioctl(fd, I2C_SLAVE, device address)
+    wiringpiwritereg8(fd, register address, data to be written))
+        
+    close(fd)

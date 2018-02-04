@@ -14,8 +14,8 @@ void init_mag();
 int* read_mag();
 
 /* General IMU Functions */
-unsigned char read_byte(unsigned char addr);
-void write_byte(unsigned char addr, unsigned char val);
+unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr);
+void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char val);
 void calibrate_IMU();
 char init_IMU();
 int* IMU_pull_samples();
