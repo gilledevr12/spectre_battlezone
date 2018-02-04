@@ -80,7 +80,11 @@ void init_gyro(){
 
     //configure orientation flip
     data = 0x00;
+<<<<<<< HEAD
     imu_write_byte(IMU_XG_ADDR, ORIENT_CFG_G, data);
+=======
+    imu_write_byte(IMU_BUS, ORIENT_CFG_G, data);
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     
     #ifdef DEBUG
         printf("Init GYRO complete\n");
@@ -174,8 +178,13 @@ void init_mag(){
         data = (1 << 5);
     else if(MAG_SCALE == 12)
         data = (2 << 5);
+<<<<<<< HEAD
     else if(MAG_SCALE == 16)
         data = (3 << 5);
+=======
+    else if(MAG_SCALE == 8)
+        data = (3 << 16);
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     else
         data = 0;
     imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, data);
@@ -186,7 +195,11 @@ void init_mag(){
 
     //set z axis mode to ultra high performance
     data = (MAG_PERFORMANCE & 3) << 2;
+<<<<<<< HEAD
     imu_write_byte(IMU_MAG_ADDR, CTRL_REG5_M, data);
+=======
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG4_M, data);
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
 
     #ifdef DEBUG
         printf("Init MAG complete\n");
@@ -216,14 +229,25 @@ int* read_mag(){
 
 /* IMU Functions */
 unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
+<<<<<<< HEAD
     int fd = open("/dev/i2c-1", O_RDWR);
     ioctl(fd, I2C_SLAVE, addr);
     union i2c_smbus_data data;
+=======
+    int fd = open("/dev/i2c-1");
+    ioctl(fd, I2C_SLAVE, addr);
+    union i2c_smbus_data data;
+    data.value = val;
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     struct i2c_smbus_ioctl_data io_data;
     io_data.read_write = 1;
     io_data.command = sub_addr;
     io_data.size = 2;
+<<<<<<< HEAD
     io_data.data = &data;
+=======
+    io_data.data = data;
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     ioctl(fd, I2C_SMBUS, &io_data);
     close(fd);
     /*
@@ -234,7 +258,11 @@ unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
     #endif
     read(IMU_BUS, temp, 1);
     */
+<<<<<<< HEAD
     #ifdef DEBUG_VERBOSE
+=======
+    #ifdef DEBUG
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
         if(addr == IMU_XG_ADDR)
             printf("Reading XG ");
         else
@@ -249,7 +277,11 @@ unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
 
 //write byte to i2c: device addr, reg addr, value to be written
 void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char val){
+<<<<<<< HEAD
     int fd = open("/dev/i2c-1", O_RDWR);
+=======
+    int fd = open("/dev/i2c-1");
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     ioctl(fd, I2C_SLAVE, addr);
     union i2c_smbus_data data;
     data.byte = val;
@@ -263,7 +295,11 @@ void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char va
 
     // unsigned char temp[2] = {addr, val};
     // write(IMU_BUS, temp, 2);
+<<<<<<< HEAD
     #ifdef DEBUG_VERBOSE
+=======
+    #ifdef DEBUG
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
         if(addr == IMU_XG_ADDR)
             printf("Writing XG ");
         else
@@ -282,6 +318,38 @@ void calibrate_IMU(){
     temp |= 2;
     imu_write_byte(IMU_XG_ADDR, CTRL_REG9, temp);
     imu_write_byte(IMU_XG_ADDR, FIFO_CTRL, 0x3F);
+<<<<<<< HEAD
+=======
+
+    unsigned char sample_count = 0;
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
+    printf("Sample count: %02x\n", sample_count);
+
+    //disable FIFO and set length back to 0
+    temp = imu_read_byte(IMU_XG_ADDR, CTRL_REG9);
+    temp &= ~2;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG9, temp);
+    imu_write_byte(IMU_XG_ADDR, FIFO_CTRL, 0x00);
+    return 1;
+>>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
 
     unsigned char sample_count = 0;
     sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
