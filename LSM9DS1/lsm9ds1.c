@@ -226,6 +226,7 @@ unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
     io_data.size = 2;
     io_data.data = data;
     ioctl(fd, I2C_SMBUS, &io_data);
+    close(fd);
     /*
     unsigned char temp[1] = {addr};
     write(IMU_BUS, temp, 1);
@@ -259,6 +260,7 @@ void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char va
     io_data.size = 2;
     io_data.data = &data;
     ioctl(fd, I2C_SMBUS, &io_data);
+    close(fd);
 
     // unsigned char temp[2] = {addr, val};
     // write(IMU_BUS, temp, 2);
