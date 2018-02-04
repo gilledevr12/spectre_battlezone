@@ -6,7 +6,7 @@ int main(int argc, char* argv[]){
                 "org.gtkmm.example.base");
 
     Gtk::Window win;
-    win.set_default_size(200, 200);
+    win.set_default_size(320, 480);
 
     return app->run(win);
 }

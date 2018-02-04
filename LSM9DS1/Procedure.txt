@@ -1,0 +1,17 @@
+Startup procedure:
+
+imu.init()
+    - basically defines a bunch of constants used for masking into registers
+    for read and writes, (ex: scale and speed)
+    - initializes wiringpisetup()
+
+imu.begin()
+    - constrainScales() - constrain scale values to something defined? Dumb function
+    - calcRes(): calculate resolution for accel gyro and mag - basically pulling
+        from header file #defines and storing in new global variables
+    - Verify connection: read ID bytes from mag and xg devices
+    initGyro():
+    initAccel():
+    initMag():
+
+imu.calibrate()

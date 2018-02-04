@@ -9,7 +9,7 @@
 #include "LSM9DS1_Registers.h"
 
 //Development Commands
-#define DEBUG
+//#define DEBUG
 
 //IMU Declarations
 #define IMU_XG_ADDR         0x6B
@@ -19,8 +19,8 @@ int GYRO_BIAS[3] = {0, 0, 0};
 int ACCEL_BIAS[3] = {0, 0, 0};
 int MAG_BIAS[3] = {0, 0, 0};
 //Gyroscope Declarations
-#define GYRO_SCALE          245
 #define GYRO_SAMPLE_RATE    6           //952
+#define GYRO_SCALE          245
 #define GYRO_BANDWIDTH      0
 //Accelerometer Declarations
 #define ACCEL_SCALE         2           
@@ -30,7 +30,7 @@ int MAG_BIAS[3] = {0, 0, 0};
 #define MAG_SCALE           4
 #define MAG_SAMPLE_RATE     7           //80 Hz
 #define MAG_BANDWIDTH       0
-#define MAG_TEMP_COMP       0           //temperature compensation disabled
+#define MAG_TEMP_COMP_EN    0           //temperature compensation disabled
 #define MAG_PERFORMANCE     3           //ultra high power performance
 #define MAG_MODE            0           //continuous conversion
 //Some Res?
@@ -44,20 +44,32 @@ int IMU_BUS;
 /* GYROSCOPE Functions */
 void init_gyro(){
     //set sample rate, scale, bandwidth
-    unsigned char data[2] = {CTRL_REG1_G, 0xC0};
+    unsigned char data[2] = {CTRL_REG1_G, 0};
+    data[1] = ((GYRO_SAMPLE_RATE & 0x07) << 5);
+    if(GYRO_SCALE == 500)
+        data[1] |= (1 << 3);
+    else if(GYRO_SCALE == 2000)
+        data[1] |= (3 << 3);
+    else
+        data[1] = data[1];
+    data[1] |= (GYRO_BANDWIDTH & 3);
     write(IMU_BUS, data, 2);
+
     //setup not using interrupt
     data[0] = CTRL_REG2_G;
     data[1] =  0x00;
     write(IMU_BUS, data, 2);
+
     //set low power disable and HPF disable
     data[0] = CTRL_REG3_G;
     data[1] = 0x00;
     write(IMU_BUS, data, 2);
-    //enable x y z axis, latched interrupt?
+
+    //enable x y z axis, latched interrupt = true
     data[0] = CTRL_REG4;
-    data[1] = 0x39;
+    data[1] = 0x3A;
     write(IMU_BUS, data, 2);
+
     //configure orientation flip
     data[0] = ORIENT_CFG_G;
     data[1] = 0x00;
@@ -94,10 +106,24 @@ void init_accel(){
     //Enable x, y, z axis
     unsigned char data[2] = {CTRL_REG5_XL, 0x38};
     write(IMU_BUS, data, 2);
+
     //Enable accel, set scale, bandwidth
     data[0] = CTRL_REG6_XL;
-    data[1] =  0xC0;
+    data[1] = (ACCEL_SAMPLE_RATE & 0x7) << 5;
+    if(ACCEL_SCALE == 4)
+        data[1] |= (2 << 3);
+    else if(ACCEL_SCALE == 8)
+        data[1] |= (3 << 3);
+    else if(ACCEL_SCALE == 16)
+        data[1] |= (1 << 3);
+    else
+        data[1] = data[1];
+    if(ACCEL_BANDWIDTH >= 0){
+        data[1] |= 1 << 2;
+        data[1] |= (ACCEL_BANDWIDTH & 0x3);
+    }
     write(IMU_BUS, data, 2);
+
     //disable high resolution
     data[0] = CTRL_REG7_XL;
     data[1] = 0x00;
@@ -129,23 +155,35 @@ int* read_accel(){
     return temp_accel;
 }
 
-
 /* MAGNETOMETER Functions */
 void init_mag(){
     //Set xzy performance level and sample rate
-    unsigned char data[2] = {CTRL_REG1_M, 0x7C};
+    unsigned char data[2] = {CTRL_REG1_M, 0x0};
+    if(MAG_TEMP_COMP_EN)
+        data[1] |= (1 << 7);
+    data[1] |= ((MAG_PERFORMANCE & 3) << 5) | ((MAG_SAMPLE_RATE & 7) << 2);
     write(IMU_BUS, data, 2);
+
     //Set scale
     data[0] = CTRL_REG2_M;
-    data[1] =  0x00;
+    if(MAG_SCALE == 8)
+        data[1] =  (1 << 5);
+    else if(MAG_SCALE == 12)
+        data[1] =  (2 << 5);
+    else if(MAG_SCALE == 8)
+        data[1] =  (3 << 16);
+    else
+        data[1] = 0;
     write(IMU_BUS, data, 2);
+
     //disable low power and continuous operation mode
     data[0] = CTRL_REG4_M;
     data[1] = 0x00;
     write(IMU_BUS, data, 2);
+
     //set z axis mode to ultra high performance
     data[0] = CTRL_REG5_M;
-    data[1] = 0x0C;
+    data[1] = (MAG_PERFORMANCE & 3) << 2;
     write(IMU_BUS, data, 2);
 
     #ifdef DEBUG
