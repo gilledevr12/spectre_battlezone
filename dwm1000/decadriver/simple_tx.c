@@ -67,31 +67,33 @@ int main(void)
 //     * performance. */
 //    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
 //    spi_set_rate_low();
+	printf("checking\n");
     if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR)
     {
         printf("INIT FAILED");
         while (1)
         { };
+    } else {
+	printf("init succeeded");
     }
     //spi_set_rate_high();
 
     /* Configure DW1000. See NOTE 3 below. */
     dwt_configure(&config);
 
-    int errorThere;
+    int errorThere = 0;
 
     /* Loop forever sending frames periodically. */
     while(1)
     {
         /* Write frame data to DW1000 and prepare transmission. See NOTE 4 below.*/
         errorThere = dwt_writetxdata(sizeof(tx_msg), tx_msg, 0); /* Zero offset in TX buffer. */
-        printf("%.2X ", errorThere);
+        printf("%.2X is the error code\n", errorThere);
         dwt_writetxfctrl(sizeof(tx_msg), 0, 0); /* Zero offset in TX buffer, no ranging. */
 
         /* Start transmission. */
         errorThere = dwt_starttx(DWT_START_TX_IMMEDIATE);
-        printf("%.2X ", errorThere);
-        printf("\n");
+        printf("%.2X is the second error code /n", errorThere);
         /* Poll DW1000 until TX frame sent event set. See NOTE 5 below.
          * STATUS register is 5 bytes long but, as the event we are looking at is in the first byte of the register, we can use this simplest API
          * function to access it.*/

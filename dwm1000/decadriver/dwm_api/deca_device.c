@@ -155,14 +155,27 @@ int dwt_initialise(uint16 config)
     pdw1000local->cbRxTo = NULL;
     pdw1000local->cbRxErr = NULL;
 
+
+    printf("break 0\n");
     // Read and validate device ID return -1 if not recognised
     if (DWT_DEVICE_ID != dwt_readdevid()) // MP IC ONLY (i.e. DW1000) FOR THIS CODE
     {
         return DWT_ERROR ;
     }
 
+    printf("break 1\n");
+
+    if (DWT_DEVICE_ID != dwt_readdevid()) // MP IC ONLY (i.e. DW1000) FOR THIS CODE
+    {
+        return DWT_ERROR ;
+    }
+
+    printf("break 2\n");
+
     // Make sure the device is completely reset before starting initialisation
     dwt_softreset();
+
+    printf("break 3\n");
 
     _dwt_enableclocks(FORCE_SYS_XTI); // NOTE: set system clock to XTI - this is necessary to make sure the values read by _dwt_otpread are reliable
 

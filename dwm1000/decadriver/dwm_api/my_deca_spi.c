@@ -50,6 +50,11 @@ int myreadfromspi(uint16 headerLength, const uint8 *headerBuffer, uint32 readlen
         rx[i + headerLength] = readBuffer[i];
     }
     transfer(fd, tx, rx, headerLength + readlength);
+    for (int i = 0; i < readlength; i++){
+	readBuffer[i] = rx[headerLength + i];
+        printf("%.2X ", readBuffer[i]);
+    }
+    puts("");
     close(fd);
 }
 
@@ -82,10 +87,10 @@ static void transfer(int fd, uint8_t *tx, uint8_t *rx, int length)
     ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
     if (ret < 1)
         pabort("can't send spi message");
-    for (ret = 0; ret < length; ret++) {
-        if (!(ret % 6)) puts("");
-        printf("%.2X ", rx[ret]);
-    }
+    //for (ret = 0; ret < length; ret++) {
+    //    if (!(ret % 6)) puts("");
+    //    printf("%.2X ", rx[ret]);
+    //}
     puts("");
 }
 
