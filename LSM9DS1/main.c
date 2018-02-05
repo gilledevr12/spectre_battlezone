@@ -9,7 +9,6 @@
 int main(){
 	init_IMU();
 	calibrate_IMU();
-	return 0;
 
 	while(1){
 		int* samples = IMU_pull_samples();
