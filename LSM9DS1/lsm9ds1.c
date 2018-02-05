@@ -218,6 +218,7 @@ void init_mag(){
 void read_device_bytes(unsigned char addr, unsigned char sub_addr, unsigned int* dest){
     int fd = open("/dev/i2c-1", O_RDWR);
     ioctl(fd, I2C_SLAVE, addr);
+<<<<<<< HEAD
 
     //probe the device to send back the device data
     struct i2c_smbus_ioctl_data io_data;
@@ -231,6 +232,21 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, unsigned int*
     unsigned char temp_data[6];
     read(fd, temp_data, 6);
 
+=======
+
+    //probe the device to send back the device data
+    struct i2c_smbus_ioctl_data io_data;
+    io_data.read_write = 1;
+    io_data.command = sub_addr;
+    io_data.size = 2;
+    io_data.data = NULL;
+    ioctl (fd, I2C_SMBUS, &io_data) ;
+
+    //read back 6 bytes from device
+    unsigned char temp_data[6];
+    read(fd, temp_data, 6);
+
+>>>>>>> 2dc85bcebd40753992ea9a90e5a0d16164d1e3d6
     //close the device
     close(fd);
 
