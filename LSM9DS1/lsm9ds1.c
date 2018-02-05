@@ -80,11 +80,7 @@ void init_gyro(){
 
     //configure orientation flip
     data = 0x00;
-<<<<<<< HEAD
     imu_write_byte(IMU_XG_ADDR, ORIENT_CFG_G, data);
-=======
-    imu_write_byte(IMU_BUS, ORIENT_CFG_G, data);
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     
     #ifdef DEBUG
         printf("Init GYRO complete\n");
@@ -93,24 +89,24 @@ void init_gyro(){
     return;
 }
 
-int* read_gyro(){
-    unsigned char temp[6] = {0, 0, 0, 0, 0, 0};
-    unsigned char addr[1] = {OUT_X_L_G};
-    write(IMU_BUS, addr, 1);
-    read(IMU_BUS, temp, 6);
-    #ifdef DEBUG
-        printf("Gyro received: ");
-        for(int i=0; i<6; i++)
-            printf("%02x ", temp[i]);
-        printf("\n");
-    #endif
-    static int temp_gyro[3];
-    temp_gyro[0] = ((temp[1] << 8) | temp[0]) - GYRO_BIAS[0];
-    temp_gyro[1] = ((temp[3] << 8) | temp[2]) - GYRO_BIAS[1];
-    temp_gyro[2] = ((temp[5] << 8) | temp[4]) - GYRO_BIAS[2];
+// int* read_gyro(){
+//     unsigned char temp[6] = {0, 0, 0, 0, 0, 0};
+//     unsigned char addr[1] = {OUT_X_L_G};
+//     write(IMU_BUS, addr, 1);
+//     read(IMU_BUS, temp, 6);
+//     #ifdef DEBUG
+//         printf("Gyro received: ");
+//         for(int i=0; i<6; i++)
+//             printf("%02x ", temp[i]);
+//         printf("\n");
+//     #endif
+//     static int temp_gyro[3];
+//     temp_gyro[0] = ((temp[1] << 8) | temp[0]) - GYRO_BIAS[0];
+//     temp_gyro[1] = ((temp[3] << 8) | temp[2]) - GYRO_BIAS[1];
+//     temp_gyro[2] = ((temp[5] << 8) | temp[4]) - GYRO_BIAS[2];
 
-    return temp_gyro;
-}
+//     return temp_gyro;
+// }
 
 /* ACCELEROMETER Functions */
 void init_accel(){
@@ -145,24 +141,24 @@ void init_accel(){
     return;
 }
 
-int* read_accel(){
-    unsigned char temp[6] = {0, 0, 0, 0, 0, 0};
-    unsigned char addr[1] = {OUT_X_L_XL};
-    write(IMU_BUS, addr, 1);
-    read(IMU_BUS, temp, 6);
-    #ifdef DEBUG
-        printf("Accel received: ");
-        for(int i=0; i<6; i++)
-            printf("%02x ", temp[i]);
-        printf("\n");
-    #endif
-    static int temp_accel[3];
-    temp_accel[0] = ((temp[1] << 8) | temp[0]) - ACCEL_BIAS[0];
-    temp_accel[1] = ((temp[3] << 8) | temp[2]) - ACCEL_BIAS[1];
-    temp_accel[2] = ((temp[5] << 8) | temp[4]) - ACCEL_BIAS[2];
+// int* read_accel(){
+//     unsigned char temp[6] = {0, 0, 0, 0, 0, 0};
+//     unsigned char addr[1] = {OUT_X_L_XL};
+//     write(IMU_BUS, addr, 1);
+//     read(IMU_BUS, temp, 6);
+//     #ifdef DEBUG
+//         printf("Accel received: ");
+//         for(int i=0; i<6; i++)
+//             printf("%02x ", temp[i]);
+//         printf("\n");
+//     #endif
+//     static int temp_accel[3];
+//     temp_accel[0] = ((temp[1] << 8) | temp[0]) - ACCEL_BIAS[0];
+//     temp_accel[1] = ((temp[3] << 8) | temp[2]) - ACCEL_BIAS[1];
+//     temp_accel[2] = ((temp[5] << 8) | temp[4]) - ACCEL_BIAS[2];
 
-    return temp_accel;
-}
+//     return temp_accel;
+// }
 
 /* MAGNETOMETER Functions */
 void init_mag(){
@@ -178,13 +174,8 @@ void init_mag(){
         data = (1 << 5);
     else if(MAG_SCALE == 12)
         data = (2 << 5);
-<<<<<<< HEAD
     else if(MAG_SCALE == 16)
         data = (3 << 5);
-=======
-    else if(MAG_SCALE == 8)
-        data = (3 << 16);
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     else
         data = 0;
     imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, data);
@@ -195,11 +186,7 @@ void init_mag(){
 
     //set z axis mode to ultra high performance
     data = (MAG_PERFORMANCE & 3) << 2;
-<<<<<<< HEAD
     imu_write_byte(IMU_MAG_ADDR, CTRL_REG5_M, data);
-=======
-    imu_write_byte(IMU_MAG_ADDR, CTRL_REG4_M, data);
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
 
     #ifdef DEBUG
         printf("Init MAG complete\n");
@@ -208,46 +195,82 @@ void init_mag(){
     return;
 }
 
-int* read_mag(){
-    unsigned char temp[6] = {0, 0, 0, 0, 0, 0};
-    unsigned char addr[1] = {OUT_X_L_M};
-    write(IMU_BUS, addr, 1);
-    read(IMU_BUS, temp, 6);
-    #ifdef DEBUG
-        printf("Mag received: ");
-        for(int i=0; i<6; i++)
-            printf("%02x ", temp[i]);
-        printf("\n");
-    #endif
-    static int temp_mag[3];
-    temp_mag[0] = ((temp[1] << 8) | temp[0]);
-    temp_mag[1] = ((temp[3] << 8) | temp[2]);
-    temp_mag[2] = ((temp[5] << 8) | temp[4]);
+// int* read_mag(){
+//     unsigned char temp[6] = {0, 0, 0, 0, 0, 0};
+//     unsigned char addr[1] = {OUT_X_L_M};
+//     write(IMU_BUS, addr, 1);
+//     read(IMU_BUS, temp, 6);
+//     #ifdef DEBUG
+//         printf("Mag received: ");
+//         for(int i=0; i<6; i++)
+//             printf("%02x ", temp[i]);
+//         printf("\n");
+//     #endif
+//     static int temp_mag[3];
+//     temp_mag[0] = ((temp[1] << 8) | temp[0]);
+//     temp_mag[1] = ((temp[3] << 8) | temp[2]);
+//     temp_mag[2] = ((temp[5] << 8) | temp[4]);
 
-    return temp_mag;
-}
+//     return temp_mag;
+// }
 
 /* IMU Functions */
-unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
-<<<<<<< HEAD
+void read_device_bytes(unsigned char addr, unsigned char sub_addr, unsigned int* dest){
     int fd = open("/dev/i2c-1", O_RDWR);
     ioctl(fd, I2C_SLAVE, addr);
-    union i2c_smbus_data data;
-=======
-    int fd = open("/dev/i2c-1");
-    ioctl(fd, I2C_SLAVE, addr);
-    union i2c_smbus_data data;
-    data.value = val;
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
+
+    //probe the device to send back the device data
     struct i2c_smbus_ioctl_data io_data;
     io_data.read_write = 1;
     io_data.command = sub_addr;
     io_data.size = 2;
-<<<<<<< HEAD
+    io_data.data = NULL;
+    ioctl (fd, I2C_SMBUS, &io_data) ;
+
+    //read back 6 bytes from device
+    unsigned char temp_data[6];
+    read(fd, temp_data, 6);
+
+    //close the device
+    close(fd);
+
+    //combine to integer values
+    unsigned int compiled_data[3];
+    compiled_data[0] = (temp_data[1] << 8) | temp_data[0];
+    compiled_data[1] = (temp_data[3] << 8) | temp_data[2];
+    compiled_data[2] = (temp_data[5] << 8) | temp_data[4];
+
+    //determine type, apply bias to result
+    if(sub_addr == OUT_X_L_XL){ //Accelerometer Read
+        compiled_data[0] -= ACCEL_BIAS[0];
+        compiled_data[1] -= ACCEL_BIAS[1];
+        compiled_data[2] -= ACCEL_BIAS[2];
+    }
+    else if(sub_addr == OUT_X_L_G){ //Gyro Read
+        compiled_data[0] -= GYRO_BIAS[0];
+        compiled_data[1] -= GYRO_BIAS[1];
+        compiled_data[2] -= GYRO_BIAS[2];
+    }
+    else                            //Mag read - do nothing to adjust
+        compiled_data[0] = compiled_data[0];
+
+    //return compiled result
+    dest[0] = compiled_data[0];
+    dest[1] = compiled_data[1];
+    dest[2] = compiled_data[2];
+
+  return;
+}
+
+unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
+    int fd = open("/dev/i2c-1", O_RDWR);
+    ioctl(fd, I2C_SLAVE, addr);
+    union i2c_smbus_data data;
+    struct i2c_smbus_ioctl_data io_data;
+    io_data.read_write = 1;
+    io_data.command = sub_addr;
+    io_data.size = 2;
     io_data.data = &data;
-=======
-    io_data.data = data;
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     ioctl(fd, I2C_SMBUS, &io_data);
     close(fd);
     /*
@@ -258,30 +281,20 @@ unsigned char imu_read_byte(unsigned char addr, unsigned char sub_addr){
     #endif
     read(IMU_BUS, temp, 1);
     */
-<<<<<<< HEAD
     #ifdef DEBUG_VERBOSE
-=======
-    #ifdef DEBUG
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
         if(addr == IMU_XG_ADDR)
             printf("Reading XG ");
         else
             printf("Reading MAG ");
         printf("reg %02x: %02x\n", sub_addr, data.byte & 0xFF);
     #endif
-    
-
 
     return data.byte & 0xFF;
 }
 
 //write byte to i2c: device addr, reg addr, value to be written
 void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char val){
-<<<<<<< HEAD
     int fd = open("/dev/i2c-1", O_RDWR);
-=======
-    int fd = open("/dev/i2c-1");
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
     ioctl(fd, I2C_SLAVE, addr);
     union i2c_smbus_data data;
     data.byte = val;
@@ -295,11 +308,7 @@ void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char va
 
     // unsigned char temp[2] = {addr, val};
     // write(IMU_BUS, temp, 2);
-<<<<<<< HEAD
     #ifdef DEBUG_VERBOSE
-=======
-    #ifdef DEBUG
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
         if(addr == IMU_XG_ADDR)
             printf("Writing XG ");
         else
@@ -318,38 +327,6 @@ void calibrate_IMU(){
     temp |= 2;
     imu_write_byte(IMU_XG_ADDR, CTRL_REG9, temp);
     imu_write_byte(IMU_XG_ADDR, FIFO_CTRL, 0x3F);
-<<<<<<< HEAD
-=======
-
-    unsigned char sample_count = 0;
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-    sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
-    printf("Sample count: %02x\n", sample_count);
-
-    //disable FIFO and set length back to 0
-    temp = imu_read_byte(IMU_XG_ADDR, CTRL_REG9);
-    temp &= ~2;
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG9, temp);
-    imu_write_byte(IMU_XG_ADDR, FIFO_CTRL, 0x00);
-    return 1;
->>>>>>> 0f1b0dd4ed584f337aa814ba4137c1742a484e04
 
     unsigned char sample_count = 0;
     sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC);
@@ -495,17 +472,19 @@ char init_IMU(){
 }
 
 int* IMU_pull_samples(){
+    //sample read is defined int s[9]: {a1, a2, a3 g1, g2, g3, m1, m2, m3
     static int samples[9];
-    int *tmp;
-    tmp = read_accel();
+    int tmp[3] = {0, 0, 0};
+    //read accelerometer
+    read_device_bytes(IMU_XG_ADDR, OUT_X_L_XL, tmp);
     samples[0] = tmp[0];
     samples[1] = tmp[1];
     samples[2] = tmp[2];
-    tmp = read_gyro();
+    read_device_bytes(IMU_XG_ADDR, OUT_X_L_G, tmp);
     samples[3] = tmp[0];
     samples[4] = tmp[1];
     samples[5] = tmp[2];
-    tmp = read_mag();
+    read_device_bytes(IMU_MAG_ADDR, OUT_X_L_M, tmp);
     samples[6] = tmp[0];
     samples[7] = tmp[1];
     samples[8] = tmp[2];
