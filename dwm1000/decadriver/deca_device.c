@@ -17,6 +17,7 @@
 #include "deca_param_types.h"
 #include "deca_regs.h"
 #include "deca_device_api.h"
+#include "my_deca_spi.h"
 
 // Defines for enable_clocks function
 #define FORCE_SYS_XTI  0
@@ -216,7 +217,7 @@ int dwt_initialise(uint16 config)
 
     return DWT_SUCCESS ;
 
-} // end dwt_initialise()
+} // end dwt_initialise() BREAKPOINT
 
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn dwt_otprevision()
@@ -611,8 +612,8 @@ void dwt_settxantennadelay(uint16 txDelay)
  *                         standard PHR mode allows up to 127 bytes
  *                         if > 127 is programmed, DWT_PHRMODE_EXT needs to be set in the phrMode configuration
  *                         see dwt_configure function
- * @param txFrameBytes   - Pointer to the user’s buffer containing the data to send.
- * @param txBufferOffset - This specifies an offset in the DW1000’s TX Buffer at which to start writing data.
+ * @param txFrameBytes   - Pointer to the userï¿½s buffer containing the data to send.
+ * @param txBufferOffset - This specifies an offset in the DW1000ï¿½s TX Buffer at which to start writing data.
  *
  * output parameters
  *
@@ -974,7 +975,7 @@ void dwt_writetodevice
     }
     
     //our code ----
-	mywritetospi();
+	mywritetospi(cnt,header,length,buffer);
 	
 	//theirs
     // Write it to the SPI
@@ -1042,7 +1043,7 @@ void dwt_readfromdevice
     }
 
 	//our code ----
-	myreadfromspi();
+	myreadfromspi(cnt, header, length, buffer);
 	
 	//theirs
     // Do the read from the SPI
@@ -1600,6 +1601,13 @@ uint32 _dwt_otpprogword32(uint32 data, uint16 address)
     }
 
     return DWT_SUCCESS;
+}
+
+//taken from deca_sleep.c and changed
+/* Wrapper function to be used by decadriver. Declared in deca_device_api.h */
+void deca_sleep(unsigned int time_ms)
+{
+    usleep(time_ms * 1000);
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
@@ -2442,7 +2450,7 @@ void dwt_setleds(uint8 mode)
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
- * @fn _dwt_enableclocks() BREAKPOINT
+ * @fn _dwt_enableclocks()
  *
  * @brief function to enable/disable clocks to particular digital blocks/system
  *
@@ -2642,7 +2650,9 @@ void dwt_forcetrxoff(void)
     // We can disable the radio, but before the status is cleared an interrupt can be set (e.g. the
     // event has just happened before the radio was disabled)
     // thus we need to disable interrupt during this operation
-    stat = decamutexon() ;
+
+    //TODO
+    //stat = decamutexon() ;
 
     dwt_write32bitreg(SYS_MASK_ID, 0) ; // Clear interrupt mask - so we don't get any unwanted events
 
@@ -2656,7 +2666,9 @@ void dwt_forcetrxoff(void)
     dwt_write32bitreg(SYS_MASK_ID, mask) ; // Set interrupt mask to what it was
 
     // Enable/restore interrupts again...
-    decamutexoff(stat) ;
+    //TODO
+    //decamutexoff(stat) ;
+
     pdw1000local->wait4resp = 0;
 
 } // end deviceforcetrxoff()
@@ -2699,7 +2711,7 @@ void dwt_syncrxbufptrs(void)
  * @param enable - 1 to enable SNIFF mode, 0 to disable. When 0, all other parameters are not taken into account.
  * @param timeOn - duration of receiver ON phase, expressed in multiples of PAC size. The counter automatically adds 1 PAC
  *                 size to the value set. Min value that can be set is 1 (i.e. an ON time of 2 PAC size), max value is 15.
- * @param timeOff - duration of receiver OFF phase, expressed in multiples of 128/125 µs (~1 µs). Max value is 255.
+ * @param timeOff - duration of receiver OFF phase, expressed in multiples of 128/125 ï¿½s (~1 ï¿½s). Max value is 255.
  *
  * output parameters
  *
@@ -2779,9 +2791,9 @@ void dwt_setlowpowerlistening(int enable)
  * @brief Set duration of "short sleep" phase when in low-power listening mode.
  *
  * input parameters:
- * @param snooze_time - "short sleep" phase duration, expressed in multiples of 512/19.2 µs (~26.7 µs). The counter
+ * @param snooze_time - "short sleep" phase duration, expressed in multiples of 512/19.2 ï¿½s (~26.7 ï¿½s). The counter
  *                      automatically adds 1 to the value set. The smallest working value that should be set is 1,
- *                      i.e. giving a snooze time of 2 units (or ~53 µs).
+ *                      i.e. giving a snooze time of 2 units (or ~53 ï¿½s).
  *
  * output parameters
  *
@@ -2909,7 +2921,7 @@ void dwt_setpreambledetecttimeout(uint16 timeout)
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
- * @fn void dwt_setinterrupt()
+ * @fn void dwt_setinterrupt() BREAKPOINT
  *
  * @brief This function enables the specified events to trigger an interrupt.
  * The following events can be enabled:
@@ -2938,7 +2950,8 @@ void dwt_setinterrupt(uint32 bitmask, uint8 enable)
     uint32 mask ;
 
     // Need to beware of interrupts occurring in the middle of following read modify write cycle
-    stat = decamutexon() ;
+    //TODO
+    //stat = decamutexon() ;
 
     mask = dwt_read32bitreg(SYS_MASK_ID) ; // Read register
 
@@ -2952,7 +2965,8 @@ void dwt_setinterrupt(uint32 bitmask, uint8 enable)
     }
     dwt_write32bitreg(SYS_MASK_ID,mask) ; // New value
 
-    decamutexoff(stat) ;
+    //TODO
+    //decamutexoff(stat) ;
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------

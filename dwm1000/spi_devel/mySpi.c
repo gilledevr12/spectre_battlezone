@@ -38,7 +38,7 @@ static uint16_t delay;
 static void transfer(int fd, uint8_t tx[], uint8_t *rxa)
 {
 	int ret;
-	uint8_t rx[10];
+	uint8_t rx[fd];
 	for (int i = 0; i < 10; i++){
 		rx[i] = rxa[i];
 	}
