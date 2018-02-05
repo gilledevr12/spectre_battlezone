@@ -140,6 +140,7 @@ int dwt_setlocaldataptr(unsigned int index)
 #define VTEMP_ADDRESS  (0x09)
 #define XTRIM_ADDRESS  (0x1E)
 
+//this is just 0x01 or 0x00 based on loading or not loading from memory.  0x00 is don't load from memory
 int dwt_initialise(uint16 config)
 {
     uint16 otp_addr = 0;
@@ -161,7 +162,7 @@ int dwt_initialise(uint16 config)
     }
 
     // Make sure the device is completely reset before starting initialisation
-    //dwt_softreset(); comment out for now.... reset isn't connected and function isn't inspected
+    dwt_softreset();
 
     _dwt_enableclocks(FORCE_SYS_XTI); // NOTE: set system clock to XTI - this is necessary to make sure the values read by _dwt_otpread are reliable
 
@@ -3054,7 +3055,7 @@ void dwt_rxreset(void)
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
- * @fn dwt_softreset()
+ * @fn dwt_softreset() BREAKPOINT
  *
  * @brief this function resets the DW1000
  *
