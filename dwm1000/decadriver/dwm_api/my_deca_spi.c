@@ -52,7 +52,7 @@ int myreadfromspi(uint16 headerLength, const uint8 *headerBuffer, uint32 readlen
     transfer(fd, tx, rx, headerLength + readlength);
     for (int i = 0; i < readlength; i++){
 	readBuffer[i] = rx[headerLength + i];
-        printf("%.2X ", readBuffer[i]);
+        printf("x%.2X ", readBuffer[i]);
     }
     puts("");
     close(fd);
@@ -136,9 +136,9 @@ int setupSpi() {
     if (ret == -1)
         pabort("can't get max speed hz");
 
-    printf("spi mode: %d\n", mode);
-    printf("bits per word: %d\n", bits);
-    printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
+    //printf("spi mode: %d\n", mode);
+    //printf("bits per word: %d\n", bits);
+    //printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
 
     return fd;
 }
