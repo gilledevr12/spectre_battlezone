@@ -22,8 +22,8 @@ dwm1000.o: dwm1000.c dwm1000.h
 gen_mac.o: gen_mac.c
 	$(CC) $(CFLAGS) -c gen_mac.c
 
-lsm303.o: lsm303.c lsm303.h
-	$(CC) $(CFLAGS) -c lsm303.c
+# lsm303.o: lsm303.c lsm303.h
+# 	$(CC) $(CFLAGS) -c lsm303.c
 
 lsm9ds1.o: lsm9ds1.c lsm9ds1.h
 		$(CC) $(CFLAGS) -c lsm9ds1.c

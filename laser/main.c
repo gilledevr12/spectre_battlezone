@@ -4,53 +4,73 @@
 
 #include "main.h"
 
-struct int_x3 ACCEL, MAGNETOM;
+struct float_x3 ACCEL, GYRO, MAG;
 
 int main(){
 
-    #ifdef SENSOR_ENABLE
-        if(DEBUG)
-            printf("Begin I2C methods\n");
-
+    #ifdef IMU_ENABLE
+        #ifdef DEBUG
+            printf("Begin IMU Initialization\n");
+        #endif
         //pull readings from sensors
-        char packet_buffer[100];
+        if(init_IMU() > 0)
+            return 1;
+        calibrate_IMU();
 
-        int I2C_PORT = open_I2C_port("/dev/i2c-1");
-        // config_LSM303(I2C_PORT);
-        // ACCEL = get_accel(I2C_PORT);
-        // MAGNETOM = get_magnetom(I2C_PORT);
     #else
-      if(DEBUG)
-          printf("Skipping the I2C methods\n");
-    #endif
+        #ifdef DEBUG
+            printf("Skipping the IMU Initialization\n");
+        #endif
+    #endif  //IMU_ENABLE
 
     #ifdef CLIENT_ENABLE
-        if(DEBUG)
-            printf("Begin client methods\n");
+        #ifdef DEBUG
+            printf("Begin client-communication initialization\n");
+        #endif
 
-        int ret = pull_DEVICE_MAC();
-        if(!ret)
+        open_client_socket();
+        close_client_socket();  //Don't leave open.. this should really be closed... 
+
+        if(pull_DEVICE_MAC() > 0)
             return 1;
 
-        //send test packet
-        ACCEL.x = 100;
-        ACCEL.y = 200;
-        ACCEL.z = 300;
-        MAGNETOM.x = 400;
-        MAGNETOM.y = 500;
-        MAGNETOM.z = 600;
+    #else
+        printf("Client-comms not enabled. Messages will be sent to the console\n");
+    #endif  //CLIENT_ENABLE
 
-        int count = 0, SLEEP_DELAY = 25000;
+    int packet_count = 0, SLEEP_DELAY = 1000000;
+    while(1){
+        #ifdef IMU_ENABLE
+            float* curr_samples = IMU_pull_samples();
+            ACCEL.x = curr_samples[0];
+            ACCEL.y = curr_samples[1];
+            ACCEL.z = curr_samples[2];
+            GYRO.x = curr_samples[3];
+            GYRO.y = curr_samples[4];
+            GYRO.z = curr_samples[5];
+            MAG.x = curr_samples[6];
+            MAG.y = curr_samples[7];
+            MAG.z = curr_samples[8];
+            
+        #else
+            //send test packet
+            ACCEL.x = 1.00;
+            ACCEL.y = 2.00;
+            ACCEL.z = 3.00;
+            GYRO.x = 4.00;
+            GYRO.y = 5.00;
+            GYRO.z = 6.00;
+            MAG.x = 7.00;
+            MAG.y = 8.00;
+            MAG.z = 9.00;
+        #endif
 
-        //send_status(ACCEL, MAGNETOM, SHOTS_FIRED, FIRE_WEIGHT, Player Status);
-        while(1){
-            open_client_socket();
-            send_status(ACCEL, MAGNETOM, 0, count++);
-            close_client_socket();
-            usleep(SLEEP_DELAY);
+        open_client_socket();
+        send_status(ACCEL, GYRO, MAG, 0, packet_count++);
+        close_client_socket();
+        usleep(SLEEP_DELAY);
+        
         }
-
-    #endif
 
     return 0;
 }

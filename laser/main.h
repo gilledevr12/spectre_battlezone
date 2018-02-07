@@ -3,15 +3,15 @@
 //used to control compilation flags
 //IE DEBUG mode, disable I2C, etc.
 
-struct int_x3 {
-    int x;
-    int y;
-    int z;
+struct float_x3 {
+    float x;
+    float y;
+    float z;
 };
 
-#define DEBUG 1
+#define DEBUG
 #define CLIENT_ENABLE
-//#define SENSOR_ENABLE
+#define IMU_ENABLE
 
 #include "client.h"
 #include "dwm1000.h"

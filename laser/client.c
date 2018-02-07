@@ -38,14 +38,16 @@ void open_client_socket(){
     }
 }
 
-void send_status(struct int_x3 acc, struct int_x3 mag, int shot, int weight){
+void send_status(struct float_x3 acc, struct float_x3 gyro, struct float_x3 mag, int shot, int weight){
     /*Main loop: get/send lines of text*/
     int packet_length;
-    char packet_buffer[100];
-    sprintf(packet_buffer, "%s %i %i %i %i %i %i %i %i", DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, shot, weight);
+    char packet_buffer[120];
+    sprintf(packet_buffer, "%s %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %i %i", 
+        DEVICE_MAC, acc.x, acc.y, acc.z, gyro.x, gyro.y, gyro.z, mag.x, mag.y, mag.z, shot, weight);
 
-    if(DEBUG)
+    #ifdef DEBUG
         printf("Sending client packet: %s\n", packet_buffer);
+    #endif
 
     packet_length = strlen(packet_buffer) + 1;
 
@@ -66,12 +68,13 @@ int pull_DEVICE_MAC(){
     fin = fopen("DEVICE_MAC", "r");
     if(fin < 0){
         perror("Run gen_mac_file.sh before launching this program. Quitting..\n");
-        return 0;
+        return 1;
     }
 
     fgets(DEVICE_MAC, 13, fin);
-    if(DEBUG)
+    #ifdef DEBUG
         printf("Pulled mac: %s\n", DEVICE_MAC);
+    #endif
     fclose(fin);
-    return 1;
+    return 0;
 }
