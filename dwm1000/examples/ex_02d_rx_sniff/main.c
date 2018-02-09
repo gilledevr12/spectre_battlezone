@@ -1,46 +1,47 @@
-//
-// Created by gilledevr12 on 2/5/18.
-//
-
 /*! ----------------------------------------------------------------------------
- *  @file    simple_rx.c
- *  @brief   Simple RX example code
+ *  @file    main.c
+ *  @brief   RX using SNIFF mode example code
  *
  * @attention
  *
- * Copyright 2015 (c) Decawave Ltd, Dublin, Ireland.
+ * Copyright 2016 (c) Decawave Ltd, Dublin, Ireland.
  *
  * All rights reserved.
  *
  * @author Decawave
  */
-#include "dwm_api/deca_device_api.h"
-#include "dwm_api/deca_regs.h"
-#include "dwm_api/my_deca_spi.h"
-#include <stdio.h>
-//#include "lcd.h"
-//#include "port.h"
+#include "deca_device_api.h"
+#include "deca_regs.h"
+#include "lcd.h"
+#include "port.h"
 
 /* Example application name and version to display on LCD screen. */
-#define APP_NAME "SIMPLE RX v1.2"
+#define APP_NAME "RX SNIFF v1.0"
 
-/* Default communication configuration. We use here EVK1000's default mode (mode 3). */
+/* Default communication configuration. */
 static dwt_config_t config = {
-        2,               /* Channel number. */
-        DWT_PRF_64M,     /* Pulse repetition frequency. */
-        DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
-        DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
-        9,               /* TX preamble code. Used in TX only. */
-        9,               /* RX preamble code. Used in RX only. */
-        1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
-        DWT_BR_110K,     /* Data rate. */
-        DWT_PHRMODE_STD, /* PHY header mode. */
-        (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
+    2,               /* Channel number. */
+    DWT_PRF_64M,     /* Pulse repetition frequency. */
+    DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
+    DWT_PAC8,        /* Preamble acquisition chunk size. Used in RX only. */
+    9,               /* TX preamble code. Used in TX only. */
+    9,               /* RX preamble code. Used in RX only. */
+    1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
+    DWT_BR_110K,     /* Data rate. */
+    DWT_PHRMODE_STD, /* PHY header mode. */
+    (1025 + 64 - 8)  /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
 };
+
+/* SNIFF mode on/off times.
+ * ON time is expressed in multiples of PAC size (with the IC adding 1 PAC automatically). So the ON time of 1 here gives 2 PAC times and, since the
+ * configuration (above) specifies DWT_PAC8, we get an ON time of 2x8 symbols, or around 16 탎.
+ * OFF time is expressed in multiples of 128/125 탎 (~1 탎).
+ * These values will lead to a roughly 50% duty-cycle, each ON and OFF phase lasting for about 16 탎. */
+#define SNIFF_ON_TIME 1
+#define SNIFF_OFF_TIME 16
 
 /* Buffer to store received frame. See NOTE 1 below. */
 #define FRAME_LEN_MAX 127
-#define HIGH 1
 static uint8 rx_buffer[FRAME_LEN_MAX];
 
 /* Hold copy of status register state here for reference so that it can be examined at a debug breakpoint. */
@@ -54,30 +55,33 @@ static uint16 frame_len = 0;
  */
 int main(void)
 {
-//    /* Start with board specific hardware init. */
-//    peripherals_init();
-//
-//    /* Display application name on LCD. */
-//    lcd_display_str(APP_NAME);
-//
-//    /* Reset and initialise DW1000. See NOTE 2 below.
-//     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
-//     * performance. */
-//    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
-//    spi_set_rate_low();
+    /* Start with board specific hardware init. */
+    peripherals_init();
 
+    /* Display application name on LCD. */
+    lcd_display_str(APP_NAME);
+
+    /* Reset and initialise DW1000. See NOTE 2 below.
+     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
+     * performance. */
+    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
+    spi_set_rate_low();
     if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR)
     {
-        printf("INIT FAILED");
+        lcd_display_str("INIT FAILED");
         while (1)
         { };
     }
-    //spi_set_rate_high();
-    setSpeed(HIGH);
+    spi_set_rate_high();
+
+    /* This is put here for testing, so that we can see the receiver ON/OFF pattern using an oscilloscope. */
+    dwt_setlnapamode(1, 1);
 
     /* Configure DW1000. */
     dwt_configure(&config);
-    //int errorThere;
+
+    /* Configure SNIFF mode. */
+    dwt_setsniffmode(1, SNIFF_ON_TIME, SNIFF_OFF_TIME);
 
     /* Loop forever receiving frames. */
     while (1)
@@ -86,7 +90,7 @@ int main(void)
 
         /* TESTING BREAKPOINT LOCATION #1 */
 
-        /* Clear local RX buffer to avoid having leftovers from previous receptions  This is not necessary but is included here to aid reading
+        /* Clear local RX buffer to avoid having leftovers from previous receptions. This is not necessary but is included here to aid reading
          * the RX buffer.
          * This is a good place to put a breakpoint. Here (after first time through the loop) the local status register will be set for last event
          * and if a good receive has happened the data buffer will have the data in it, and frame_len will be set to the length of the RX frame. */
@@ -98,29 +102,22 @@ int main(void)
         /* Activate reception immediately. See NOTE 3 below. */
         dwt_rxenable(DWT_START_RX_IMMEDIATE);
 
-        /* Poll until a frame is properly received or an error/timeout occurs. See NOTE 4 below.
-         * STATUS register is 5 bytes long but, as the event we are looking at is in the first byte of the register, we can use this simplest API
-         * function to access it. */
+        /* Poll until a frame is properly received or an RX error occurs. See NOTE 4 below.
+         * STATUS register is 5 bytes long but we are not interested in the high byte here, so we read a more manageable 32-bits with this API call. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)))
         { };
 
         if (status_reg & SYS_STATUS_RXFCG)
         {
+            /* Clear good RX frame event in the DW1000 status register. */
+            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
+
             /* A frame has been received, copy it to our local buffer. */
             frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFL_MASK_1023;
             if (frame_len <= FRAME_LEN_MAX)
             {
                 dwt_readrxdata(rx_buffer, frame_len, 0);
             }
-
-            /* Clear good RX frame event in the DW1000 status register. */
-            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
-
-            for (i = 0 ; i < frame_len; i++ )
-            {
-                printf("%.2X ", rx_buffer[i]);
-            }
-            printf("\n");
         }
         else
         {

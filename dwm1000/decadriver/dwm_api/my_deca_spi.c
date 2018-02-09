@@ -51,10 +51,8 @@ int myreadfromspi(uint16 headerLength, const uint8 *headerBuffer, uint32 readlen
     }
     transfer(fd, tx, rx, headerLength + readlength);
     for (int i = 0; i < readlength; i++){
-	readBuffer[i] = rx[headerLength + i];
-        printf("x%.2X ", readBuffer[i]);
+	    readBuffer[i] = rx[headerLength + i];
     }
-    puts("");
     close(fd);
 }
 
@@ -87,11 +85,10 @@ static void transfer(int fd, uint8_t *tx, uint8_t *rx, int length)
     ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
     if (ret < 1)
         pabort("can't send spi message");
-    //for (ret = 0; ret < length; ret++) {
-    //    if (!(ret % 6)) puts("");
-    //    printf("%.2X ", rx[ret]);
-    //}
-    puts("");
+}
+
+void setSpeed(int mode){
+    max_speed = mode;
 }
 
 int setupSpi() {
@@ -128,10 +125,15 @@ int setupSpi() {
     /*
      * 	 * max speed hz
      * 	 	 */
-    ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
-    if (ret == -1)
-        pabort("can't set max speed hz");
-
+    if (max_speed) {
+        ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed_high);
+        if (ret == -1)
+            pabort("can't set max speed hz");
+    } else {
+        ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+        if (ret == -1)
+            pabort("can't set max speed hz");
+    }
     ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
     if (ret == -1)
         pabort("can't get max speed hz");

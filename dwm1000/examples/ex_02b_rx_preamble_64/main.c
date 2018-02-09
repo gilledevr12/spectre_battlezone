@@ -1,46 +1,39 @@
-//
-// Created by gilledevr12 on 2/5/18.
-//
-
 /*! ----------------------------------------------------------------------------
- *  @file    simple_rx.c
- *  @brief   Simple RX example code
+ *  @file    main.c
+ *  @brief   Simple example code: Receiving frames sent with 64-symbol preamble length
  *
  * @attention
  *
- * Copyright 2015 (c) Decawave Ltd, Dublin, Ireland.
+ * Copyright 2016 (c) Decawave Ltd, Dublin, Ireland.
  *
  * All rights reserved.
  *
  * @author Decawave
  */
-#include "dwm_api/deca_device_api.h"
-#include "dwm_api/deca_regs.h"
-#include "dwm_api/my_deca_spi.h"
-#include <stdio.h>
-//#include "lcd.h"
-//#include "port.h"
+#include "deca_device_api.h"
+#include "deca_regs.h"
+#include "lcd.h"
+#include "port.h"
 
 /* Example application name and version to display on LCD screen. */
-#define APP_NAME "SIMPLE RX v1.2"
+#define APP_NAME "RX PSR64 v1.0"
 
-/* Default communication configuration. We use here EVK1000's default mode (mode 3). */
+/* Default communication configuration. We use here a configuration suitable for 64 symbols long preambles. See NOTE 1 below. */
 static dwt_config_t config = {
-        2,               /* Channel number. */
-        DWT_PRF_64M,     /* Pulse repetition frequency. */
-        DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
-        DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
-        9,               /* TX preamble code. Used in TX only. */
-        9,               /* RX preamble code. Used in RX only. */
-        1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
-        DWT_BR_110K,     /* Data rate. */
-        DWT_PHRMODE_STD, /* PHY header mode. */
-        (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
+    2,               /* Channel number. */
+    DWT_PRF_64M,     /* Pulse repetition frequency. */
+    DWT_PLEN_64,     /* Preamble length. Used in TX only. */
+    DWT_PAC8,        /* Preamble acquisition chunk size. Used in RX only. */
+    9,               /* TX preamble code. Used in TX only. */
+    9,               /* RX preamble code. Used in RX only. */
+    0,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
+    DWT_BR_6M8,      /* Data rate. */
+    DWT_PHRMODE_STD, /* PHY header mode. */
+    (64 + 1 + 8 - 8) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
 };
 
-/* Buffer to store received frame. See NOTE 1 below. */
+/* Buffer to store received frame. See NOTE 2 below. */
 #define FRAME_LEN_MAX 127
-#define HIGH 1
 static uint8 rx_buffer[FRAME_LEN_MAX];
 
 /* Hold copy of status register state here for reference so that it can be examined at a debug breakpoint. */
@@ -54,30 +47,29 @@ static uint16 frame_len = 0;
  */
 int main(void)
 {
-//    /* Start with board specific hardware init. */
-//    peripherals_init();
-//
-//    /* Display application name on LCD. */
-//    lcd_display_str(APP_NAME);
-//
-//    /* Reset and initialise DW1000. See NOTE 2 below.
-//     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
-//     * performance. */
-//    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
-//    spi_set_rate_low();
+    /* Start with board specific hardware init. */
+    peripherals_init();
 
+    /* Display application name on LCD. */
+    lcd_display_str(APP_NAME);
+
+    /* Reset and initialise DW1000. See NOTE 3 below.
+     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
+     * performance. */
+    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
+    spi_set_rate_low();
     if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR)
     {
-        printf("INIT FAILED");
+        lcd_display_str("INIT FAILED");
         while (1)
         { };
     }
-    //spi_set_rate_high();
-    setSpeed(HIGH);
+    /* Load specific Operational Parameter Set to deal with 64-symbol preambles. This has to be done with DW1000 set to crystal speed. */
+    dwt_loadopsettabfromotp(DWT_OPSET_64LEN);
+    spi_set_rate_high();
 
     /* Configure DW1000. */
     dwt_configure(&config);
-    //int errorThere;
 
     /* Loop forever receiving frames. */
     while (1)
@@ -95,10 +87,10 @@ int main(void)
             rx_buffer[i] = 0;
         }
 
-        /* Activate reception immediately. See NOTE 3 below. */
+        /* Activate reception immediately. See NOTE 4 below. */
         dwt_rxenable(DWT_START_RX_IMMEDIATE);
 
-        /* Poll until a frame is properly received or an error/timeout occurs. See NOTE 4 below.
+        /* Poll until a frame is properly received or an error/timeout occurs. See NOTE 5 below.
          * STATUS register is 5 bytes long but, as the event we are looking at is in the first byte of the register, we can use this simplest API
          * function to access it. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)))
@@ -115,12 +107,6 @@ int main(void)
 
             /* Clear good RX frame event in the DW1000 status register. */
             dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
-
-            for (i = 0 ; i < frame_len; i++ )
-            {
-                printf("%.2X ", rx_buffer[i]);
-            }
-            printf("\n");
         }
         else
         {
@@ -133,14 +119,16 @@ int main(void)
 /*****************************************************************************************************************************************************
  * NOTES:
  *
- * 1. In this example, maximum frame length is set to 127 bytes which is 802.15.4 UWB standard maximum frame length. DW1000 supports an extended
+ * 1. This example can be tested using either DecaRanging PC application or example 1a "Simple TX" modified to have the same configuration values as
+ *    used here (i.e. 64-symbol preamble and standard SFD).
+ * 2. In this example, maximum frame length is set to 127 bytes which is 802.15.4 UWB standard maximum frame length. DW1000 supports an extended
  *    frame length (up to 1023 bytes long) mode which is not used in this example.
- * 2. In this example, LDE microcode is not loaded upon calling dwt_initialise(). This will prevent the IC from generating an RX timestamp. If
+ * 3. In this example, LDE microcode is not loaded upon calling dwt_initialise(). This will prevent the IC from generating an RX timestamp. If
  *    time-stamping is required, DWT_LOADUCODE parameter should be used. See two-way ranging examples (e.g. examples 5a/5b).
- * 3. Manual reception activation is performed here but DW1000 offers several features that can be used to handle more complex scenarios or to
+ * 4. Manual reception activation is performed here but DW1000 offers several features that can be used to handle more complex scenarios or to
  *    optimise system's overall performance (e.g. timeout after a given time, automatic re-enabling of reception in case of errors, etc.).
- * 4. We use polled mode of operation here to keep the example as simple as possible but RXFCG and error/timeout status events can be used to generate
+ * 5. We use polled mode of operation here to keep the example as simple as possible but RXFCG and error/timeout status events can be used to generate
  *    interrupts. Please refer to DW1000 User Manual for more details on "interrupts".
- * 5. The user is referred to DecaRanging ARM application (distributed with EVK1000 product) for additional practical example of usage, and to the
+ * 6. The user is referred to DecaRanging ARM application (distributed with EVK1000 product) for additional practical example of usage, and to the
  *    DW1000 API Guide for more details on the DW1000 driver functions.
  ****************************************************************************************************************************************************/

@@ -1,9 +1,5 @@
-//
-// Created by gilledevr12 on 2/5/18.
-//
-
 /*! ----------------------------------------------------------------------------
- *  @file    simple_rx.c
+ *  @file    main.c
  *  @brief   Simple RX example code
  *
  * @attention
@@ -14,33 +10,30 @@
  *
  * @author Decawave
  */
-#include "dwm_api/deca_device_api.h"
-#include "dwm_api/deca_regs.h"
-#include "dwm_api/my_deca_spi.h"
-#include <stdio.h>
-//#include "lcd.h"
-//#include "port.h"
+#include "deca_device_api.h"
+#include "deca_regs.h"
+#include "lcd.h"
+#include "port.h"
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "SIMPLE RX v1.2"
 
 /* Default communication configuration. We use here EVK1000's default mode (mode 3). */
 static dwt_config_t config = {
-        2,               /* Channel number. */
-        DWT_PRF_64M,     /* Pulse repetition frequency. */
-        DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
-        DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
-        9,               /* TX preamble code. Used in TX only. */
-        9,               /* RX preamble code. Used in RX only. */
-        1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
-        DWT_BR_110K,     /* Data rate. */
-        DWT_PHRMODE_STD, /* PHY header mode. */
-        (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
+    2,               /* Channel number. */
+    DWT_PRF_64M,     /* Pulse repetition frequency. */
+    DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
+    DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
+    9,               /* TX preamble code. Used in TX only. */
+    9,               /* RX preamble code. Used in RX only. */
+    1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
+    DWT_BR_110K,     /* Data rate. */
+    DWT_PHRMODE_STD, /* PHY header mode. */
+    (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
 };
 
 /* Buffer to store received frame. See NOTE 1 below. */
 #define FRAME_LEN_MAX 127
-#define HIGH 1
 static uint8 rx_buffer[FRAME_LEN_MAX];
 
 /* Hold copy of status register state here for reference so that it can be examined at a debug breakpoint. */
@@ -54,30 +47,27 @@ static uint16 frame_len = 0;
  */
 int main(void)
 {
-//    /* Start with board specific hardware init. */
-//    peripherals_init();
-//
-//    /* Display application name on LCD. */
-//    lcd_display_str(APP_NAME);
-//
-//    /* Reset and initialise DW1000. See NOTE 2 below.
-//     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
-//     * performance. */
-//    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
-//    spi_set_rate_low();
+    /* Start with board specific hardware init. */
+    peripherals_init();
 
+    /* Display application name on LCD. */
+    lcd_display_str(APP_NAME);
+
+    /* Reset and initialise DW1000. See NOTE 2 below.
+     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
+     * performance. */
+    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
+    spi_set_rate_low();
     if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR)
     {
-        printf("INIT FAILED");
+        lcd_display_str("INIT FAILED");
         while (1)
         { };
     }
-    //spi_set_rate_high();
-    setSpeed(HIGH);
+    spi_set_rate_high();
 
     /* Configure DW1000. */
     dwt_configure(&config);
-    //int errorThere;
 
     /* Loop forever receiving frames. */
     while (1)
@@ -115,12 +105,6 @@ int main(void)
 
             /* Clear good RX frame event in the DW1000 status register. */
             dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
-
-            for (i = 0 ; i < frame_len; i++ )
-            {
-                printf("%.2X ", rx_buffer[i]);
-            }
-            printf("\n");
         }
         else
         {

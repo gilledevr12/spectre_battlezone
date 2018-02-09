@@ -1,9 +1,5 @@
-//
-// Created by gilledevr12 on 2/5/18.
-//
-
 /*! ----------------------------------------------------------------------------
- *  @file    simple_tx.c
+ *  @file    main.c
  *  @brief   Simple TX example code
  *
  * @attention
@@ -14,30 +10,27 @@
  *
  * @author Decawave
  */
-#include "dwm_api/deca_device_api.h"
-#include "dwm_api/deca_regs.h"
-#include "dwm_api/my_deca_spi.h"
-#include <stdio.h>
-
-//#include "sleep.h"
-//#include "lcd.h"
-//#include "port.h"
+#include "deca_device_api.h"
+#include "deca_regs.h"
+#include "sleep.h"
+#include "lcd.h"
+#include "port.h"
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "SIMPLE TX v1.2"
 
 /* Default communication configuration. We use here EVK1000's default mode (mode 3). */
 static dwt_config_t config = {
-        2,               /* Channel number. */
-        DWT_PRF_64M,     /* Pulse repetition frequency. */
-        DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
-        DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
-        9,               /* TX preamble code. Used in TX only. */
-        9,               /* RX preamble code. Used in RX only. */
-        1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
-        DWT_BR_110K,     /* Data rate. */
-        DWT_PHRMODE_STD, /* PHY header mode. */
-        (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
+    2,               /* Channel number. */
+    DWT_PRF_64M,     /* Pulse repetition frequency. */
+    DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
+    DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
+    9,               /* TX preamble code. Used in TX only. */
+    9,               /* RX preamble code. Used in RX only. */
+    1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
+    DWT_BR_110K,     /* Data rate. */
+    DWT_PHRMODE_STD, /* PHY header mode. */
+    (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
 };
 
 /* The frame sent in this example is an 802.15.4e standard blink. It is a 12-byte frame composed of the following fields:
@@ -50,34 +43,31 @@ static uint8 tx_msg[] = {0xC5, 0, 'D', 'E', 'C', 'A', 'W', 'A', 'V', 'E', 0, 0};
 #define BLINK_FRAME_SN_IDX 1
 
 /* Inter-frame delay period, in milliseconds. */
-#define TX_DELAY_MS 1
-#define HIGH 1
+#define TX_DELAY_MS 1000
 
 /**
  * Application entry point.
  */
 int main(void)
 {
-//    /* Start with board specific hardware init. */
-//    peripherals_init();
-//
-//    /* Display application name on LCD. */
-//    lcd_display_str(APP_NAME);
-//
-//    /* Reset and initialise DW1000. See NOTE 2 below.
-//     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
-//     * performance. */
-//    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
-//    spi_set_rate_low();
+    /* Start with board specific hardware init. */
+    peripherals_init();
 
+    /* Display application name on LCD. */
+    lcd_display_str(APP_NAME);
+
+    /* Reset and initialise DW1000. See NOTE 2 below.
+     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
+     * performance. */
+    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
+    spi_set_rate_low();
     if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR)
     {
-        printf("INIT FAILED");
+        lcd_display_str("INIT FAILED");
         while (1)
         { };
     }
-    //spi_set_rate_high();
-    setSpeed(HIGH);
+    spi_set_rate_high();
 
     /* Configure DW1000. See NOTE 3 below. */
     dwt_configure(&config);
@@ -87,7 +77,6 @@ int main(void)
     {
         /* Write frame data to DW1000 and prepare transmission. See NOTE 4 below.*/
         dwt_writetxdata(sizeof(tx_msg), tx_msg, 0); /* Zero offset in TX buffer. */
-
         dwt_writetxfctrl(sizeof(tx_msg), 0, 0); /* Zero offset in TX buffer, no ranging. */
 
         /* Start transmission. */
@@ -103,8 +92,7 @@ int main(void)
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
 
         /* Execute a delay between transmissions. */
-        printf("sleeping...\n");
-        deca_sleep(TX_DELAY_MS);
+        sleep_ms(TX_DELAY_MS);
 
         /* Increment the blink frame sequence number (modulo 256). */
         tx_msg[BLINK_FRAME_SN_IDX]++;
@@ -116,7 +104,7 @@ int main(void)
  *
  * 1. The device ID is a hard coded constant in the blink to keep the example simple but for a real product every device should have a unique ID.
  *    For development purposes it is possible to generate a DW1000 unique ID by combining the Lot ID & Part Number values programmed into the
- *    DW1000 during its manufacture. However there is no guarantee this will not conflict with someone elseï¿½s implementation. We recommended that
+ *    DW1000 during its manufacture. However there is no guarantee this will not conflict with someone else’s implementation. We recommended that
  *    customers buy a block of addresses from the IEEE Registration Authority for their production items. See "EUI" in the DW1000 User Manual.
  * 2. In this example, LDE microcode is not loaded upon calling dwt_initialise(). This will prevent the IC from generating an RX timestamp. If
  *    time-stamping is required, DWT_LOADUCODE parameter should be used. See two-way ranging examples (e.g. examples 5a/5b).
