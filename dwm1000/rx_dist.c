@@ -19,11 +19,12 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include "decadriver/dwm_api/my_deca_spi.h"
 
-#include "deca_device_api.h"
-#include "deca_regs.h"
-#include "lcd.h"
-#include "port.h"
+#include "decadriver/dwm_api/deca_device_api.h"
+#include "decadriver/dwm_api/deca_regs.h"
+//#include "lcd.h"
+//#include "port.h"
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "DS TWR RESP v1.2"
@@ -70,7 +71,7 @@ static uint8 rx_buffer[RX_BUF_LEN];
 static uint32 status_reg = 0;
 
 /* UWB microsecond (uus) to device time unit (dtu, around 15.65 ps) conversion factor.
- * 1 uus = 512 / 499.2 µs and 1 µs = 499.2 * 128 dtu. */
+ * 1 uus = 512 / 499.2 ï¿½s and 1 ï¿½s = 499.2 * 128 dtu. */
 #define UUS_TO_DWT_TIME 65536
 
 /* Delay between frames, in UWB microseconds. See NOTE 4 below. */
@@ -94,6 +95,9 @@ static uint64 final_rx_ts;
 
 /* Speed of light in air, in metres per second. */
 #define SPEED_OF_LIGHT 299702547
+
+#define HIGH 1
+
 
 /* Hold copies of computed time of flight and distance here for reference so that it can be examined at a debug breakpoint. */
 static double tof;
@@ -119,23 +123,25 @@ static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts);
 int main(void)
 {
     /* Start with board specific hardware init. */
-    peripherals_init();
+//    peripherals_init();
 
     /* Display application name on LCD. */
-    lcd_display_str(APP_NAME);
+//    lcd_display_str(APP_NAME);
 
     /* Reset and initialise DW1000.
      * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
      * performance. */
-    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
-    spi_set_rate_low();
+//    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
+//    spi_set_rate_low();
     if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR)
     {
-        lcd_display_str("INIT FAILED");
+        printf("INIT FAILED");
         while (1)
         { };
     }
-    spi_set_rate_high();
+//    spi_set_rate_high();
+    setSpeed(HIGH);
+
 
     /* Configure DW1000. See NOTE 7 below. */
     dwt_configure(&config);
@@ -258,7 +264,14 @@ int main(void)
 
                         /* Display computed distance on LCD. */
                         sprintf(dist_str, "DIST: %3.2f m", distance);
-                        lcd_display_str(dist_str);
+                        printf(dist_str);
+//                        for (i = 0 ; i < frame_len; i++ )
+//                        {
+//                            printf("%.2X ", rx_buffer[i]);
+//                        }
+//                        printf("\n");
+
+//                        lcd_display_str(dist_str);
                     }
                 }
                 else

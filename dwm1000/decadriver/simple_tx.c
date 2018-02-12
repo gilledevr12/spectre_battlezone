@@ -50,7 +50,7 @@ static uint8 tx_msg[] = {0xC5, 0, 'D', 'E', 'C', 'A', 'W', 'A', 'V', 'E', 0, 0};
 #define BLINK_FRAME_SN_IDX 1
 
 /* Inter-frame delay period, in milliseconds. */
-#define TX_DELAY_MS 1
+#define TX_DELAY_MS 1000
 #define HIGH 1
 
 /**
