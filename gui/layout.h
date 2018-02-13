@@ -2,12 +2,12 @@
 #ifndef LAYOUT_H
 #define LAYOUT_H
 
-void printTopBar(){
+void print_top_bar(){
     printf("\nName      This is         K/D\n");
     printf("Evan      a message       7/2\n");
 }
 
-void printMap(){
+void print_map(){
     int x = 28;
     int y = 12;
     for(int i=0; i<x+1; i++){
@@ -27,14 +27,14 @@ void printMap(){
     printf("\n");
 }
 
-void printBottomBar(){
+void print_bottom_bar(){
     printf("Health    Armor        Weapon\n");
     printf("100       25          Shotgun\n");
 }
 
-void refreshScreen(){
-    printTopBar();
-    printMap();
-    printBottomBar();
+void refresh_screen(){
+    print_top_bar();
+    print_map();
+    print_bottom_bar();
 }
 #endif
