@@ -50,21 +50,21 @@ static dwt_config_t config = {
 /* Frames used in the ranging process. See NOTE 2 below. */
 static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0x21, 0, 0};
 static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0x10, 0x02, 0, 0, 0, 0};
-static uint8 rx_final_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8 rx_final_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 /* Length of the common part of the message (up to and including the function code, see NOTE 2 below). */
 #define ALL_MSG_COMMON_LEN 10
 /* Index to access some of the fields in the frames involved in the process. */
 #define ALL_MSG_SN_IDX 2
 #define FINAL_MSG_POLL_TX_TS_IDX 10
-#define FINAL_MSG_RESP_RX_TS_IDX 14
-#define FINAL_MSG_FINAL_TX_TS_IDX 18
-#define FINAL_MSG_TS_LEN 4
+#define FINAL_MSG_RESP_RX_TS_IDX 15
+#define FINAL_MSG_FINAL_TX_TS_IDX 20
+#define FINAL_MSG_TS_LEN 5
 /* Frame sequence number, incremented after each transmission. */
 static uint8 frame_seq_nb = 0;
 
 /* Buffer to store received messages.
  * Its size is adjusted to longest frame that this example code is supposed to handle. */
-#define RX_BUF_LEN 24
+#define RX_BUF_LEN 27
 static uint8 rx_buffer[RX_BUF_LEN];
 
 /* Hold copy of status register state here for reference so that it can be examined at a debug breakpoint. */
@@ -109,7 +109,7 @@ char dist_str[16] = {0};
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
 static uint64 get_rx_timestamp_u64(void);
-static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts);
+static void final_msg_get_ts(const uint8 *ts_field, uint64 *ts);
 
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
@@ -168,6 +168,7 @@ int main(void)
 
         if (status_reg & SYS_STATUS_RXFCG)
         {
+            printf("got first\n");
             uint32 frame_len;
 
             /* Clear good RX frame event in the DW1000 status register. */
@@ -211,6 +212,7 @@ int main(void)
                     continue;
                 }
 
+                printf("sent\n");
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                 while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
                 { };
@@ -222,6 +224,8 @@ int main(void)
                 {
                     /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
                     dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
+
+                    printf("next\n");
 
                     /* A frame has been received, read it into the local buffer. */
                     frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFLEN_MASK;
@@ -235,8 +239,9 @@ int main(void)
                     rx_buffer[ALL_MSG_SN_IDX] = 0;
                     if (memcmp(rx_buffer, rx_final_msg, ALL_MSG_COMMON_LEN) == 0)
                     {
-                        uint32 poll_tx_ts, resp_rx_ts, final_tx_ts;
-                        uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
+                        uint64 poll_tx_ts, resp_rx_ts, final_tx_ts;
+                        //uint32 poll_tx_ts, resp_rx_ts, final_tx_ts;
+                        //uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                         double Ra, Rb, Da, Db;
                         int64 tof_dtu;
 
@@ -258,6 +263,17 @@ int main(void)
                         Da = (double)(final_tx_ts - resp_rx_ts);
                         Db = (double)(resp_tx_ts_32 - poll_rx_ts_32);
                         tof_dtu = (int64)((Ra * Rb - Da * Db) / (Ra + Rb + Da + Db));
+
+                        printf("%llu pollt\n", poll_tx_ts);
+                        printf("%llu pollr\n", poll_rx_ts);
+                        printf("%llu respt\n", resp_tx_ts);
+                        printf("%llu respr\n", resp_rx_ts);
+                        printf("%llu finalr\n", final_tx_ts);
+                        printf("%llu finalt\n", final_rx_ts);
+                        printf("%f Ra\n", Ra);
+                        printf("%f Rb\n", Rb);
+                        printf("%f Da\n", Da);
+                        printf("%f Db\n", Db);
 
                         tof = tof_dtu * DWT_TIME_UNITS;
                         distance = tof * SPEED_OF_LIGHT;
