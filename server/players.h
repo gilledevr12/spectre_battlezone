@@ -9,7 +9,7 @@ struct PLAYER {
     char HEALTH;
     char ARMOR;
     INVENTORY_ITEM* INVENTORY;
-}
+};
 
 set_player_id(unsigned char*);
 

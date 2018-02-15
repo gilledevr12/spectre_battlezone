@@ -2,9 +2,12 @@
 
 #ifndef SETUP_H
 #define SETUP_H
+typedef enum { false, true } bool;
 
-void createMap(){
+typedef struct { int x; int y; int z; } location_data;
 
-}
+bool get_active_status();
+
+void create_map();
 
 #endif

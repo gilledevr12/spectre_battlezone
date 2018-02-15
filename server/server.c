@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <pthread.h>
+#include "setup.h"
+extern struct location_data loc_dat;
 
 pthread_t server_thread, gameplay_display_thread;
 char* PLAYER_ID;
@@ -72,6 +74,9 @@ int main(){
 
 	// This thread receives raw data, computes and generates valid data, sends out response
 	pthread_create(&server_thread,NULL,server_loop,NULL);
+
+    // Call create_map() for testing
+    create_map();
 
 	//build
 	//pthread_create(&gameplay_display_thread,NULL,gameplay_display_loop,NULL);
