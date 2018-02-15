@@ -18,6 +18,6 @@ struct float_x3 {
 #include "lsm9ds1.h"
 #include "rifle_variables.h"
 
-
+void alarmISR(int sig_num);
 
 #endif //MAIN_H

@@ -8,6 +8,8 @@
 #include <pthread.h>
 
 pthread_t server_thread, gameplay_display_thread;
+char* PLAYER_ID;
+float ACCEL[3], GYRO[3], MAG[3];
 
 #define PORT 8080
 #define MAX_BUFFER_LENGTH 1024
@@ -17,12 +19,14 @@ void gameplay_display_loop(){
 	while(1);
 }
 
-void server_loop(){
+void* server_loop(){
 	int server_fd, new_socket;
 	struct sockaddr_in address;
 	int opt = 1;
 	int addrlen = sizeof(address);
-	char buffer[MAX_BUFFER_LENGTH] = {0};
+	char* buffer;
+	PLAYER_ID = (char*) malloc(15 * sizeof(char));
+	buffer = (char*) malloc( MAX_BUFFER_LENGTH * sizeof(char));
 
 	// Creating socket file descriptor
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0){
@@ -49,16 +53,18 @@ void server_loop(){
 		exit(EXIT_FAILURE);
 	}
 
-	int count = 0;
+	printf("Server launch\n");
 	while(1){
 		if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0){
 			perror("accept");
 			exit(EXIT_FAILURE);
 		}
 		read(new_socket, buffer, MAX_BUFFER_LENGTH);
-		printf("Received packet: %s\n",buffer );
-
-		//	send(new_socket, server_resp, strlen(server_resp) ,0 );
+		printf("Packet received: %s\n", buffer);
+		// It would be easy to parse the buffer into individual strings first.
+		// Having all separate strings, convert strings to floats or ints.
+		// As of now, each packet: 
+		//		ID, ACCEL(x, y, z) GYRO (x, y, z) MAG(x, y, z), shots_fired (1/0) shot_weight(probably 4 bit char)
 	}
 }
 
