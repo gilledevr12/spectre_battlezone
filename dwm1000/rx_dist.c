@@ -77,13 +77,13 @@ static uint32 status_reg = 0;
 /* Delay between frames, in UWB microseconds. See NOTE 4 below. */
 /* This is the delay from Frame RX timestamp to TX reply timestamp used for calculating/setting the DW1000's delayed TX function. This includes the
  * frame length of approximately 2.46 ms with above configuration. */
-#define POLL_RX_TO_RESP_TX_DLY_UUS 2600
+#define POLL_RX_TO_RESP_TX_DLY_UUS 3500
 /* This is the delay from the end of the frame transmission to the enable of the receiver, as programmed for the DW1000's wait for response feature. */
 #define RESP_TX_TO_FINAL_RX_DLY_UUS 500
 /* Receive final timeout. See NOTE 5 below. */
-#define FINAL_RX_TIMEOUT_UUS 3300
+#define FINAL_RX_TIMEOUT_UUS 64300
 /* Preamble timeout, in multiple of PAC size. See NOTE 6 below. */
-#define PRE_TIMEOUT 8
+//#define PRE_TIMEOUT 8
 
 /* Timestamps of frames transmission/reception.
  * As they are 40-bit wide, we need to define a 64-bit int type to handle them. */
@@ -151,7 +151,7 @@ int main(void)
     dwt_settxantennadelay(TX_ANT_DLY);
 
     /* Set preamble timeout for expected frames. See NOTE 6 below. */
-    dwt_setpreambledetecttimeout(PRE_TIMEOUT);
+    //dwt_setpreambledetecttimeout(PRE_TIMEOUT);
 
     /* Loop forever responding to ranging requests. */
     while (1)
@@ -263,7 +263,7 @@ int main(void)
                         distance = tof * SPEED_OF_LIGHT;
 
                         /* Display computed distance on LCD. */
-                        sprintf(dist_str, "DIST: %3.2f m", distance);
+                        sprintf(dist_str, "DIST: %3.2f m\n", distance);
                         printf(dist_str);
 //                        for (i = 0 ; i < frame_len; i++ )
 //                        {
