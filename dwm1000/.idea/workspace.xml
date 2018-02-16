@@ -90,11 +90,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="tx_dist.c" pinned="false" current-in-tab="true">
+      <file leaf-file-name="tx_dist.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tx_dist.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="233">
+            <state relative-caret-position="2579">
               <caret line="226" column="37" lean-forward="false" selection-start-line="226" selection-start-column="37" selection-end-line="226" selection-end-column="37" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="tx_dist.c" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/examples/ex_05a_ds_twr_init/tx_dist.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-1326">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -147,7 +157,7 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="1">
     <option name="x" value="10" />
     <option name="y" value="54" />
     <option name="width" value="1346" />
@@ -174,6 +184,17 @@
             <path>
               <item name="dwm1000" type="dad4c3:CidrFilesViewHelper$MyProjectTreeStructure$1" />
               <item name="dwm1000" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="dwm1000" type="dad4c3:CidrFilesViewHelper$MyProjectTreeStructure$1" />
+              <item name="dwm1000" type="462c0819:PsiDirectoryNode" />
+              <item name="examples" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="dwm1000" type="dad4c3:CidrFilesViewHelper$MyProjectTreeStructure$1" />
+              <item name="dwm1000" type="462c0819:PsiDirectoryNode" />
+              <item name="examples" type="462c0819:PsiDirectoryNode" />
+              <item name="ex_05a_ds_twr_init" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -214,7 +235,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10783000" />
+    <option name="totallyTimeSpent" value="11392000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="10" y="54" width="1346" height="694" extended-state="0" />
@@ -282,14 +303,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/platform/deca_spi.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/spi_devel/mySpi.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -519,8 +532,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/tx_dist.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="233">
+        <state relative-caret-position="2579">
           <caret line="226" column="37" lean-forward="false" selection-start-line="226" selection-start-column="37" selection-end-line="226" selection-end-column="37" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/examples/ex_05a_ds_twr_init/tx_dist.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1326">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>

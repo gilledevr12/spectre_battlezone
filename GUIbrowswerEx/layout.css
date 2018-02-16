@@ -1,0 +1,43 @@
+/*html {*/
+    /*height: 100%;*/
+/*}*/
+
+table {
+    width: 100%;
+    height: 600px;
+    /*margin-left: auto;*/
+    /*margin-right: auto;*/
+    margin-bottom: auto;
+    margin-top: auto;
+}
+
+.corner_blank {
+    width: 20%;
+    height: 15%;
+}
+
+.side_blank {
+    width: 20%;
+    height: 70%;
+}
+
+#canvas-main {
+    background-color: darkkhaki;
+    height: 420px;
+    width: 1000px;
+}
+
+#maze {
+    height: 70%;
+    width: 60%;
+}
+
+#stats {
+    height: 15%;
+    width: 60%;
+}
+
+#foot{
+    height: 15%;
+    width: 60%;
+}

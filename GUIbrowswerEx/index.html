@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Maze Game</title>
+
+    <link rel="stylesheet" type="text/css" href="layout.css">
+</head>
+<body onload = "">
+<table name="UI_layout"> <!--border="l"-->
+    <tbody>
+    <tr>
+        <td class="corner_blank"></td>
+        <td id="stats">
+            <div id="time">
+                <!--empty until added stuff-->
+            </div>
+            <div id="score">
+                <!--<h1>Devin's Maze Game</h1>-->
+            </div>
+        </td>
+        <td class="corner_blank"></td>
+    </tr>
+    <tr>
+        <td class="side_blank"></td>
+        <td id="maze">
+            <canvas id = "canvas-main" width="1000" height="420"></canvas>
+            <!--style = "width: 100%; height: 100%"></canvas>-->
+        </td>
+        <td class="side_blank"></td>
+    </tr>
+    <tr>
+        <td class="corner_blank"></td>
+        <td id="foot">
+            <h4>CS-5410 Assignment 2</h4>
+        </td>
+        <td class="corner_blank"></td>
+    </tr>
+    </tbody>
+</table>
+<script>
+    var MyMaze = {};
+</script>
+<script src="maze.js"></script>
+<script src="graphic.js"></script>
+<script src="MazeGame.js"></script>
+</body>
+</html>
