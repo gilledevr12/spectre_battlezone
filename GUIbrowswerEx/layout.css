@@ -1,19 +1,39 @@
-/*html {*/
-    /*height: 100%;*/
-/*}*/
+body {
+    background-image: url('starwars.jpg');
+    background-size: cover;
+}
 
 table {
     width: 100%;
     height: 600px;
-    /*margin-left: auto;*/
-    /*margin-right: auto;*/
     margin-bottom: auto;
     margin-top: auto;
+}
+
+#stats {
+    color: red;
+}
+
+#play {
+    color: white;
+    text-align: center;
 }
 
 .corner_blank {
     width: 20%;
     height: 15%;
+}
+
+#button2 {
+    background-color: cadetblue;
+    color: darkred;
+    padding: 10px 5px;
+}
+
+#button1 {
+    background-color: cadetblue;
+    color: darkred;
+    padding: 10px 5px;
 }
 
 .side_blank {
@@ -22,14 +42,18 @@ table {
 }
 
 #canvas-main {
-    background-color: darkkhaki;
+    background: url('space.jpg');
+    background-size: cover;
     height: 420px;
-    width: 1000px;
+    width: 800px;
 }
 
 #maze {
     height: 70%;
     width: 60%;
+    color: aqua;
+    font-size: 23px;
+    vertical-align: top;
 }
 
 #stats {

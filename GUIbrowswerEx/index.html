@@ -7,32 +7,47 @@
     <link rel="stylesheet" type="text/css" href="layout.css">
 </head>
 <body onload = "">
-<table name="UI_layout"> <!--border="l"-->
+<table name="UI_layout">
     <tbody>
     <tr>
         <td class="corner_blank"></td>
         <td id="stats">
             <div id="time">
-                <!--empty until added stuff-->
+                Time: 00:00
+            </div>
+            <div id="highScore">
+                High Score: 0
             </div>
             <div id="score">
-                <!--<h1>Devin's Maze Game</h1>-->
+                Score: 0
             </div>
+
         </td>
         <td class="corner_blank"></td>
     </tr>
     <tr>
         <td class="side_blank"></td>
         <td id="maze">
-            <canvas id = "canvas-main" width="1000" height="420"></canvas>
-            <!--style = "width: 100%; height: 100%"></canvas>-->
+            <div id="message"></div>
+            <canvas id = "canvas-main" width="800" height="420"></canvas>
         </td>
         <td class="side_blank"></td>
     </tr>
     <tr>
         <td class="corner_blank"></td>
         <td id="foot">
-            <h4>CS-5410 Assignment 2</h4>
+            <div id="play">
+                <button id="button2" onclick= MyMaze.main.wasClicked(); type="button">Start</button>
+                <button id="button1" onclick= MyMaze.main.stopClicked(); type="button">Stop</button>
+                Maze Size:
+                <select id="dimension">
+                    <option value="20">20x20</option>
+                    <option value="15">15x15</option>
+                    <option value="10">10x10</option>
+                    <option value="5">5x5</option>
+                </select>
+                <h4>CS-5410 Assignment 2 - Created by Devin Gillespie</h4>
+            </div>
         </td>
         <td class="corner_blank"></td>
     </tr>
@@ -42,7 +57,9 @@
     var MyMaze = {};
 </script>
 <script src="maze.js"></script>
+<script src="input.js"></script>
 <script src="graphic.js"></script>
 <script src="MazeGame.js"></script>
+<script src="menu.js"></script>
 </body>
 </html>

@@ -4,29 +4,45 @@ MyMaze.mazeLayout = (function() {
     let possibleCells = [];
     let mazeCells = [];
     let whichContact = [];
-    let dim = 15;
-    var is = true;
+    let dim = 10;
+    let pathToFinish = [];
+
+    function prep() {
+        for (let i = 0; i < dim; i++){
+            allCells.push([]);
+            for (let j = 0; j < dim; j++){
+                allCells[i].push({
+                    ref: {
+                        up: null,
+                        down: null,
+                        left: null,
+                        right: null
+                    },
+                    row: i, col: j, maze: false
+                });
+            }
+        }
+    }
+
+    function cleanUp() {
+        allCells.length = 0;
+        possibleCells.length = 0;
+        mazeCells.length = 0;
+        whichContact.length = 0;
+        pathToFinish.length = 0;
+    }
 
     function getSize() {
         return dim;
     }
 
-    for (let i = 0; i < dim; i++){
-        allCells.push([])
-        for (j = 0; j < dim; j++){
-            allCells[i].push({
-                ref: {
-                    up: null,
-                    down: null,
-                    left: null,
-                    right: null
-                },
-                row: i, col: j, maze: false
-            });
-        }
-    }
+    function getTrail() {
+        return pathToFinish;
+    };
 
-    function init(){
+    function init(size){
+        dim = size;
+        prep();
         var rowStart = Math.floor(Math.random()*(dim - 2)) + 1;
         var colStart = Math.floor(Math.random()*(dim - 2)) + 1;
         mazeCells.push({
@@ -38,8 +54,7 @@ MyMaze.mazeLayout = (function() {
             },
             row: rowStart, col: colStart, maze: true
         });
-        allCells[rowStart][colStart].maze = true;
-        for (i = -1; i < 2; i++){
+        for (let i = -1; i < 2; i++){
             possibleCells.push({
                 ref: {
                     up: null,
@@ -51,7 +66,7 @@ MyMaze.mazeLayout = (function() {
             });
             i++;
         }
-        for (i = -1; i < 2; i++) {
+        for (let i = -1; i < 2; i++) {
             possibleCells.push({
                 ref: {
                     up: null,
@@ -169,18 +184,18 @@ MyMaze.mazeLayout = (function() {
         //returns relative to the cell to be added
         if (whichCell.row === possibleCell.row){
             if (whichCell.col === possibleCell.col - 1){
-                allCells[whichCell.row][whichCell.col].ref.right = possibleCell;
+                allCells[whichCell.row][whichCell.col].ref.right = allCells[possibleCell.row][possibleCell.col];
                 allCells[possibleCell.row][possibleCell.col].ref.left = allCells[whichCell.row][whichCell.col];
             } else { //col + 1
-                allCells[whichCell.row][whichCell.col].ref.left = possibleCell;
+                allCells[whichCell.row][whichCell.col].ref.left = allCells[possibleCell.row][possibleCell.col];
                 allCells[possibleCell.row][possibleCell.col].ref.right = allCells[whichCell.row][whichCell.col];
             }
         } else { //then columns are equal
             if (whichCell.row === possibleCell.row - 1){
-                allCells[whichCell.row][whichCell.col].ref.down = possibleCell;
+                allCells[whichCell.row][whichCell.col].ref.down = allCells[possibleCell.row][possibleCell.col];
                 allCells[possibleCell.row][possibleCell.col].ref.up = allCells[whichCell.row][whichCell.col];
             } else {
-                allCells[whichCell.row][whichCell.col].ref.up = possibleCell;
+                allCells[whichCell.row][whichCell.col].ref.up = allCells[possibleCell.row][possibleCell.col];
                 allCells[possibleCell.row][possibleCell.col].ref.down = allCells[whichCell.row][whichCell.col];
             }
         }
@@ -201,18 +216,14 @@ MyMaze.mazeLayout = (function() {
         whichContact.length = 0;
     }
 
-    function createMaze(){
-        init();
+    function createMaze(spec){
+        // let that = {};
+
+        init(spec.size);
         while(possibleCells.length){
-            console.log("hello")
             removeWall();
             if (possibleCells.length) addToFrontier();
         }
-        // for (i = 0; i < dim; i++){
-        //     for(j = 0; j < dim; j++){
-        //         console.log(allCells[i][j])
-        //     }
-        // }
         return allCells;
     }
 
@@ -223,7 +234,9 @@ MyMaze.mazeLayout = (function() {
     return {
         createMaze : createMaze,
         getSize : getSize,
-        getMaze : getMaze
+        getMaze : getMaze,
+        getTrail : getTrail,
+        cleanUp : cleanUp,
     };
 
 }());
