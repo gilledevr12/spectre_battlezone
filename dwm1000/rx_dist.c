@@ -58,7 +58,7 @@ static uint8 rx_final_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0x
 #define FINAL_MSG_POLL_TX_TS_IDX 10
 #define FINAL_MSG_RESP_RX_TS_IDX 15
 #define FINAL_MSG_FINAL_TX_TS_IDX 20
-#define FINAL_MSG_TS_LEN 5
+#define FINAL_MSG_TS_LEN 4
 /* Frame sequence number, incremented after each transmission. */
 static uint8 frame_seq_nb = 0;
 
@@ -77,7 +77,7 @@ static uint32 status_reg = 0;
 /* Delay between frames, in UWB microseconds. See NOTE 4 below. */
 /* This is the delay from Frame RX timestamp to TX reply timestamp used for calculating/setting the DW1000's delayed TX function. This includes the
  * frame length of approximately 2.46 ms with above configuration. */
-#define POLL_RX_TO_RESP_TX_DLY_UUS 3500
+#define POLL_RX_TO_RESP_TX_DLY_UUS 9000
 /* This is the delay from the end of the frame transmission to the enable of the receiver, as programmed for the DW1000's wait for response feature. */
 #define RESP_TX_TO_FINAL_RX_DLY_UUS 500
 /* Receive final timeout. See NOTE 5 below. */
@@ -92,7 +92,9 @@ typedef unsigned long long uint64;
 static uint64 poll_rx_ts;
 static uint64 resp_tx_ts;
 static uint64 final_rx_ts;
-
+static uint64 poll_tx_ts;
+static uint64 resp_rx_ts;
+static uint64 final_tx_ts;
 /* Speed of light in air, in metres per second. */
 #define SPEED_OF_LIGHT 299702547
 
@@ -109,7 +111,7 @@ char dist_str[16] = {0};
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
 static uint64 get_rx_timestamp_u64(void);
-static void final_msg_get_ts(const uint8 *ts_field, uint64 *ts);
+static uint64 final_msg_get_ts(const uint8 *ts_field);
 
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
@@ -168,7 +170,7 @@ int main(void)
 
         if (status_reg & SYS_STATUS_RXFCG)
         {
-            printf("got first\n");
+//            printf("got first\n");
             uint32 frame_len;
 
             /* Clear good RX frame event in the DW1000 status register. */
@@ -207,12 +209,14 @@ int main(void)
                 ret = dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
-                if (ret == DWT_ERROR)
+//                printf("sending\n");
+		
+		if (ret == DWT_ERROR)
                 {
                     continue;
                 }
 
-                printf("sent\n");
+//                printf("sent\n");
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                 while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
                 { };
@@ -225,7 +229,7 @@ int main(void)
                     /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
                     dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
 
-                    printf("next\n");
+//                    printf("next\n");
 
                     /* A frame has been received, read it into the local buffer. */
                     frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFLEN_MASK;
@@ -239,52 +243,60 @@ int main(void)
                     rx_buffer[ALL_MSG_SN_IDX] = 0;
                     if (memcmp(rx_buffer, rx_final_msg, ALL_MSG_COMMON_LEN) == 0)
                     {
-                        uint64 poll_tx_ts, resp_rx_ts, final_tx_ts;
+                        //uint64 poll_tx_ts, resp_rx_ts, final_tx_ts;
                         //uint32 poll_tx_ts, resp_rx_ts, final_tx_ts;
                         //uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                         double Ra, Rb, Da, Db;
-                        int64 tof_dtu;
+                        uint64 tof_dtu;
 
                         /* Retrieve response transmission and final reception timestamps. */
                         resp_tx_ts = get_tx_timestamp_u64();
                         final_rx_ts = get_rx_timestamp_u64();
 
                         /* Get timestamps embedded in the final message. */
-                        final_msg_get_ts(&rx_buffer[FINAL_MSG_POLL_TX_TS_IDX], &poll_tx_ts);
-                        final_msg_get_ts(&rx_buffer[FINAL_MSG_RESP_RX_TS_IDX], &resp_rx_ts);
-                        final_msg_get_ts(&rx_buffer[FINAL_MSG_FINAL_TX_TS_IDX], &final_tx_ts);
+                        poll_tx_ts = final_msg_get_ts(&rx_buffer[FINAL_MSG_POLL_TX_TS_IDX]);
+                        resp_rx_ts = final_msg_get_ts(&rx_buffer[FINAL_MSG_RESP_RX_TS_IDX]);
+                        final_tx_ts = final_msg_get_ts(&rx_buffer[FINAL_MSG_FINAL_TX_TS_IDX]);
 
                         /* Compute time of flight. 32-bit subtractions give correct answers even if clock has wrapped. See NOTE 12 below. */
-                        poll_rx_ts_32 = (uint32)poll_rx_ts;
-                        resp_tx_ts_32 = (uint32)resp_tx_ts;
-                        final_rx_ts_32 = (uint32)final_rx_ts;
+                        //poll_rx_ts_32 = (uint32)poll_rx_ts;
+                        //resp_tx_ts_32 = (uint32)resp_tx_ts;
+                        //final_rx_ts_32 = (uint32)final_rx_ts;
                         Ra = (double)(resp_rx_ts - poll_tx_ts);
-                        Rb = (double)(final_rx_ts_32 - resp_tx_ts_32);
+                        Rb = (double)(final_rx_ts - resp_tx_ts);
                         Da = (double)(final_tx_ts - resp_rx_ts);
-                        Db = (double)(resp_tx_ts_32 - poll_rx_ts_32);
-                        tof_dtu = (int64)((Ra * Rb - Da * Db) / (Ra + Rb + Da + Db));
-
+                        Db = (double)(resp_tx_ts - poll_rx_ts);
+                        tof_dtu = (uint64)((Ra * Rb - Da * Db) / (Ra + Rb + Da + Db));
+/*
                         printf("%llu pollt\n", poll_tx_ts);
                         printf("%llu pollr\n", poll_rx_ts);
                         printf("%llu respt\n", resp_tx_ts);
                         printf("%llu respr\n", resp_rx_ts);
-                        printf("%llu finalr\n", final_tx_ts);
-                        printf("%llu finalt\n", final_rx_ts);
+                        printf("%llu finalt\n", final_tx_ts);
+                        printf("%llu finalr\n", final_rx_ts);
                         printf("%f Ra\n", Ra);
                         printf("%f Rb\n", Rb);
                         printf("%f Da\n", Da);
                         printf("%f Db\n", Db);
-
+*/
                         tof = tof_dtu * DWT_TIME_UNITS;
                         distance = tof * SPEED_OF_LIGHT;
 
                         /* Display computed distance on LCD. */
-                        sprintf(dist_str, "DIST: %3.2f m\n", distance);
-                        printf(dist_str);
-//                        for (i = 0 ; i < frame_len; i++ )
+			if (distance > 0 && distance < 400){
+			       	sprintf(dist_str, "DIST: %3.2f m\n", distance);
+                        	printf(dist_str);
+			} else {
+				if (Da > Rb) {
+					printf("error in final timestamp computation\n");
+				} else {
+					printf("unknown error");
+				}
+			}
+//                        for (int i = 0 ; i < frame_len; i++ )
 //                        {
 //                            printf("%.2X ", rx_buffer[i]);
-//                        }
+//			}
 //                        printf("\n");
 
 //                        lcd_display_str(dist_str);
@@ -370,20 +382,22 @@ static uint64 get_rx_timestamp_u64(void)
  *
  * @return none
  */
-static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts)
+static uint64 final_msg_get_ts(const uint8 *ts_field)
 {
     int i;
-    *ts = 0;
-    for (i = 0; i < FINAL_MSG_TS_LEN; i++)
+    uint64 ts = 0;
+    for (i = FINAL_MSG_TS_LEN; i >= 0; i--)
     {
-        *ts += ts_field[i] << (i * 8);
+        ts <<= 8;
+	ts |= ts_field[i];
     }
+    return ts;
 }
 
 /*****************************************************************************************************************************************************
  * NOTES:
  *
- * 1. The sum of the values is the TX to RX antenna delay, experimentally determined by a calibration process. Here we use a hard coded typical value
+  1. The sum of the values is the TX to RX antenna delay, experimentally determined by a calibration process. Here we use a hard coded typical value
  *    but, in a real application, each device should have its own antenna delay properly calibrated to get the best possible precision when performing
  *    range measurements.
  * 2. The messages here are similar to those used in the DecaRanging ARM application (shipped with EVK1000 kit). They comply with the IEEE

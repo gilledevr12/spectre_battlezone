@@ -161,7 +161,9 @@ int main(void)
          * set by dwt_setrxaftertxdelay() has elapsed. */
         dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
 
-        /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
+        printf("sneding\n");
+
+	/* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
         { };
 
@@ -199,7 +201,6 @@ int main(void)
                 poll_tx_ts = get_tx_timestamp_u64();
                 resp_rx_ts = get_rx_timestamp_u64();
 
-                /* Compute final message transmission time. See NOTE 10 below. */
                 final_tx_time = (resp_rx_ts + (RESP_RX_TO_FINAL_TX_DLY_UUS * UUS_TO_DWT_TIME)) >> 8;
                 dwt_setdelayedtrxtime(final_tx_time);
 
@@ -211,9 +212,9 @@ int main(void)
                 final_msg_set_ts(&tx_final_msg[FINAL_MSG_RESP_RX_TS_IDX], resp_rx_ts);
                 final_msg_set_ts(&tx_final_msg[FINAL_MSG_FINAL_TX_TS_IDX], final_tx_ts);
 
-                printf("%llu poll\n", poll_tx_ts);
-                printf("%llu resp\n", resp_rx_ts);
-                printf("%llu final\n", final_tx_ts);
+             //   printf("%llu poll\n", poll_tx_ts);
+             //   printf("%llu resp\n", resp_rx_ts);
+             //   printf("%llu final\n", final_tx_ts);
 
                 /* Write and send final message. See NOTE 8 below. */
                 tx_final_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
@@ -224,7 +225,7 @@ int main(void)
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 12 below. */
                 if (ret == DWT_SUCCESS)
                 {
-                    printf("sent\n");
+                    printf("transaction complete\n");
                     /* Poll DW1000 until TX frame sent event set. See NOTE 9 below. */
                     while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
                     { };
