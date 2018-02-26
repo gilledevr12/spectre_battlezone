@@ -49,9 +49,12 @@ static dwt_config_t config = {
 #define TX_ANT_DLY 16436
 #define RX_ANT_DLY 16436
 
+//comment out what isnt your tag name and corresponding anchor msg
 /* Frames used in the ranging process. See NOTE 3 below. */
-static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', 'E', 0xE0, 0, 0};
-static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'V', 'E', 'W', 'A', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', '1', 0xE0, 0, 0};
+static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', '2', 0xE0, 0, 0};
+static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', 'A', 'G', '1', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', 'A', 'G', '2', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 /* Length of the common part of the message (up to and including the function code, see NOTE 3 below). */
 #define ALL_MSG_COMMON_LEN 10
 /* Index to access some of the fields in the frames involved in the process. */
@@ -75,7 +78,7 @@ static uint32 status_reg = 0;
 #define UUS_TO_DWT_TIME 65536
 
 /* Delay between frames, in UWB microseconds. See NOTE 1 below. */
-#define POLL_RX_TO_RESP_TX_DLY_UUS 330
+#define POLL_RX_TO_RESP_TX_DLY_UUS 9330
 
 #define HIGH 1
 
@@ -193,7 +196,7 @@ int main(void)
                     /* Increment frame sequence number after transmission of the poll message (modulo 256). */
                     frame_seq_nb++;
 
-                    deca_sleep(RNG_DELAY_MS);
+                    deca_sleep(RNG_DELAY_MS * 2);
                 }
             }
         }
