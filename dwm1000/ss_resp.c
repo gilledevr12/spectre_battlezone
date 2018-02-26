@@ -28,7 +28,7 @@
 //#include "port.h"
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "SS TWR RESP v1.2"
-#define RNG_DELAY_MS 1000
+#define RNG_DELAY_MS 70
 
 
 /* Default communication configuration. We use here EVK1000's mode 4. See NOTE 1 below. */
@@ -51,12 +51,10 @@ static dwt_config_t config = {
 
 //comment out what isnt your tag name and corresponding anchor msg
 /* Frames used in the ranging process. See NOTE 3 below. */
-static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', '1', 0xE0, 0, 0};
-static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', '2', 0xE0, 0, 0};
-static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', 'A', 'G', '1', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', 'A', 'G', '2', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '#', 'A', '1', 0xE0, 0, 0};
+static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '#', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 /* Length of the common part of the message (up to and including the function code, see NOTE 3 below). */
-#define ALL_MSG_COMMON_LEN 10
+#define ALL_MSG_COMMON_LEN 8
 /* Index to access some of the fields in the frames involved in the process. */
 #define ALL_MSG_SN_IDX 2
 #define RESP_MSG_POLL_RX_TS_IDX 10
@@ -155,13 +153,15 @@ int main(void)
                 dwt_readrxdata(rx_buffer, frame_len, 0);
             }
 
+            int ret = -1;
+            uint8 anch_num = rx_buffer[8];
+
             /* Check that the frame is a poll sent by "SS TWR initiator" example.
              * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
             rx_buffer[ALL_MSG_SN_IDX] = 0;
-            if (memcmp(rx_buffer, rx_poll_msg, ALL_MSG_COMMON_LEN) == 0)
-            {
+            if (memcmp(rx_buffer, rx_poll_msg, ALL_MSG_COMMON_LEN) == 0 && anch_num == rx_poll_msg[8]) {
                 uint32 resp_tx_time;
-                int ret;
+                uint8 tag_num = rx_buffer[6];
 
                 /* Retrieve poll reception timestamp. */
                 poll_rx_ts = get_rx_timestamp_u64();
@@ -171,7 +171,7 @@ int main(void)
                 dwt_setdelayedtrxtime(resp_tx_time);
 
                 /* Response TX timestamp is the transmission time we programmed plus the antenna delay. */
-                resp_tx_ts = (((uint64)(resp_tx_time & 0xFFFFFFFEUL)) << 8) + TX_ANT_DLY;
+                resp_tx_ts = (((uint64) (resp_tx_time & 0xFFFFFFFEUL)) << 8) + TX_ANT_DLY;
 
                 /* Write all timestamps in the final message. See NOTE 8 below. */
                 resp_msg_set_ts(&tx_resp_msg[RESP_MSG_POLL_RX_TS_IDX], poll_rx_ts);
@@ -179,26 +179,28 @@ int main(void)
 
                 /* Write and send the response message. See NOTE 9 below. */
                 tx_resp_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
+                tx_resp_msg[8] = tag_num;
                 dwt_writetxdata(sizeof(tx_resp_msg), tx_resp_msg, 0); /* Zero offset in TX buffer. */
                 dwt_writetxfctrl(sizeof(tx_resp_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
                 ret = dwt_starttx(DWT_START_TX_DELAYED);
-
-                /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 10 below. */
-                if (ret == DWT_SUCCESS)
-                {
-                    /* Poll DW1000 until TX frame sent event set. See NOTE 6 below. */
-                    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
-                    { };
-
-                    /* Clear TXFRS event. */
-                    dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
-
-                    /* Increment frame sequence number after transmission of the poll message (modulo 256). */
-                    frame_seq_nb++;
-
-                    deca_sleep(RNG_DELAY_MS * 2);
-                }
             }
+
+            /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 10 below. */
+            if (ret == DWT_SUCCESS)
+            {
+                /* Poll DW1000 until TX frame sent event set. See NOTE 6 below. */
+                while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
+                { };
+
+                /* Clear TXFRS event. */
+                dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
+
+                /* Increment frame sequence number after transmission of the poll message (modulo 256). */
+                frame_seq_nb++;
+
+            }
+
+            deca_sleep(RNG_DELAY_MS);
         }
         else
         {

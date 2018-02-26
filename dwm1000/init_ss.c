@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "decadriver/dwm_api/my_deca_spi.h"
-
 #include "decadriver/dwm_api/deca_device_api.h"
 #include "decadriver/dwm_api/deca_regs.h"
 
@@ -31,7 +30,7 @@
 #define APP_NAME "SS TWR INIT v1.3"
 
 /* Inter-ranging delay period, in milliseconds. */
-#define RNG_DELAY_MS 1000
+#define RNG_DELAY_MS 70
 
 /* Default communication configuration. We use here EVK1000's mode 4. See NOTE 1 below. */
 static dwt_config_t config = {
@@ -52,12 +51,10 @@ static dwt_config_t config = {
 #define RX_ANT_DLY 16436
 
 /* Frames used in the ranging process. See NOTE 3 below. */
-static uint8 tx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', '1', 0xE0, 0, 0};
-static uint8 tx_poll_msg2[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'W', 'A', 'V', '2', 0xE0, 0, 0};
-static uint8 rx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', 'A', 'G', '1', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static uint8 rx_resp_msg2[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', 'A', 'G', '2', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8 tx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0xE0, 0, 0};
+static uint8 rx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 /* Length of the common part of the message (up to and including the function code, see NOTE 3 below). */
-#define ALL_MSG_COMMON_LEN 10
+#define ALL_MSG_COMMON_LEN 8
 /* Indexes to access some of the fields in the frames defined above. */
 #define ALL_MSG_SN_IDX 2
 #define RESP_MSG_POLL_RX_TS_IDX 10
@@ -65,7 +62,6 @@ static uint8 rx_resp_msg2[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', 'A', 'G', '2', 0x
 #define RESP_MSG_TS_LEN 4
 /* Frame sequence number, incremented after each transmission. */
 static uint8 frame_seq_nb = 0;
-static bool tag1 = true;
 
 /* Buffer to store received response message.
  * Its size is adjusted to longest frame that this example code is supposed to handle. */
@@ -93,6 +89,7 @@ static uint32 status_reg = 0;
 /* Hold copies of computed time of flight and distance here for reference so that it can be examined at a debug breakpoint. */
 static double tof;
 static double distance;
+static uint8 DEVICE_MAC[13];
 
 /* String used to display measured distance on LCD screen (16 characters maximum). */
 char dist_str[16] = {0};
@@ -111,6 +108,11 @@ static void resp_msg_get_ts(uint8 *ts_field, uint32 *ts);
  */
 int main(void)
 {
+    pull_DEVICE_MAC(DEVICE_MAC);
+    for (int i = 0; i < 13; i++){
+        printf("%.2x ", DEVICE_MAC[i]);
+    }
+    printf("\n");
     /* Start with board specific hardware init. */
 //    peripherals_init();
 
@@ -144,22 +146,22 @@ int main(void)
     dwt_setrxaftertxdelay(POLL_TX_TO_RESP_RX_DLY_UUS);
     dwt_setrxtimeout(RESP_RX_TIMEOUT_UUS);
 
+    int anchorTurn = 0;
+
     /* Loop forever initiating ranging exchanges. */
     while (1)
     {
-        tag1 = !tag1;
-        /* Write frame data to DW1000 and prepare transmission. See NOTE 7 below. */
-        if (tag1){
-            tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
-            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
-            dwt_writetxdata(sizeof(tx_poll_msg), tx_poll_msg, 0); /* Zero offset in TX buffer. */
-            dwt_writetxfctrl(sizeof(tx_poll_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
-        } else {
-            tx_poll_msg2[ALL_MSG_SN_IDX] = frame_seq_nb;
-            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
-            dwt_writetxdata(sizeof(tx_poll_msg2), tx_poll_msg2, 0); /* Zero offset in TX buffer. */
-            dwt_writetxfctrl(sizeof(tx_poll_msg2), 0, 1); /* Zero offset in TX buffer, ranging. */
-        }
+        //while (memcmp(signal(), DEVICE_MAC, 13) != 0);
+        if (anchorTurn == 3) deca_sleep(RNG_DELAY_MS * 6);
+
+        anchorTurn += 1;
+        if (anchorTurn == 4) anchorTurn = 1;
+            /* Write frame data to DW1000 and prepare transmission. See NOTE 7 below. */
+        tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
+        tx_poll_msg[8] = anchorTurn + '0';
+        dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
+        dwt_writetxdata(sizeof(tx_poll_msg), tx_poll_msg, 0); /* Zero offset in TX buffer. */
+        dwt_writetxfctrl(sizeof(tx_poll_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
 
         /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
          * set by dwt_setrxaftertxdelay() has elapsed. */
@@ -214,38 +216,9 @@ int main(void)
                 distance = tof * SPEED_OF_LIGHT;
 
                 /* Display computed distance on LCD. */
-                sprintf(dist_str, "TAG1 DIST: %3.2f m", distance);
+                sprintf(dist_str, "Anchor # %d DIST: %3.2f m", anchorTurn, distance);
                 printf(dist_str);
             }
-            else if (memcmp(rx_buffer, rx_resp_msg2, ALL_MSG_COMMON_LEN) == 0)
-            {
-                uint32 poll_tx_ts, resp_rx_ts, poll_rx_ts, resp_tx_ts;
-                int32 rtd_init, rtd_resp;
-                float clockOffsetRatio ;
-
-                /* Retrieve poll transmission and response reception timestamps. See NOTE 9 below. */
-                poll_tx_ts = dwt_readtxtimestamplo32();
-                resp_rx_ts = dwt_readrxtimestamplo32();
-
-                /* Read carrier integrator value and calculate clock offset ratio. See NOTE 11 below. */
-                clockOffsetRatio = dwt_readcarrierintegrator() * (FREQ_OFFSET_MULTIPLIER * HERTZ_TO_PPM_MULTIPLIER_CHAN_2 / 1.0e6) ;
-
-                /* Get timestamps embedded in response message. */
-                resp_msg_get_ts(&rx_buffer[RESP_MSG_POLL_RX_TS_IDX], &poll_rx_ts);
-                resp_msg_get_ts(&rx_buffer[RESP_MSG_RESP_TX_TS_IDX], &resp_tx_ts);
-
-                /* Compute time of flight and distance, using clock offset ratio to correct for differing local and remote clock rates */
-                rtd_init = resp_rx_ts - poll_tx_ts;
-                rtd_resp = resp_tx_ts - poll_rx_ts;
-
-                tof = ((rtd_init - rtd_resp * (1 - clockOffsetRatio)) / 2.0) * DWT_TIME_UNITS;
-                distance = tof * SPEED_OF_LIGHT;
-
-                /* Display computed distance on LCD. */
-                sprintf(dist_str, "TAG2 DIST: %3.2f m", distance);
-                printf(dist_str);
-            }
-
         }
         else
         {

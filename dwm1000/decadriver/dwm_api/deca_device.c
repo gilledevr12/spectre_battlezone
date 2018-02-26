@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "deca_types.h"
 #include "deca_param_types.h"
@@ -3585,6 +3586,20 @@ uint16 dwt_calcpgcount(uint8 pgdly)
 
     average_count = (int)(sum_count / NUM_SAMPLES);
     return average_count;
+}
+
+void pull_DEVICE_MAC(uint8 * device){
+    FILE* fin;
+    fin = fopen("spectre_battlezone/laser/DEVICE_MAC", "r");
+    if(fin < 0){
+        perror("Run gen_mac_file.sh before launching this program. Quitting..\n");
+        return;
+    }
+
+    fgets(device, 13, fin);
+
+    fclose(fin);
+    return;
 }
 
 
