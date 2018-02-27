@@ -76,7 +76,7 @@ static uint32 status_reg = 0;
 #define UUS_TO_DWT_TIME 65536
 
 /* Delay between frames, in UWB microseconds. See NOTE 1 below. */
-#define POLL_RX_TO_RESP_TX_DLY_UUS 9330
+#define POLL_RX_TO_RESP_TX_DLY_UUS 9330//15330?
 
 #define HIGH 1
 
@@ -155,13 +155,14 @@ int main(void)
 
             int ret = -1;
             uint8 anch_num = rx_buffer[8];
+            uint8 tag_num = rx_buffer[6];
+            rx_poll_msg[6] = tag_num;
 
             /* Check that the frame is a poll sent by "SS TWR initiator" example.
              * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
             rx_buffer[ALL_MSG_SN_IDX] = 0;
             if (memcmp(rx_buffer, rx_poll_msg, ALL_MSG_COMMON_LEN) == 0 && anch_num == rx_poll_msg[8]) {
                 uint32 resp_tx_time;
-                uint8 tag_num = rx_buffer[6];
 
                 /* Retrieve poll reception timestamp. */
                 poll_rx_ts = get_rx_timestamp_u64();

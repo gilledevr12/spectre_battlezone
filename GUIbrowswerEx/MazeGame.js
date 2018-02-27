@@ -205,4 +205,4 @@ MyMaze.play = (function(graphics, mazeLayout, input) {
         getScore : getScore
     }
 
-}(MyMaze.graphics, MyMaze.mazeLayout, MyMaze.input));
+}(MyMaze.graphics, MyMaze.mazeLayout, MyMaze.input, MyMaze.main));

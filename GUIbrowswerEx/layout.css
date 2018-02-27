@@ -1,6 +1,6 @@
 body {
-    background-image: url('starwars.jpg');
-    background-size: cover;
+    /*background-image: url('starwars.jpg');
+    background-size: cover;*/
 }
 
 table {
@@ -42,7 +42,7 @@ table {
 }
 
 #canvas-main {
-    background: url('space.jpg');
+    background: black;
     background-size: cover;
     height: 420px;
     width: 800px;

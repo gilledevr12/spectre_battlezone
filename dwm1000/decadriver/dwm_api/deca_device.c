@@ -3590,7 +3590,7 @@ uint16 dwt_calcpgcount(uint8 pgdly)
 
 void pull_DEVICE_MAC(uint8 * device){
     FILE* fin;
-    fin = fopen("spectre_battlezone/laser/DEVICE_MAC", "r");
+    fin = fopen("../laser/DEVICE_MAC", "r");
     if(fin < 0){
         perror("Run gen_mac_file.sh before launching this program. Quitting..\n");
         return;

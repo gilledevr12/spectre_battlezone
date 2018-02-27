@@ -110,7 +110,7 @@ int main(void)
 {
     pull_DEVICE_MAC(DEVICE_MAC);
     for (int i = 0; i < 13; i++){
-        printf("%.2x ", DEVICE_MAC[i]);
+        printf("%c", DEVICE_MAC[i]);
     }
     printf("\n");
     /* Start with board specific hardware init. */
@@ -191,6 +191,9 @@ int main(void)
             /* Check that the frame is the expected response from the companion "SS TWR responder" example.
              * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
             rx_buffer[ALL_MSG_SN_IDX] = 0;
+            int anchor_resp = rx_buffer[6];
+            rx_resp_msg[6] = anchor_resp;
+
             if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0)
             {
                 uint32 poll_tx_ts, resp_rx_ts, poll_rx_ts, resp_tx_ts;
