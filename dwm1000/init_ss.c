@@ -22,9 +22,23 @@
 #include "decadriver/dwm_api/deca_device_api.h"
 #include "decadriver/dwm_api/deca_regs.h"
 
+//mosquitto stuff
+#include <errno.h>
+#include <fcntl.h>
+#include <mosquitto.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+
 //#include "sleep.h"
 //#include "lcd.h"
 //#include "port.h"
+
+// Server connection parameters
+#define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the pi
+#define MQTT_NAME "Server_Subscriber"
+#define MQTT_PORT 1883
+#define MQTT_TOPIC "location_sync"
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "SS TWR INIT v1.3"
@@ -97,6 +111,107 @@ char dist_str[16] = {0};
 /* Declaration of static functions. */
 static void resp_msg_get_ts(uint8 *ts_field, uint32 *ts);
 
+//callback
+void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
+{
+    bool match = 0;
+    bool matchTag = 0;
+
+    printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
+
+    mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
+    if (match) {
+        if ((char*) message->payload == "ROUND1"){
+            runRanging();
+        }
+        printf("got message for %s topic\n", MQTT_TOPIC);
+    }
+}
+
+void runRanging(){
+    int anchorTurn = 0;
+    for (int i = 0; i < 3; i++) {
+        //if (anchorTurn == 3) deca_sleep(RNG_DELAY_MS * 6);
+
+        anchorTurn += 1;
+        //if (anchorTurn == 4) anchorTurn = 1;
+        /* Write frame data to DW1000 and prepare transmission. See NOTE 7 below. */
+        tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
+        tx_poll_msg[8] = anchorTurn + '0';
+        dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
+        dwt_writetxdata(sizeof(tx_poll_msg), tx_poll_msg, 0); /* Zero offset in TX buffer. */
+        dwt_writetxfctrl(sizeof(tx_poll_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
+
+        /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
+         * set by dwt_setrxaftertxdelay() has elapsed. */
+        dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
+
+        /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 8 below. */
+        while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {};
+
+        /* Increment frame sequence number after transmission of the poll message (modulo 256). */
+        frame_seq_nb++;
+
+        if (status_reg & SYS_STATUS_RXFCG) {
+            uint32 frame_len;
+
+            /* Clear good RX frame event in the DW1000 status register. */
+            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
+
+            /* A frame has been received, read it into the local buffer. */
+            frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFLEN_MASK;
+            if (frame_len <= RX_BUF_LEN) {
+                dwt_readrxdata(rx_buffer, frame_len, 0);
+            }
+
+            /* Check that the frame is the expected response from the companion "SS TWR responder" example.
+             * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
+            rx_buffer[ALL_MSG_SN_IDX] = 0;
+            int anchor_resp = rx_buffer[6];
+            rx_resp_msg[6] = anchor_resp;
+
+            if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0) {
+                uint32 poll_tx_ts, resp_rx_ts, poll_rx_ts, resp_tx_ts;
+                int32 rtd_init, rtd_resp;
+                float clockOffsetRatio;
+
+                /* Retrieve poll transmission and response reception timestamps. See NOTE 9 below. */
+                poll_tx_ts = dwt_readtxtimestamplo32();
+                resp_rx_ts = dwt_readrxtimestamplo32();
+
+                /* Read carrier integrator value and calculate clock offset ratio. See NOTE 11 below. */
+                clockOffsetRatio =
+                        dwt_readcarrierintegrator() * (FREQ_OFFSET_MULTIPLIER * HERTZ_TO_PPM_MULTIPLIER_CHAN_2 / 1.0e6);
+
+                /* Get timestamps embedded in response message. */
+                resp_msg_get_ts(&rx_buffer[RESP_MSG_POLL_RX_TS_IDX], &poll_rx_ts);
+                resp_msg_get_ts(&rx_buffer[RESP_MSG_RESP_TX_TS_IDX], &resp_tx_ts);
+
+                /* Compute time of flight and distance, using clock offset ratio to correct for differing local and remote clock rates */
+                rtd_init = resp_rx_ts - poll_tx_ts;
+                rtd_resp = resp_tx_ts - poll_rx_ts;
+
+                tof = ((rtd_init - rtd_resp * (1 - clockOffsetRatio)) / 2.0) * DWT_TIME_UNITS;
+                distance = tof * SPEED_OF_LIGHT;
+
+                /* Display computed distance on LCD. */
+                sprintf(dist_str, "Anchor # %d DIST: %3.2f m", anchorTurn, distance);
+                printf(dist_str);
+            }
+        } else {
+            /* Clear RX error/timeout events in the DW1000 status register. */
+            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
+
+            /* Reset RX to properly reinitialise LDE operation. */
+            dwt_rxreset();
+        }
+
+        /* Execute a delay between ranging exchanges. */
+        deca_sleep(RNG_DELAY_MS);
+    }
+}
+
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
  *
@@ -113,6 +228,7 @@ int main(void)
         printf("%c", DEVICE_MAC[i]);
     }
     printf("\n");
+
     /* Start with board specific hardware init. */
 //    peripherals_init();
 
@@ -146,95 +262,36 @@ int main(void)
     dwt_setrxaftertxdelay(POLL_TX_TO_RESP_RX_DLY_UUS);
     dwt_setrxtimeout(RESP_RX_TIMEOUT_UUS);
 
-    int anchorTurn = 0;
+    mosquitto_lib_init();
+    struct mosquitto *mosq = mosquitto_new(MQTT_NAME, true, NULL);
+    if(!mosq){
+        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+        exit(-1);
+    }
+
+    if(mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)){
+        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+        exit(-2);
+    }
+
+    char buf[7];
+
+    mosquitto_message_callback_set(mosq, message_callback);
+    mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 1);
 
     /* Loop forever initiating ranging exchanges. */
-    while (1)
-    {
-        //while (memcmp(signal(), DEVICE_MAC, 13) != 0);
-        if (anchorTurn == 3) deca_sleep(RNG_DELAY_MS * 6);
-
-        anchorTurn += 1;
-        if (anchorTurn == 4) anchorTurn = 1;
-            /* Write frame data to DW1000 and prepare transmission. See NOTE 7 below. */
-        tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
-        tx_poll_msg[8] = anchorTurn + '0';
-        dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
-        dwt_writetxdata(sizeof(tx_poll_msg), tx_poll_msg, 0); /* Zero offset in TX buffer. */
-        dwt_writetxfctrl(sizeof(tx_poll_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
-
-        /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
-         * set by dwt_setrxaftertxdelay() has elapsed. */
-        dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
-
-        /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 8 below. */
-        while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
-        { };
-
-        /* Increment frame sequence number after transmission of the poll message (modulo 256). */
-        frame_seq_nb++;
-
-        if (status_reg & SYS_STATUS_RXFCG)
-        {
-            uint32 frame_len;
-
-            /* Clear good RX frame event in the DW1000 status register. */
-            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
-
-            /* A frame has been received, read it into the local buffer. */
-            frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFLEN_MASK;
-            if (frame_len <= RX_BUF_LEN)
-            {
-                dwt_readrxdata(rx_buffer, frame_len, 0);
-            }
-
-            /* Check that the frame is the expected response from the companion "SS TWR responder" example.
-             * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
-            rx_buffer[ALL_MSG_SN_IDX] = 0;
-            int anchor_resp = rx_buffer[6];
-            rx_resp_msg[6] = anchor_resp;
-
-            if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0)
-            {
-                uint32 poll_tx_ts, resp_rx_ts, poll_rx_ts, resp_tx_ts;
-                int32 rtd_init, rtd_resp;
-                float clockOffsetRatio ;
-
-                /* Retrieve poll transmission and response reception timestamps. See NOTE 9 below. */
-                poll_tx_ts = dwt_readtxtimestamplo32();
-                resp_rx_ts = dwt_readrxtimestamplo32();
-
-                /* Read carrier integrator value and calculate clock offset ratio. See NOTE 11 below. */
-                clockOffsetRatio = dwt_readcarrierintegrator() * (FREQ_OFFSET_MULTIPLIER * HERTZ_TO_PPM_MULTIPLIER_CHAN_2 / 1.0e6) ;
-
-                /* Get timestamps embedded in response message. */
-                resp_msg_get_ts(&rx_buffer[RESP_MSG_POLL_RX_TS_IDX], &poll_rx_ts);
-                resp_msg_get_ts(&rx_buffer[RESP_MSG_RESP_TX_TS_IDX], &resp_tx_ts);
-
-                /* Compute time of flight and distance, using clock offset ratio to correct for differing local and remote clock rates */
-                rtd_init = resp_rx_ts - poll_tx_ts;
-                rtd_resp = resp_tx_ts - poll_rx_ts;
-
-                tof = ((rtd_init - rtd_resp * (1 - clockOffsetRatio)) / 2.0) * DWT_TIME_UNITS;
-                distance = tof * SPEED_OF_LIGHT;
-
-                /* Display computed distance on LCD. */
-                sprintf(dist_str, "Anchor # %d DIST: %3.2f m", anchorTurn, distance);
-                printf(dist_str);
-            }
+    while (1) {
+        int ret = mosquitto_loop(mosq, -1, 1);
+        if (ret) {
+            fprintf(stderr, "Connection error. Reconnecting...\n");
+            sleep(1);
+            mosquitto_reconnect(mosq);
         }
-        else
-        {
-            /* Clear RX error/timeout events in the DW1000 status register. */
-            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
-
-            /* Reset RX to properly reinitialise LDE operation. */
-            dwt_rxreset();
-        }
-
-        /* Execute a delay between ranging exchanges. */
-        deca_sleep(RNG_DELAY_MS);
     }
+
+    mosquitto_destroy(mosq);
+    mosquitto_lib_cleanup();
+
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
