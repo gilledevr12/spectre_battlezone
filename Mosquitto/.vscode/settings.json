@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "mosquitto.h": "c",
+        "fcntl.h": "c"
+    }
+}
