@@ -37,8 +37,10 @@
 // Server connection parameters
 #define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the pi
 #define MQTT_NAME "Tag_"
+#define MQTT_NAME_PUB "Pub_Tag_"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
+#define MQTT_TOPIC_TAG "location_tag"
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "SS TWR INIT v1.3"
@@ -104,6 +106,7 @@ static uint32 status_reg = 0;
 static double tof;
 static double distance;
 static uint8 DEVICE_MAC[13];
+static struct mosquitto *mosq_pub;
 
 /* String used to display measured distance on LCD screen (16 characters maximum). */
 char dist_str[16] = {0};
@@ -132,7 +135,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 void runRanging(){
     int anchorTurn = 0;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 2; i++) {
         //if (anchorTurn == 3) deca_sleep(RNG_DELAY_MS * 6);
 
         anchorTurn += 1;
@@ -201,6 +204,10 @@ void runRanging(){
                 /* Display computed distance on LCD. */
                 sprintf(dist_str, "Anchor # %d DIST: %3.2f m", anchorTurn, distance);
                 printf(dist_str);
+                if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0, false)){
+                    fprintf(stderr, "Could not publish to broker. Quitting\n");
+                    exit(-3);
+                }
             }
         } else {
             /* Clear RX error/timeout events in the DW1000 status register. */
@@ -277,6 +284,17 @@ int main(void)
         exit(-2);
     }
 
+    mosq_pub = mosquitto_new(MQTT_NAME_PUB, true, NULL);
+    if(!mosq_pub){
+        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+        exit(-1);
+    }
+
+    if(mosquitto_connect(mosq_pub, MQTT_HOSTNAME, MQTT_PORT, 0)){
+        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+        exit(-2);
+    }
+
     char buf[7];
 
     mosquitto_message_callback_set(mosq, message_callback);
@@ -284,7 +302,7 @@ int main(void)
 
     /* Loop forever initiating ranging exchanges. */
     while (1) {
-        int ret = mosquitto_loop(mosq, -1, 1);
+        int ret = mosquitto_loop(mosq, 250, 1);
         if (ret) {
             fprintf(stderr, "Connection error. Reconnecting...\n");
             sleep(1);

@@ -130,7 +130,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 void runRanging(){
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 2; i++) {
 
         /* Activate reception immediately. */
         dwt_rxenable(DWT_START_RX_IMMEDIATE);
