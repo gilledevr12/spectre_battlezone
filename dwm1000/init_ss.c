@@ -202,7 +202,7 @@ void runRanging(){
                 distance = tof * SPEED_OF_LIGHT;
 
                 /* Display computed distance on LCD. */
-                sprintf(dist_str, "Anchor # %d DIST: %3.2f m", anchorTurn, distance);
+                sprintf(dist_str, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
                 printf(dist_str);
                 if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0, false)){
                     fprintf(stderr, "Could not publish to broker. Quitting\n");
