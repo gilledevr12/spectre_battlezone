@@ -23,12 +23,26 @@
 #include "decadriver/dwm_api/deca_device_api.h"
 #include "decadriver/dwm_api/deca_regs.h"
 
+//mosquitto stuff
+#include <errno.h>
+#include <fcntl.h>
+#include <mosquitto.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 //#include "sleep.h"
 //#include "lcd.h"
 //#include "port.h"
+
+// Server connection parameters
+#define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the pi
+#define MQTT_NAME "Anchor_"
+#define MQTT_PORT 1883
+#define MQTT_TOPIC "location_sync"
+
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "SS TWR RESP v1.2"
-#define RNG_DELAY_MS 70
+#define RNG_DELAY_MS 10
 
 
 /* Default communication configuration. We use here EVK1000's mode 4. See NOTE 1 below. */
@@ -90,6 +104,110 @@ static uint64 resp_tx_ts;
 static uint64 get_rx_timestamp_u64(void);
 static void resp_msg_set_ts(uint8 *ts_field, const uint64 ts);
 
+void runRanging(void);
+
+//callback
+void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
+{
+    bool match = 0;
+    bool matchTag_1 = 0;
+    bool matchTag_2 = 0;
+    bool matchTag_3 = 0;
+
+    printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
+
+    mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
+    if (match) {
+        mosquitto_topic_matches_sub("Round1", (char*) message->payload, &matchTag_1);
+        mosquitto_topic_matches_sub("Round2", (char*) message->payload, &matchTag_2);
+        mosquitto_topic_matches_sub("Round3", (char*) message->payload, &matchTag_3);
+        if (matchTag_1 || matchTag_2 || matchTag_3){
+            runRanging();
+        }
+        //printf("got message for %s topic\n", MQTT_TOPIC);
+    }
+}
+
+void runRanging(){
+
+    for (int i = 0; i < 3; i++) {
+
+        /* Activate reception immediately. */
+        dwt_rxenable(DWT_START_RX_IMMEDIATE);
+
+        /* Poll for reception of a frame or error/timeout. See NOTE 6 below. */
+        while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR))) {};
+
+        if (status_reg & SYS_STATUS_RXFCG) {
+            uint32 frame_len;
+
+            /* Clear good RX frame event in the DW1000 status register. */
+            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
+
+            /* A frame has been received, read it into the local buffer. */
+            frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFL_MASK_1023;
+            if (frame_len <= RX_BUFFER_LEN) {
+                dwt_readrxdata(rx_buffer, frame_len, 0);
+            }
+
+            int ret = -1;
+            uint8 anch_num = rx_buffer[8];
+            uint8 tag_num = rx_buffer[6];
+            rx_poll_msg[6] = tag_num;
+
+            /* Check that the frame is a poll sent by "SS TWR initiator" example.
+             * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
+            rx_buffer[ALL_MSG_SN_IDX] = 0;
+            if (memcmp(rx_buffer, rx_poll_msg, ALL_MSG_COMMON_LEN) == 0 && anch_num == rx_poll_msg[8]) {
+                uint32 resp_tx_time;
+
+                /* Retrieve poll reception timestamp. */
+                poll_rx_ts = get_rx_timestamp_u64();
+
+                /* Compute final message transmission time. See NOTE 7 below. */
+                resp_tx_time = (poll_rx_ts + (POLL_RX_TO_RESP_TX_DLY_UUS * UUS_TO_DWT_TIME)) >> 8;
+                dwt_setdelayedtrxtime(resp_tx_time);
+
+                /* Response TX timestamp is the transmission time we programmed plus the antenna delay. */
+                resp_tx_ts = (((uint64) (resp_tx_time & 0xFFFFFFFEUL)) << 8) + TX_ANT_DLY;
+
+                /* Write all timestamps in the final message. See NOTE 8 below. */
+                resp_msg_set_ts(&tx_resp_msg[RESP_MSG_POLL_RX_TS_IDX], poll_rx_ts);
+                resp_msg_set_ts(&tx_resp_msg[RESP_MSG_RESP_TX_TS_IDX], resp_tx_ts);
+
+                /* Write and send the response message. See NOTE 9 below. */
+                tx_resp_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
+                tx_resp_msg[8] = tag_num;
+                dwt_writetxdata(sizeof(tx_resp_msg), tx_resp_msg, 0); /* Zero offset in TX buffer. */
+                dwt_writetxfctrl(sizeof(tx_resp_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
+                ret = dwt_starttx(DWT_START_TX_DELAYED);
+            }
+
+            /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 10 below. */
+            if (ret == DWT_SUCCESS) {
+                /* Poll DW1000 until TX frame sent event set. See NOTE 6 below. */
+                while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS)) {};
+
+                /* Clear TXFRS event. */
+                dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
+
+                /* Increment frame sequence number after transmission of the poll message (modulo 256). */
+                frame_seq_nb++;
+
+            }
+
+            deca_sleep(RNG_DELAY_MS);
+        } else {
+            /* Clear RX error events in the DW1000 status register. */
+            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
+
+            /* Reset RX to properly reinitialise LDE operation. */
+            dwt_rxreset();
+        }
+    }
+}
+
+
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
  *
@@ -129,89 +247,36 @@ int main(void)
     dwt_setrxantennadelay(RX_ANT_DLY);
     dwt_settxantennadelay(TX_ANT_DLY);
 
-    /* Loop forever responding to ranging requests. */
-    while (1)
-    {
-        /* Activate reception immediately. */
-        dwt_rxenable(DWT_START_RX_IMMEDIATE);
+    mosquitto_lib_init();
+    struct mosquitto *mosq = mosquitto_new(MQTT_NAME, true, NULL);
+    if(!mosq){
+        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+        exit(-1);
+    }
 
-        /* Poll for reception of a frame or error/timeout. See NOTE 6 below. */
-        while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)))
-        { };
+    if(mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)){
+        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+        exit(-2);
+    }
 
-        if (status_reg & SYS_STATUS_RXFCG)
-        {
-            uint32 frame_len;
+    char buf[7];
 
-            /* Clear good RX frame event in the DW1000 status register. */
-            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
+    mosquitto_message_callback_set(mosq, message_callback);
+    mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
 
-            /* A frame has been received, read it into the local buffer. */
-            frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFL_MASK_1023;
-            if (frame_len <= RX_BUFFER_LEN)
-            {
-                dwt_readrxdata(rx_buffer, frame_len, 0);
-            }
-
-            int ret = -1;
-            uint8 anch_num = rx_buffer[8];
-            uint8 tag_num = rx_buffer[6];
-            rx_poll_msg[6] = tag_num;
-
-            /* Check that the frame is a poll sent by "SS TWR initiator" example.
-             * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
-            rx_buffer[ALL_MSG_SN_IDX] = 0;
-            if (memcmp(rx_buffer, rx_poll_msg, ALL_MSG_COMMON_LEN) == 0 && anch_num == rx_poll_msg[8]) {
-                uint32 resp_tx_time;
-
-                /* Retrieve poll reception timestamp. */
-                poll_rx_ts = get_rx_timestamp_u64();
-
-                /* Compute final message transmission time. See NOTE 7 below. */
-                resp_tx_time = (poll_rx_ts + (POLL_RX_TO_RESP_TX_DLY_UUS * UUS_TO_DWT_TIME)) >> 8;
-                dwt_setdelayedtrxtime(resp_tx_time);
-
-                /* Response TX timestamp is the transmission time we programmed plus the antenna delay. */
-                resp_tx_ts = (((uint64) (resp_tx_time & 0xFFFFFFFEUL)) << 8) + TX_ANT_DLY;
-
-                /* Write all timestamps in the final message. See NOTE 8 below. */
-                resp_msg_set_ts(&tx_resp_msg[RESP_MSG_POLL_RX_TS_IDX], poll_rx_ts);
-                resp_msg_set_ts(&tx_resp_msg[RESP_MSG_RESP_TX_TS_IDX], resp_tx_ts);
-
-                /* Write and send the response message. See NOTE 9 below. */
-                tx_resp_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
-                tx_resp_msg[8] = tag_num;
-                dwt_writetxdata(sizeof(tx_resp_msg), tx_resp_msg, 0); /* Zero offset in TX buffer. */
-                dwt_writetxfctrl(sizeof(tx_resp_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
-                ret = dwt_starttx(DWT_START_TX_DELAYED);
-            }
-
-            /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 10 below. */
-            if (ret == DWT_SUCCESS)
-            {
-                /* Poll DW1000 until TX frame sent event set. See NOTE 6 below. */
-                while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
-                { };
-
-                /* Clear TXFRS event. */
-                dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
-
-                /* Increment frame sequence number after transmission of the poll message (modulo 256). */
-                frame_seq_nb++;
-
-            }
-
-            deca_sleep(RNG_DELAY_MS);
-        }
-        else
-        {
-            /* Clear RX error events in the DW1000 status register. */
-            dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
-
-            /* Reset RX to properly reinitialise LDE operation. */
-            dwt_rxreset();
+    /* Loop forever initiating ranging exchanges. */
+    while (1) {
+        int ret = mosquitto_loop(mosq, -1, 1);
+        if (ret) {
+            fprintf(stderr, "Connection error. Reconnecting...\n");
+            sleep(1);
+            mosquitto_reconnect(mosq);
         }
     }
+
+    mosquitto_destroy(mosq);
+    mosquitto_lib_cleanup();
+
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------

@@ -36,7 +36,7 @@
 
 // Server connection parameters
 #define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the pi
-#define MQTT_NAME "Server_Subscriber"
+#define MQTT_NAME "Tag_"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 
@@ -44,7 +44,7 @@
 #define APP_NAME "SS TWR INIT v1.3"
 
 /* Inter-ranging delay period, in milliseconds. */
-#define RNG_DELAY_MS 70
+#define RNG_DELAY_MS 10
 
 /* Default communication configuration. We use here EVK1000's mode 4. See NOTE 1 below. */
 static dwt_config_t config = {
@@ -110,7 +110,7 @@ char dist_str[16] = {0};
 
 /* Declaration of static functions. */
 static void resp_msg_get_ts(uint8 *ts_field, uint32 *ts);
-void runRanging();
+void runRanging(void);
 
 //callback
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
@@ -122,7 +122,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
-        mosquitto_topic_matches_sub(MQTT_TOPIC, (char*) message->payload, &matchTag);
+        mosquitto_topic_matches_sub("Round#", (char*) message->payload, &matchTag);
         if (matchTag){
             runRanging();
         }
@@ -280,7 +280,7 @@ int main(void)
     char buf[7];
 
     mosquitto_message_callback_set(mosq, message_callback);
-    mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 1);
+    mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
 
     /* Loop forever initiating ranging exchanges. */
     while (1) {
