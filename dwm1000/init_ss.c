@@ -110,6 +110,7 @@ char dist_str[16] = {0};
 
 /* Declaration of static functions. */
 static void resp_msg_get_ts(uint8 *ts_field, uint32 *ts);
+void runRanging();
 
 //callback
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
@@ -121,10 +122,11 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
-        if ((char*) message->payload == "ROUND1"){
+        mosquitto_topic_matches_sub(MQTT_TOPIC, (char*) message->payload, &matchTag);
+        if (matchTag){
             runRanging();
         }
-        printf("got message for %s topic\n", MQTT_TOPIC);
+        //printf("got message for %s topic\n", MQTT_TOPIC);
     }
 }
 
@@ -134,6 +136,7 @@ void runRanging(){
         //if (anchorTurn == 3) deca_sleep(RNG_DELAY_MS * 6);
 
         anchorTurn += 1;
+        printf("Ping anchor # %d\n", anchorTurn);
         //if (anchorTurn == 4) anchorTurn = 1;
         /* Write frame data to DW1000 and prepare transmission. See NOTE 7 below. */
         tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
