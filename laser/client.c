@@ -10,6 +10,8 @@
 #define SERVER_PORT (int) 8080
 #define SERVER_IP "192.168.0.5"
 
+#define MAX_BUFFER_LENGTH 1024
+
 char DEVICE_MAC[13];
 int SOCK;
 
@@ -41,7 +43,7 @@ void open_client_socket(){
 void send_status(struct float_x3 acc, struct float_x3 gyro, struct float_x3 mag, int shot, int weight){
     /*Main loop: get/send lines of text*/
     int packet_length;
-    char packet_buffer[120];
+    char *packet_buffer;
     sprintf(packet_buffer, "%s %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %i %i", 
         DEVICE_MAC, acc.x, acc.y, acc.z, gyro.x, gyro.y, gyro.z, mag.x, mag.y, mag.z, shot, weight);
 
@@ -57,6 +59,12 @@ void send_status(struct float_x3 acc, struct float_x3 gyro, struct float_x3 mag,
         perror("client: error sending packet \n");
         exit(1);
     }
+}
+
+char* receive_status(){
+    static char buf[MAX_BUFFER_LENGTH];
+    read(SOCK, buf, MAX_BUFFER_LENGTH);
+    return buf;
 }
 
 void close_client_socket(){

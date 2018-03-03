@@ -12,6 +12,7 @@ struct float_x3 {
 #define DEBUG
 #define CLIENT_ENABLE
 #define IMU_ENABLE
+#define WIRING_PINS
 
 #include "client.h"
 #include "dwm1000.h"

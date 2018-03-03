@@ -2,8 +2,27 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
+// #include <wiringPi.h>
 
 #include "main.h"
+
+#define TRIGGER_PIN 26
+#define V_SOURCE_PIN 25
+
+volatile unsigned char trig_press;
+
+char wiringPiSetup();
+char digitalRead(char p);
+void digitalWrite(char p, char v);
+void pinMode(char c, char m);
+#define INPUT 0
+#define OUTPUT 1
+
+char CLIENT_STATUS;
+//  status descriptions
+//      0: GAMEPLAY NORMAL OPERATING MODE
+//      1: HALT - client is in halt mode, waiting for valid response
+//      2: NA
 
 struct float_x3 ACCEL, GYRO, MAG;
 
@@ -37,13 +56,28 @@ void alarmISR(int sig_num){
             MAG.z = 9.00;
         #endif
 
-        open_client_socket();
-        send_status(ACCEL, GYRO, MAG, 0, 0);
-        close_client_socket();
+        #ifdef CLIENT_ENABLE
+            open_client_socket();
+            send_status(ACCEL, GYRO, MAG, trig_press, 0); 
+            close_client_socket();
+        #else
+            printf("A:%2.5f %2.5f %2.5f \t\tG:%2.5f %2.5f %2.5f \t\tM:%2.5f %2.5f %2.5f\n",
+                ACCEL.x, ACCEL.y, ACCEL.z, GYRO.x, GYRO.y, GYRO.z, MAG.x, MAG.y, MAG.z);
+        #endif
+
+        trig_press = 0;
     }
 }
 
 int main(){
+
+    if(wiringPiSetup() < 0){
+        printf("Wiring pi setup failed. Quitting\n");
+        return 1;
+    }
+    pinMode(TRIGGER_PIN, INPUT);
+    pinMode(V_SOURCE_PIN, OUTPUT);
+    digitalWrite(V_SOURCE_PIN, HIGH);
 
     #ifdef IMU_ENABLE
         #ifdef DEBUG
@@ -80,8 +114,16 @@ int main(){
     //define the ISR called for the SIGALRM signal
     signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
     ualarm(250000, 250000);     // trigger a SIGALRM signal every 1/4 second
+    
+    //initialize the laser to be doing no work until told to do so
+    CLIENT_STATUS = 1;          
 
-    while(1);
+    trig_press = 0;
+    while(1){
+        if(!trig_press) //only continue to sample if it hasn't already been pressed
+            if(digitalRead(TRIGGER_PIN))
+                trig_press = 0b1;
+    }
 
     return 0;
 }

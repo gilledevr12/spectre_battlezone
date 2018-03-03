@@ -6,7 +6,10 @@ default: laser-brains
 
 # For the laser-brains executable, list here all object files to be included
 laser-brains:  main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
-	$(CC) $(CFLAGS) -o laser-brains main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
+	$(CC) $(CFLAGS) -l wiringpi -o laser-brains main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
+
+imu_test: main.o lsm9ds1.o 
+	$(CC) $(CFLAGS) -l math -o imu_test
 
 # Generate the unique device idenitfiier based on the mac address
 gen_mac: gen_mac.o
