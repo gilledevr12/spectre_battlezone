@@ -8,7 +8,7 @@ default: laser-brains
 laser-brains:  main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
 	$(CC) $(CFLAGS) -l wiringpi -o laser-brains main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
 
-imu_test: main.o lsm9ds1.o 
+imu_test: main.o lsm303.o 
 	$(CC) $(CFLAGS) -l math -o imu_test
 
 # Generate the unique device idenitfiier based on the mac address
@@ -25,11 +25,11 @@ dwm1000.o: dwm1000.c dwm1000.h
 gen_mac.o: gen_mac.c
 	$(CC) $(CFLAGS) -c gen_mac.c
 
-# lsm303.o: lsm303.c lsm303.h
-# 	$(CC) $(CFLAGS) -c lsm303.c
+lsm303.o: lsm303.c lsm303.h
+	$(CC) $(CFLAGS) -c lsm303.c
 
-lsm9ds1.o: lsm9ds1.c lsm9ds1.h
-		$(CC) $(CFLAGS) -c lsm9ds1.c
+# lsm9ds1.o: lsm9ds1.c lsm9ds1.h
+# 		$(CC) $(CFLAGS) -c lsm9ds1.c
 
 main.o: main.c main.h
 		$(CC) $(CFLAGS) -c main.c
