@@ -1,4 +1,5 @@
 #include "rifle_variables.h"
+#include "inventory.h"
 
 //WEAPON name         = {CLASS, RELOAD_DELAY, FIRE_DELAY, FIRE_WEIGHT, CLIP_SIZE}
 struct WEAPON pea_shooter    = {PEA_SHOOTER, AVERAGE, AVERAGE, MID, 15};

@@ -9,8 +9,8 @@ struct INVENTORY_ITEM {
     char MAX_AMMO;
 };
 
-INVENTORY ITEM* no_items;
-INVENTORY ITEM* initial_inventory;
+//const struct INVENTORY_ITEM* no_items = NULL;
+struct INVENTORY_ITEM* initial_inventory;
 
 
 

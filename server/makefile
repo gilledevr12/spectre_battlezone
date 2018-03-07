@@ -5,7 +5,7 @@ CFLAGS  = -g -Wall -l pthread
 default: central-hub
 
 # For the central- executable, list here all object files to be included
-central-hub:  players.o rifle_variables.o server.o setup.o guns.h inventory.h
+central-hub:  players.o rifle_variables.o server.o setup.o inventory.h
 	$(CC) $(CFLAGS) -o central-hub players.o rifle_variables.o server.o setup.o
 
 # For each subsequent object file, define source files
