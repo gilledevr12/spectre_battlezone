@@ -1,6 +1,7 @@
 #ifndef PLAYERS_H
 #define PLAYERS_H
 #include "rifle_variables.h"
+#include "inventory.h"
 typedef enum { false, true } bool;
 
 struct PLAYER {
@@ -11,6 +12,6 @@ struct PLAYER {
     INVENTORY_ITEM* INVENTORY;
 };
 
-set_player_id(unsigned char*);
+void set_player_info(PLAYER, unsigned char*)
 
 #endif

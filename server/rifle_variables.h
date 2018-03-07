@@ -1,9 +1,7 @@
 #ifndef RIFLE_VARIABLES_H
 #define RIFLE_VARIABLES_H
 
-typedef char bool;
-#define TRUE  1
-#define FALSE 0
+typedef enum { false, true } bool;
 
 /* Define the weapons used in the game:
  *  PEA_SHOOTER:  typically the default weapon. average reload_delay, average fire_delay, average fire_weight
@@ -13,6 +11,7 @@ typedef char bool;
  */
 
 #define WEAPON_COUNT    4
+
 //WEAPON CLASS
 #define PEA_SHOOTER     0
 #define SHOTGUN         1
@@ -38,11 +37,4 @@ struct WEAPON {
   char CLIP_SIZE;
 };
 
-struct INVENTORY_ITEM {
-  struct WEAPON WEAPON_NAME;
-  bool EQUIPPED;
-  char AMMO_REMAINING;
-  char MAX_AMMO;
-};
-
-#endif //RIFLE_VARIABLES_H
+#endif

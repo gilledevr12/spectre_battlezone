@@ -6,12 +6,10 @@
 #include "players.h"
 #include "rifle_variables.h"
 #include "guns.h"
+#include "inventory.h"
 typedef enum { false, true } bool;
 
 unsigned char player_init_num = 0;
-
-INVENTORY_ITEM* no_items;
-INVENTORY_ITEM* initial_inventory;
 
 struct PLAYER p1 = {0, 0, 0, no_items};
 struct PLAYER p2 = {0, 0, 0, no_items};
@@ -19,12 +17,10 @@ struct PLAYER p3 = {0, 0, 0, no_items};
 struct PLAYER p4 = {0, 0, 0, no_items};
 typedef enum { p1, p2, p3, p4 } players;
 
-set_player_info(player_init_num, unsigned char* id){
-   current_player players = player_init_num;
+set_player_info(PLAYER current_player, unsigned char* id){
    current_player.ID = id;
    current_player.ALIVE = true;
    current_player.HEALTH = 100;
    current_player.ARMOR = 0;
    current_player.INVENTORY = intial_inventory;
 }
-#endif
