@@ -20,7 +20,7 @@ void print_ACCEL(){
     printf("Pitch: %2.5f Roll: %2.5f\n", pitch, roll);
 }
 
-#define DECLINATION -11.32 //magnetic declination for Logan UT in degrees
+#define DECLINATION 11.32 //magnetic declination for Logan UT in degrees
 void print_MAG(){
     //atan2(x, y) is the same as arctan(y/x)
     float th = atan2(MAG.x, MAG.y) * 180.0 / PI;
