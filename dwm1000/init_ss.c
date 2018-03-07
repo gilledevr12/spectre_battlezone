@@ -98,7 +98,7 @@ static uint32 status_reg = 0;
 
 /* Speed of light in air, in metres per second. */
 #define SPEED_OF_LIGHT 299702547
-
+#define ANCHOR_TOT 2
 #define HIGH 1
 
 
@@ -109,7 +109,10 @@ static uint8 DEVICE_MAC[13];
 static struct mosquitto *mosq_pub;
 
 /* String used to display measured distance on LCD screen (16 characters maximum). */
-char dist_str[16] = {0};
+char dist_str_1[33] = {0};
+char dist_str_2[33] = {0};
+char dist_str_3[33] = {0};
+char dist_str[33 * ANCHOR_TOT] = {0};
 
 /* Declaration of static functions. */
 static void resp_msg_get_ts(uint8 *ts_field, uint32 *ts);
@@ -135,7 +138,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 void runRanging(){
     int anchorTurn = 0;
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < ANCHOR_TOT; i++) {
         //if (anchorTurn == 3) deca_sleep(RNG_DELAY_MS * 6);
 
         anchorTurn += 1;
@@ -202,11 +205,22 @@ void runRanging(){
                 distance = tof * SPEED_OF_LIGHT;
 
                 /* Display computed distance on LCD. */
-                sprintf(dist_str, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
-                printf(dist_str);
-                if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0, false)){
-                    fprintf(stderr, "Could not publish to broker. Quitting\n");
-                    exit(-3);
+                if (anchorTurn == 1){
+                    sprintf(dist_str_1, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
+                    printf(dist_str_1);
+                } else if (anchorTurn == 2){
+                    sprintf(dist_str_2, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
+                    printf(dist_str_2);
+                } else if (anchorTurn == 3){
+                    sprintf(dist_str_3, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
+                    printf(dist_str_3);
+                }
+                if (anchorTurn == ANCHOR_TOT) {
+                    sprintf(dist_str, "%s %s %s\n", dist_str_1, dist_str_2, dist_str_3);
+                    if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0, false)) {
+                        fprintf(stderr, "Could not publish to broker. Quitting\n");
+                        exit(-3);
+                    }
                 }
             }
         } else {
