@@ -2,9 +2,11 @@
 
 #ifndef PLAY_H 
 #define PLAY_H 
+#include "server.h"
+#include "bool.h"
 
-void loadMap(){
-
-}
+void wait(float);
+void play_loop(char*);
+bool valid_map_file(char*);
 
 #endif

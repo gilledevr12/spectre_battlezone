@@ -5,19 +5,18 @@
  */
 #include "players.h"
 #include "rifle_variables.h"
-#include "guns.h"
 #include "inventory.h"
 //typedef enum { false, true } bool;
 
 unsigned char player_init_num = 0;
 
-struct PLAYER p1 = {0, 0, 0, 0, 0};
-struct PLAYER p2 = {0, 0, 0, 0, 0};
-struct PLAYER p3 = {0, 0, 0, 0, 0};
-struct PLAYER p4 = {0, 0, 0, 0, 0};
+PLAYER p1 = {0, 0, 0, 0, 0};
+PLAYER p2 = {0, 0, 0, 0, 0};
+PLAYER p3 = {0, 0, 0, 0, 0};
+PLAYER p4 = {0, 0, 0, 0, 0};
 //typedef enum { p1, p2, p3, p4 } players;
 
-void set_player_info(struct PLAYER current_player, unsigned char* id){
+void set_player_info(PLAYER current_player, unsigned char* id){
    current_player.ID = id;
    current_player.ALIVE = true;
    current_player.HEALTH = 100;
