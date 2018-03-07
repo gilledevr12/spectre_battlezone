@@ -56,10 +56,10 @@ void play_loop(char* map_file){
         wait(0.01);    // Correcting an issue with the "Server launch" print statement
         printf("Using map file %s\n",map_file);
         printf("This map has %i columns and %i rows\n",map_size.cols,map_size.rows);
-        refreshScreen();
+        refresh_screen(map);
         while(1){
             wait(5);
-            refreshScreen();
+            refresh_screen(map);
         }
     }
     else{ printf("The supplied file was not a valid .bmp file\n"); exit(1);}
