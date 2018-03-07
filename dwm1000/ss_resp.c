@@ -91,7 +91,7 @@ static uint32 status_reg = 0;
 
 /* Delay between frames, in UWB microseconds. See NOTE 1 below. */
 #define POLL_RX_TO_RESP_TX_DLY_UUS 9330//15330?
-#define ANCHOR_TOT 2
+#define ANCHOR_TOT 3
 #define HIGH 1
 
 /* Timestamps of frames transmission/reception.
