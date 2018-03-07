@@ -2,13 +2,16 @@
 CC = gcc
 CFLAGS  = -g -Wall -l pthread
 
-default: central-hub
+default: hub
 
-# For the central- executable, list here all object files to be included
-central-hub:  players.o rifle_variables.o server.o setup.o inventory.h
-	$(CC) $(CFLAGS) -o central-hub players.o rifle_variables.o server.o setup.o
+# For the hub executable, list here all object files to be included
+hub:  main.o players.o rifle_variables.o server.o setup.o play.o inventory.h bool.h
+	$(CC) $(CFLAGS) -o hub main.o players.o rifle_variables.o server.o setup.o play.o
 
 # For each subsequent object file, define source files
+main.o: main.c
+	$(CC) $(CFLAGS) -c main.c
+
 players.o: players.c players.h
 	$(CC) $(CFLAGS) -c players.c
 
@@ -21,6 +24,9 @@ server.o: server.c server.h
 setup.o: setup.c setup.h
 	$(CC) $(CFLAGS) -c setup.c
 
+play.o: play.c play.h
+	$(CC) $(CFLAGS) -c play.c
+
 clean:
-	$(RM) central-hub *.o *~
+	$(RM) hub *.o *~
 	

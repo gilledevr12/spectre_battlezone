@@ -4,6 +4,8 @@
 #include <string.h>
 #include <time.h>
 #include "setup.h"
+#include "bool.h"
+
 extern struct location_data loc_dat;
 
 location_data current_location;
@@ -18,11 +20,6 @@ location_data get_location(){
 
 bool get_active_status(){
     return false;
-}
-
-void wait(int seconds){
-    time_t start = time(0);
-    while(time(0)-start<seconds);
 }
 
 void create_map(){

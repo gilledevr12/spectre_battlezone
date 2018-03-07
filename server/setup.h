@@ -2,7 +2,7 @@
 
 #ifndef SETUP_H
 #define SETUP_H
-typedef enum { false, true } bool;
+#include "bool.h"
 
 typedef struct { int x; int y; int z; } location_data;
 
