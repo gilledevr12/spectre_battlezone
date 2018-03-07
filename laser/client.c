@@ -40,12 +40,12 @@ void open_client_socket(){
     }
 }
 
-void send_status(struct float_x3 acc, struct float_x3 gyro, struct float_x3 mag, int shot, int weight){
+void send_status(struct samples_x3 acc, struct samples_x3 mag, int shot, int weight){
     /*Main loop: get/send lines of text*/
     int packet_length;
     char *packet_buffer;
-    sprintf(packet_buffer, "%s %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %i %i", 
-        DEVICE_MAC, acc.x, acc.y, acc.z, gyro.x, gyro.y, gyro.z, mag.x, mag.y, mag.z, shot, weight);
+    sprintf(packet_buffer, "%s %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %i %i", 
+        DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, shot, weight);
 
     #ifdef DEBUG
         printf("Sending client packet: %s\n", packet_buffer);

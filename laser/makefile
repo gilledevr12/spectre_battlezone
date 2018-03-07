@@ -1,6 +1,6 @@
 # Define the compiler being used with the compiler flags
 CC = gcc
-CFLAGS  = -g -Wall
+CFLAGS  = -lm -g -Wall
 
 default: laser-brains
 
@@ -8,8 +8,8 @@ default: laser-brains
 laser-brains:  main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
 	$(CC) $(CFLAGS) -l wiringpi -o laser-brains main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
 
-imu_test: main.o lsm303.o 
-	$(CC) $(CFLAGS) -l math -o imu_test
+test-imu: test_imu.o lsm303.o 
+	$(CC) $(CFLAGS) test_imu.o lsm303.o -o test-imu 
 
 # Generate the unique device idenitfiier based on the mac address
 gen_mac: gen_mac.o
@@ -33,6 +33,9 @@ lsm303.o: lsm303.c lsm303.h
 
 main.o: main.c main.h
 		$(CC) $(CFLAGS) -c main.c
+
+test_imu.o: test_imu.c main.h
+		$(CC) $(CFLAGS) -c test_imu.c
 
 rifle_variables.o: rifle_variables.c rifle_variables.h
 		$(CC) $(CFLAGS) -c rifle_variables.c
