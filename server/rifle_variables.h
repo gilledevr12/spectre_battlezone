@@ -29,12 +29,12 @@ typedef enum { false, true } bool;
 #define MID             1
 #define HIGH            2
 
-struct WEAPON {
+typedef struct {
   char CLASS;
   char RELOAD_DELAY;
   char FIRE_DELAY;
   char FIRE_WEIGHT;
   char CLIP_SIZE;
-};
+} WEAPON;
 
 #endif

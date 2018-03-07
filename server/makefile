@@ -19,7 +19,7 @@ server.o: server.c server.h
 	$(CC) $(CFLAGS) -c server.c
 
 setup.o: setup.c setup.h
-	$(CC) $(CFLAGS) setup.c
+	$(CC) $(CFLAGS) -c setup.c
 
 clean:
 	$(RM) central-hub *.o *~

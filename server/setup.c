@@ -27,16 +27,23 @@ void wait(int seconds){
 
 void create_map(){
     bool active = false;
+    char map_ftype[5];
+    strcpy(map_ftype, ".sbm");
+    size_t buf_size = 32;
+    size_t chars;
     char* map_name;
+    map_name = (char*)malloc(buf_size * sizeof(char));
     printf("What do you want to name the map?\n");
-    scanf("%s",map_name);
-    strcat(map_name,".map");
+    chars = getline(&map_name, &buf_size, stdin);
+    map_name = strtok(map_name, "\n");
+    strcat(map_name,map_ftype);
+    printf("The file we'll be using is %s\n",map_name);
     FILE* map;
     map = fopen(map_name, "w");
-    while(active){
+    /*while(active){
         get_active_status();
         current_location = get_location();
         fprintf(map, "%i\n", current_location.x);
         wait(1);
-    }
+    }*/
 }

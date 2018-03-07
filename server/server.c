@@ -71,12 +71,11 @@ void* server_loop(){
 }
 
 int main(){
+    // Call create_map() for testing
+    create_map();
 
 	// This thread receives raw data, computes and generates valid data, sends out response
 	pthread_create(&server_thread,NULL,server_loop,NULL);
-
-    // Call create_map() for testing
-    create_map();
 
 	//build
 	//pthread_create(&gameplay_display_thread,NULL,gameplay_display_loop,NULL);
