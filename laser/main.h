@@ -3,10 +3,12 @@
 //used to control compilation flags
 //IE DEBUG mode, disable I2C, etc.
 
-struct float_x3 {
-    float x;
-    float y;
-    float z;
+#include <stdint.h>
+
+struct samples_x3 {
+    int16_t x;
+    int16_t y;
+    int16_t z;
 };
 
 #define DEBUG
@@ -16,8 +18,7 @@ struct float_x3 {
 
 #include "client.h"
 #include "dwm1000.h"
-#include "lsm9ds1.h"
-#include "rifle_variables.h"
+#include "lsm303.h"
 
 void alarmISR(int sig_num);
 
