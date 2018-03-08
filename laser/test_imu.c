@@ -47,9 +47,11 @@ void alarmISR(int sig_num){
         MAG.x = curr_samples[6];
         MAG.y = curr_samples[7];
         MAG.z = curr_samples[8];
-
+	printf("ACC: %3.3f %3.3f %3.3f GYR: %3.3f %3.3f %3.3f MAG: %3.3f %3.3f %3.3f\n",
+		ACC.x, ACC.y, ACC.z, GYR.x, GYR.y, GYR.z, MAG.x, MAG.y, MAG.z);
         new_samples = 1;
-    	alarm(1);     // trigger a SIGALRM signal every second        
+	alarm(1);     // trigger a SIGALRM signal every second        
+
     }
 }
 
@@ -67,7 +69,7 @@ int main(){
     alarm(1);     // trigger a SIGALRM signal every second        
 
     new_samples = 0;
-    read_memory();
+//    read_memory();
     while(1){
 	    if(new_samples){
 		    new_samples = 0;

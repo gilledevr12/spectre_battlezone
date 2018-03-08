@@ -73,19 +73,10 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest
 
     //combine to integer values
     int16_t compiled_data[3];
-
-    if(addr == IMU_XG_ADDR){
-        compiled_data[0] = (temp_data[1] << 8) | temp_data[0];
-        compiled_data[1] = (temp_data[3] << 8) | temp_data[2];
-        compiled_data[2] = (temp_data[5] << 8) | temp_data[4];
-    }
-    else{
-        compiled_data[0] = (temp_data[0] << 8) | temp_data[1];
-        compiled_data[1] = (temp_data[2] << 8) | temp_data[3];
-        compiled_data[2] = (temp_data[4] << 8) | temp_data[5];
-    }
-
-
+    compiled_data[0] = (temp_data[0] << 8) | temp_data[1];
+    compiled_data[1] = (temp_data[2] << 8) | temp_data[3];
+    compiled_data[2] = (temp_data[4] << 8) | temp_data[5];
+    
     //determine type, apply bias to result
     if((sub_addr == OUT_X_L_XL) && (addr == IMU_XG_ADDR)){     //Accelerometer Read
         compiled_data[0] -= ACCEL_BIAS[0];
@@ -285,14 +276,16 @@ void init_mag(){
 
 void calibrate_mag(){
         unsigned char dev_ready = 0;
-        while(!dev_ready){
-            dev_ready = (imu_read_byte(IMU_MAG_ADDR, STATUS_REG_M) & 8) >> 3;
-        }
         int16_t mag_min[3] = {0, 0, 0};
         int16_t mag_max[3] = {0, 0, 0};
         short tmp_read[3];
         //iterate 128 times for average values
+	printf("Calibrating mag...");
         for(int c=0; c<128; c++){
+	    dev_ready = 0;
+            while(!dev_ready){
+	        dev_ready = (imu_read_byte(IMU_MAG_ADDR, STATUS_REG_M) & 8) >> 3;
+	    }
             read_device_bytes(IMU_MAG_ADDR, OUT_X_L_M, tmp_read);
             //adjust max and min for newly read values
             for(int i=0; i<3; i++){
@@ -307,7 +300,10 @@ void calibrate_mag(){
             MAG_BIAS[j] = ((mag_max[j] + mag_min[j]) / 2) * MAG_RES;
             // if (loadIn)
             //     magOffset(j, mBiasRaw[j]);
-        } 
+        }
+        printf("done\n");
+	for(int i=0; i<3; i++)
+		printf("mag_max[%i]: %i mag_min[%i]: %i MAG_BIAS[%i]: %3.3f\n", i, mag_max[i], i, mag_min[i], i, MAG_BIAS[i]); 
 
 }
 
@@ -387,7 +383,7 @@ void calibrate_IMU(){
                     ACCEL_BIAS[0], ACCEL_BIAS[1], ACCEL_BIAS[2]);
     #endif
 
-    calibrate_mag();
+    //calibrate_mag();
 }
 
 char init_IMU(){
@@ -436,8 +432,8 @@ char init_IMU(){
     #endif
 
     //reset the ACC/GYRO and MAG
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG8, 0x05);
-    imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, 0x0C);
+    //imu_write_byte(IMU_XG_ADDR, CTRL_REG8, 0x05);
+    //imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, 0x0C);
 
     sleep(0.1);
 

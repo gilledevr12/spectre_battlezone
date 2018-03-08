@@ -11,7 +11,7 @@ struct samples_x3 {
     float z;
 };
 
-#define DEBUG
+//#define DEBUG
 #define CLIENT_ENABLE
 #define IMU_ENABLE
 #define WIRING_PINS
