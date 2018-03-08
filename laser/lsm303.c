@@ -22,12 +22,11 @@ int MAG_RES = 1;
 /*****         I2C DEVICE FUNCTIONS         *****/
 /************************************************/
 //I2C Read/Write Structs
-union i2c_smbus_data
-{
+union i2c_smbus_data{
   uint8_t  byte ;
   uint16_t word ;
   uint8_t  block [34] ;	// block [0] is used for length + one more for PEC
-} ;
+} 
 /* Write a single byte to the I2C bus
  *  addr      :   device address
  *  sub_addr  :   register to be written
@@ -156,7 +155,7 @@ void init_imu(){
 //  calibrate_imu();
 }
 
-int16_t* IMU_pull_samples(){
+int16_t* LSM303_IMU_pull_samples(){
 	static int16_t samples[6];
 	int16_t* tmp;
 	tmp = read_acc();
@@ -172,8 +171,7 @@ int16_t* IMU_pull_samples(){
 	return samples;
 }
 
-void print_memory()
-{
+void print_memory(){
 	printf("Accel:\n");
 	for(int i=0; i<0x3F; i++){
 		if((i%16) == 0) printf("\n");

@@ -4,6 +4,7 @@
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "lsm9ds1.h"
 #include "LSM9DS1_Registers.h"
@@ -41,127 +42,17 @@ const float MAG_RES     =   0.00014;
 const char* I2C_PORT_NAME = "/dev/i2c-1";
 int IMU_BUS;
 
+/************************************************/
+/*****         I2C DEVICE FUNCTIONS         *****/
+/************************************************/
 //I2C Read/Write Structs
-union i2c_smbus_data
-{
+union i2c_smbus_data{
   uint8_t  byte ;
   uint16_t word ;
   uint8_t  block [34] ;	// block [0] is used for length + one more for PEC
-} ;
+};
 
-/* GYROSCOPE Functions */
-void init_gyro(){
-    //set sample rate, scale, bandwidth
-    unsigned char data = 0;
-    data = ((GYRO_SAMPLE_RATE & 0x07) << 5);
-    if(GYRO_SCALE == 500)
-        data |= (1 << 3);
-    else if(GYRO_SCALE == 2000)
-        data |= (3 << 3);
-    else
-        data = data;
-    data |= (GYRO_BANDWIDTH & 3);
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG1_G, data);
-
-    //setup not using interrupt
-    data =  0x00;
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG2_G, data);
-
-    //set low power disable and HPF disable
-    data = 0x00;
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG3_G, data);
-
-    //enable x y z axis, latched interrupt = true
-    data = 0x3A;
-    imu_write_byte(IMU_XG_ADDR,CTRL_REG4, data);
-
-    //configure orientation flip
-    data = 0x00;
-    imu_write_byte(IMU_XG_ADDR, ORIENT_CFG_G, data);
-    
-    #ifdef DEBUG
-        printf("Init GYRO complete\n");
-    #endif
-    
-    return;
-}
-
-/* ACCELEROMETER Functions */
-void init_accel(){
-    //Enable x, y, z axis
-    unsigned char data = 0x38;
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG5_XL, data);
-
-    //Enable accel, set scale, bandwidth
-    data = (ACCEL_SAMPLE_RATE & 0x7) << 5;
-    if(ACCEL_SCALE == 4)
-        data |= (2 << 3);
-    else if(ACCEL_SCALE == 8)
-        data |= (3 << 3);
-    else if(ACCEL_SCALE == 16)
-        data |= (1 << 3);
-    else
-        data = data;
-    if(ACCEL_BANDWIDTH >= 0){
-        data |= 1 << 2;
-        data |= (ACCEL_BANDWIDTH & 0x3);
-    }
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG6_XL, data);
-
-    //disable high resolution
-    data = 0x00;
-    imu_write_byte(IMU_XG_ADDR, CTRL_REG7_XL, data);
-    
-    #ifdef DEBUG
-        printf("Init ACCEL complete\n");
-    #endif
-
-    return;
-}
-
-/* MAGNETOMETER Functions */
-void init_mag(){
-    //Set xzy performance level and sample rate
-    unsigned char data = 0x00;
-    if(MAG_TEMP_COMP_EN)
-        data |= (1 << 7);
-    data |= ((MAG_PERFORMANCE & 3) << 5) | ((MAG_SAMPLE_RATE & 7) << 2);
-    imu_write_byte(IMU_MAG_ADDR, CTRL_REG1_M, data);
-
-    //Set scale
-    if(MAG_SCALE == 8)
-        data = (1 << 5);
-    else if(MAG_SCALE == 12)
-        data = (2 << 5);
-    else if(MAG_SCALE == 16)
-        data = (3 << 5);
-    else
-        data = 0;
-    imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, data);
-
-    //disable low power and continuous operation mode
-    data = 0x00;
-    imu_write_byte(IMU_MAG_ADDR, CTRL_REG3_M, data);
-
-    //set z axis mode to ultra high performance
-    data = (MAG_PERFORMANCE & 3) << 2;
-    imu_write_byte(IMU_MAG_ADDR, CTRL_REG4_M, data);
-
-    //block domain update disable
-    data = 0x00;
-    imu_write_byte(IMU_MAG_ADDR, CTRL_REG5_M, data);
-
-    #ifdef DEBUG
-        printf("Init MAG complete\n");
-    #endif
-
-    return;
-}
-
-void calibrate_mag();
-
-/* IMU Functions */
-void read_device_bytes(unsigned char addr, unsigned char sub_addr, short* dest){
+void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest){
     int fd = open("/dev/i2c-1", O_RDWR);
     ioctl(fd, I2C_SLAVE, addr);
 
@@ -181,24 +72,36 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, short* dest){
     close(fd);
 
     //combine to integer values
-    unsigned short compiled_data[3];
-    compiled_data[0] = (temp_data[1] << 8) | temp_data[0];
-    compiled_data[1] = (temp_data[3] << 8) | temp_data[2];
-    compiled_data[2] = (temp_data[5] << 8) | temp_data[4];
+    int16_t compiled_data[3];
+
+    if(addr == IMU_XG_ADDR){
+        compiled_data[0] = (temp_data[1] << 8) | temp_data[0];
+        compiled_data[1] = (temp_data[3] << 8) | temp_data[2];
+        compiled_data[2] = (temp_data[5] << 8) | temp_data[4];
+    }
+    else{
+        compiled_data[0] = (temp_data[0] << 8) | temp_data[1];
+        compiled_data[1] = (temp_data[2] << 8) | temp_data[3];
+        compiled_data[2] = (temp_data[4] << 8) | temp_data[5];
+    }
+
 
     //determine type, apply bias to result
-    if(sub_addr == OUT_X_L_XL){     //Accelerometer Read
+    if((sub_addr == OUT_X_L_XL) && (addr == IMU_XG_ADDR)){     //Accelerometer Read
         compiled_data[0] -= ACCEL_BIAS[0];
         compiled_data[1] -= ACCEL_BIAS[1];
         compiled_data[2] -= ACCEL_BIAS[2];
     }
-    else if(sub_addr == OUT_X_L_G){ //Gyro Read
+    else if((sub_addr == OUT_X_L_G) && (addr == IMU_XG_ADDR)){ //Gyro Read
         compiled_data[0] -= GYRO_BIAS[0];
         compiled_data[1] -= GYRO_BIAS[1];
         compiled_data[2] -= GYRO_BIAS[2];
     }
-    else                            //Mag read - do nothing to adjust
-        compiled_data[0] = compiled_data[0];
+    else{                           //Mag read 
+        compiled_data[0] -= MAG_BIAS[0];
+        compiled_data[1] -= MAG_BIAS[1];
+        compiled_data[2] -= MAG_BIAS[2];
+    }
 
     //return compiled result
     dest[0] = compiled_data[0];
@@ -265,6 +168,152 @@ void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char va
     return;
 }
 
+/************************************************/
+/*****            ACCELEROMETER             *****/
+/************************************************/
+void init_accel(){
+    //Enable x, y, z axis
+    unsigned char data = 0x38;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG5_XL, data);
+
+    //Enable accel, set scale, bandwidth
+    data = (ACCEL_SAMPLE_RATE & 0x7) << 5;
+    if(ACCEL_SCALE == 4)
+        data |= (2 << 3);
+    else if(ACCEL_SCALE == 8)
+        data |= (3 << 3);
+    else if(ACCEL_SCALE == 16)
+        data |= (1 << 3);
+    else
+        data = data;
+    if(ACCEL_BANDWIDTH >= 0){
+        data |= 1 << 2;
+        data |= (ACCEL_BANDWIDTH & 0x3);
+    }
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG6_XL, data);
+
+    //disable high resolution
+    data = 0x00;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG7_XL, data);
+    
+    #ifdef DEBUG
+        printf("Init ACCEL complete\n");
+    #endif
+
+    return;
+}
+
+/************************************************/
+/*****              GYROSCOPE               *****/
+/************************************************/
+void init_gyro(){
+    //set sample rate, scale, bandwidth
+    unsigned char data = 0;
+    data = ((GYRO_SAMPLE_RATE & 0x07) << 5);
+    if(GYRO_SCALE == 500)
+        data |= (1 << 3);
+    else if(GYRO_SCALE == 2000)
+        data |= (3 << 3);
+    else
+        data = data;
+    data |= (GYRO_BANDWIDTH & 3);
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG1_G, data);
+
+    //setup not using interrupt
+    data =  0x00;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG2_G, data);
+
+    //set low power disable and HPF disable
+    data = 0x00;
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG3_G, data);
+
+    //enable x y z axis, latched interrupt = true
+    data = 0x3A;
+    imu_write_byte(IMU_XG_ADDR,CTRL_REG4, data);
+
+    //configure orientation flip
+    data = 0x00;
+    imu_write_byte(IMU_XG_ADDR, ORIENT_CFG_G, data);
+    
+    #ifdef DEBUG
+        printf("Init GYRO complete\n");
+    #endif
+    
+    return;
+}
+
+/************************************************/
+/*****            MAGNETOMETER              *****/
+/************************************************/
+void init_mag(){
+    //Set xzy performance level and sample rate
+    unsigned char data = 0x00;
+    if(MAG_TEMP_COMP_EN)
+        data |= (1 << 7);
+    data |= ((MAG_PERFORMANCE & 3) << 5) | ((MAG_SAMPLE_RATE & 7) << 2);
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG1_M, data);
+
+    //Set scale
+    if(MAG_SCALE == 8)
+        data = (1 << 5);
+    else if(MAG_SCALE == 12)
+        data = (2 << 5);
+    else if(MAG_SCALE == 16)
+        data = (3 << 5);
+    else
+        data = 0;
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, data);
+
+    //disable low power and continuous operation mode
+    data = 0x00;
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG3_M, data);
+
+    //set z axis mode to ultra high performance
+    data = (MAG_PERFORMANCE & 3) << 2;
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG4_M, data);
+
+    //block domain update disable
+    data = 0x00;
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG5_M, data);
+
+    #ifdef DEBUG
+        printf("Init MAG complete\n");
+    #endif
+
+    return;
+}
+
+void calibrate_mag(){
+        unsigned char dev_ready = 0;
+        while(!dev_ready){
+            dev_ready = (imu_read_byte(IMU_MAG_ADDR, STATUS_REG_M) & 8) >> 3;
+        }
+        int16_t mag_min[3] = {0, 0, 0};
+        int16_t mag_max[3] = {0, 0, 0};
+        short tmp_read[3];
+        //iterate 128 times for average values
+        for(int c=0; c<128; c++){
+            read_device_bytes(IMU_MAG_ADDR, OUT_X_L_M, tmp_read);
+            //adjust max and min for newly read values
+            for(int i=0; i<3; i++){
+                if(tmp_read[i] > mag_max[i])
+                    mag_max[i] = tmp_read[i];            
+                if(tmp_read[i] < mag_min[i])
+                    mag_min[i] = tmp_read[i];
+            }
+        }
+        //adjust into the bias variable
+        for (int j = 0; j < 3; j++){
+            MAG_BIAS[j] = ((mag_max[j] + mag_min[j]) / 2) * MAG_RES;
+            // if (loadIn)
+            //     magOffset(j, mBiasRaw[j]);
+        } 
+
+}
+
+/************************************************/
+/*****            GENERAL IMU               *****/
+/************************************************/
 void calibrate_IMU(){
     printf("Calibration imcomplete. Proceed with caution...\n");
 
@@ -338,7 +387,7 @@ void calibrate_IMU(){
                     ACCEL_BIAS[0], ACCEL_BIAS[1], ACCEL_BIAS[2]);
     #endif
 
-    //calibrate_mag();
+    calibrate_mag();
 }
 
 char init_IMU(){
@@ -386,12 +435,18 @@ char init_IMU(){
     	printf("LSM9DS1 connection established!\n");
     #endif
 
+    //reset the ACC/GYRO and MAG
+    imu_write_byte(IMU_XG_ADDR, CTRL_REG8, 0x05);
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, 0x0C);
+
+    sleep(0.1);
+
     init_gyro();
     init_accel();
     init_mag();
     
     //Calibrate the IMU Device
-    //calibrate_IMU();
+    calibrate_IMU();
 
     return 0;
 }
@@ -399,7 +454,7 @@ char init_IMU(){
 float* IMU_pull_samples(){
     //sample read is defined int s[9]: {a1, a2, a3 g1, g2, g3, m1, m2, m3
     static float samples[9];
-    short tmp[3] = {0, 0, 0};
+    int16_t tmp[3] = {0, 0, 0};
     //read accelerometer
     unsigned char dev_ready = 0;
     while(!dev_ready)

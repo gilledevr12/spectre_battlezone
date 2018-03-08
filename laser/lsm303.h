@@ -14,7 +14,7 @@ int16_t* read_mag();
 
 void calibrate_IMU();
 void init_imu();
-int16_t* IMU_pull_samples();
+int16_t* LSM303_IMU_pull_samples();
 void print_memory();
 
 #endif //LSM303_H

@@ -6,9 +6,9 @@
 #include <stdint.h>
 
 struct samples_x3 {
-    int16_t x;
-    int16_t y;
-    int16_t z;
+    float x;
+    float y;
+    float z;
 };
 
 #define DEBUG
@@ -16,9 +16,9 @@ struct samples_x3 {
 #define IMU_ENABLE
 #define WIRING_PINS
 
-#include "client.h"
-#include "dwm1000.h"
-#include "lsm303.h"
+//#include "client.h"
+//#include "dwm1000.h"
+#include "lsm9ds1.h"
 
 void alarmISR(int sig_num);
 

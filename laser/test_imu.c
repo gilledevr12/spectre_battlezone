@@ -8,7 +8,7 @@
 
 #define PI 3.14159
 
-struct samples_x3 ACC, MAG;
+struct samples_x3 ACC, GYR, MAG;
 #define ACC_LSB  0.001F
 volatile unsigned char new_samples;
 
@@ -37,10 +37,13 @@ void print_MAG(){
 
 void alarmISR(int sig_num){
     if(sig_num == SIGALRM){
-        int16_t* curr_samples = IMU_pull_samples();
+        float* curr_samples = IMU_pull_samples();
         ACC.x = curr_samples[0];
         ACC.y = curr_samples[1];
         ACC.z = curr_samples[2];
+        GYR.x = curr_samples[3];
+        GYR.y = curr_samples[4];
+        GYR.z = curr_samples[5];        
         MAG.x = curr_samples[6];
         MAG.y = curr_samples[7];
         MAG.z = curr_samples[8];
@@ -54,7 +57,7 @@ int main(){
 
     //pull readings from sensors
     printf("Init the imu..");
-    init_imu();
+    init_IMU();
     printf("done\n");
     
     //define the ISR called for the SIGALRM signal
@@ -64,7 +67,7 @@ int main(){
     alarm(1);     // trigger a SIGALRM signal every second        
 
     new_samples = 0;
-    print_memory();
+    read_memory();
     while(1){
 	    if(new_samples){
 		    new_samples = 0;

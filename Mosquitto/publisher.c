@@ -19,12 +19,13 @@ static struct mosquitto *mosq;
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
 	bool match = 0;
-	printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
+	//printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
 
 	mosquitto_topic_matches_sub(MQTT_TOPIC_TAG, message->topic, &match);
 	if (match) {
-		printf("got message for %s topic\n", MQTT_TOPIC);
-	}
+		//printf("got message for %s topic\n", MQTT_TOPIC);
+	    printf("%.*s \n", message->payloadlen, (char*) message->payload);
+    }
 }
 
 int main(){
@@ -75,7 +76,7 @@ int main(){
 		    sleep(1);
 		    mosquitto_reconnect(mosq_sub);
 	    }
-        usleep(200000);
+        usleep(100000);
         
         sprintf(buf, "Round%i", 2);
         if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
@@ -88,7 +89,7 @@ int main(){
 		    sleep(1);
 		    mosquitto_reconnect(mosq_sub);
 	    }
-        usleep(200000);
+        usleep(100000);
 
         //add when 6 tags + anchors are used
 
