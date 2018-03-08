@@ -98,7 +98,7 @@ static uint32 status_reg = 0;
 
 /* Speed of light in air, in metres per second. */
 #define SPEED_OF_LIGHT 299702547
-#define ANCHOR_TOT 2
+#define ANCHOR_TOT 3
 #define HIGH 1
 
 
@@ -206,17 +206,17 @@ void runRanging(){
 
                 /* Display computed distance on LCD. */
                 if (anchorTurn == 1){
-                    sprintf(dist_str_1, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
+                    sprintf(dist_str_1, "Tag: # Anchor: %d Dist: %3.2f m\n", anchorTurn, distance);
                     printf(dist_str_1);
                 } else if (anchorTurn == 2){
-                    sprintf(dist_str_2, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
+                    sprintf(dist_str_2, "Tag: # Anchor: %d Dist: %3.2f m\n", anchorTurn, distance);
                     printf(dist_str_2);
                 } else if (anchorTurn == 3){
-                    sprintf(dist_str_3, "Tag # Anchor # %d DIST: %3.2f m\n", anchorTurn, distance);
+                    sprintf(dist_str_3, "Tag: # Anchor: %d Dist: %3.2f m\n", anchorTurn, distance);
                     printf(dist_str_3);
                 }
                 if (anchorTurn == ANCHOR_TOT) {
-                    sprintf(dist_str, "%s %s %s\n", dist_str_1, dist_str_2, dist_str_3);
+                    sprintf(dist_str, "%s%s%s\ncomplete\n", dist_str_1, dist_str_2, dist_str_3);
                     if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0, false)) {
                         fprintf(stderr, "Could not publish to broker. Quitting\n");
                         exit(-3);

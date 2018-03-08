@@ -6,12 +6,18 @@
 #include <string.h>
 
 
-void printTopBar(){
+void print_top_bar(){
     printf("\nName           This is              K/D\n");
     printf("Evan           a message            7/2\n");
 }
 
-void printMap(){
+void print_map(FILE* map){
+    char ch;
+    fseek(map,0,SEEK_SET);
+    while((ch = getc(map)) != EOF) { putchar(ch); }
+}
+
+void print_generic_map(){
     int x = 56;
     int y = 24;
     for(int i=0; i<x+1; i++){
@@ -31,7 +37,7 @@ void printMap(){
     printf("\n");
 }
 
-void printBottomBar(){
+void print_bottom_bar(){
     int coor_x = 1, coor_y = 5;
     char *heading = (char*)malloc(10);
     char *tilt    = (char*)malloc(10);
@@ -44,9 +50,9 @@ void printBottomBar(){
 
 }
 
-void refreshScreen(){
-    printTopBar();
-    printMap();
-    printBottomBar();
+void refresh_screen(FILE* map){
+    print_top_bar();
+    print_map(map);
+    print_bottom_bar();
 }
 #endif
