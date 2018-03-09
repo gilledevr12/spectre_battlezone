@@ -35,7 +35,7 @@
 //#include "port.h"
 
 // Server connection parameters
-#define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the pi
+#define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the server
 #define MQTT_NAME "Tag_"
 #define MQTT_NAME_PUB "Pub_Tag_"
 #define MQTT_PORT 1883
@@ -113,6 +113,7 @@ char dist_str_1[33] = {0};
 char dist_str_2[33] = {0};
 char dist_str_3[33] = {0};
 char dist_str[33 * ANCHOR_TOT] = {0};
+char round[6] = {0};
 
 /* Declaration of static functions. */
 static void resp_msg_get_ts(uint8 *ts_field, uint32 *ts);
@@ -124,26 +125,24 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     bool match = 0;
     bool matchTag = 0;
 
-    printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
+    sprintf(round, "Round%d", tx_poll_msg[6]);
+    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
-        mosquitto_topic_matches_sub("Round#", (char*) message->payload, &matchTag);
+        mosquitto_topic_matches_sub(round, (char*) message->payload, &matchTag);
         if (matchTag){
             runRanging();
         }
-        //printf("got message for %s topic\n", MQTT_TOPIC);
     }
 }
 
 void runRanging(){
     int anchorTurn = 0;
     for (int i = 0; i < ANCHOR_TOT; i++) {
-        //if (anchorTurn == 3) deca_sleep(RNG_DELAY_MS * 6);
 
         anchorTurn += 1;
         printf("Ping anchor # %d\n", anchorTurn);
-        //if (anchorTurn == 4) anchorTurn = 1;
         /* Write frame data to DW1000 and prepare transmission. See NOTE 7 below. */
         tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
         tx_poll_msg[8] = anchorTurn + '0';
@@ -206,17 +205,17 @@ void runRanging(){
 
                 /* Display computed distance on LCD. */
                 if (anchorTurn == 1){
-                    sprintf(dist_str_1, "Tag: # Anchor: %d Dist: %3.2f m\n", anchorTurn, distance);
+                    sprintf(dist_str_1, "Tag: %d Anchor: %d Dist: %3.2f m\n", tx_poll_msg[6], anchorTurn, distance);
                     printf(dist_str_1);
                 } else if (anchorTurn == 2){
-                    sprintf(dist_str_2, "Tag: # Anchor: %d Dist: %3.2f m\n", anchorTurn, distance);
+                    sprintf(dist_str_2, "Tag: %d Anchor: %d Dist: %3.2f m\n", tx_poll_msg[6], anchorTurn, distance);
                     printf(dist_str_2);
                 } else if (anchorTurn == 3){
-                    sprintf(dist_str_3, "Tag: # Anchor: %d Dist: %3.2f m\n", anchorTurn, distance);
+                    sprintf(dist_str_3, "Tag: %d Anchor: %d Dist: %3.2f m\n", tx_poll_msg[6], anchorTurn, distance);
                     printf(dist_str_3);
                 }
                 if (anchorTurn == ANCHOR_TOT) {
-                    sprintf(dist_str, "%s%s%s\ncomplete\n", dist_str_1, dist_str_2, dist_str_3);
+                    sprintf(dist_str, "%s%s%s\n", dist_str_1, dist_str_2, dist_str_3);
                     if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0, false)) {
                         fprintf(stderr, "Could not publish to broker. Quitting\n");
                         exit(-3);

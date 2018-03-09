@@ -19,10 +19,10 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "decadriver/dwm_api/my_deca_spi.h"
+#include "dwm_api/my_deca_spi.h"
 
-#include "decadriver/dwm_api/deca_device_api.h"
-#include "decadriver/dwm_api/deca_regs.h"
+#include "dwm_api/deca_device_api.h"
+#include "dwm_api/deca_regs.h"
 //#include "lcd.h"
 //#include "port.h"
 
