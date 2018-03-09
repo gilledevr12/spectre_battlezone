@@ -73,9 +73,16 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest
 
     //combine to integer values
     int16_t compiled_data[3];
-    compiled_data[0] = (temp_data[0] << 8) | temp_data[1];
-    compiled_data[1] = (temp_data[2] << 8) | temp_data[3];
-    compiled_data[2] = (temp_data[4] << 8) | temp_data[5];
+    if(addr == IMU_XG_ADDR){
+        compiled_data[0] = (temp_data[0] << 8) | temp_data[1];
+        compiled_data[1] = (temp_data[2] << 8) | temp_data[3];
+        compiled_data[2] = (temp_data[4] << 8) | temp_data[5];
+    }
+    else{
+        compiled_data[0] = (temp_data[1] << 8) | temp_data[0];
+        compiled_data[1] = (temp_data[3] << 8) | temp_data[2];
+        compiled_data[2] = (temp_data[5] << 8) | temp_data[4];
+    }
     
     //determine type, apply bias to result
     if((sub_addr == OUT_X_L_XL) && (addr == IMU_XG_ADDR)){     //Accelerometer Read
@@ -276,11 +283,11 @@ void init_mag(){
 
 void calibrate_mag(){
         unsigned char dev_ready = 0;
-        int16_t mag_min[3] = {0, 0, 0};
-        int16_t mag_max[3] = {0, 0, 0};
         short tmp_read[3];
+        read_device_bytes(IMU_MAG_ADDR, OUT_X_L_M, tmp_read);
+        int16_t mag_min[3] = {tmp_read[0], tmp_read[1], tmp_read[2]};
+        int16_t mag_max[3] = {tmp_read[0], tmp_read[1], tmp_read[2]};
         //iterate 128 times for average values
-	printf("Calibrating mag...");
         for(int c=0; c<128; c++){
 	    dev_ready = 0;
             while(!dev_ready){
@@ -301,18 +308,13 @@ void calibrate_mag(){
             // if (loadIn)
             //     magOffset(j, mBiasRaw[j]);
         }
-        printf("done\n");
-	for(int i=0; i<3; i++)
-		printf("mag_max[%i]: %i mag_min[%i]: %i MAG_BIAS[%i]: %3.3f\n", i, mag_max[i], i, mag_min[i], i, MAG_BIAS[i]); 
-
 }
 
 /************************************************/
 /*****            GENERAL IMU               *****/
 /************************************************/
 void calibrate_IMU(){
-    printf("Calibration imcomplete. Proceed with caution...\n");
-
+    printf("Calibrating the IMU....");
     //enable FIFO and set length 0x1F
     unsigned char temp = imu_read_byte(IMU_XG_ADDR, CTRL_REG9);
     temp |= 2;
@@ -320,21 +322,10 @@ void calibrate_IMU(){
     imu_write_byte(IMU_XG_ADDR, FIFO_CTRL, 0x3F);
 
     //pull back the number of stored sampled
-    #ifdef DEBUG
-        #undef DEBUG
-        #define RECOVER_DEBUG
-        printf("Pulling samples...");
-    #endif
     unsigned char sample_count = 0;
     while(sample_count < 0x1F){
             sample_count = imu_read_byte(IMU_XG_ADDR, FIFO_SRC) & 0x1F;
-        //printf("Sample count: %02x %i\n", sample_count, sample_count);
     }
-    #ifdef RECOVER_DEBUG
-        #define DEBUG
-        #undef RECOVER_DEBUG
-        printf("done\n");
-    #endif
     //pull samples
     short temp_gyro[3], temp_accel[3];
     short gyro_raw[3] = {0, 0, 0};
@@ -351,11 +342,6 @@ void calibrate_IMU(){
         accel_raw[1] += temp_accel[1];
         accel_raw[2] += temp_accel[2];
 
-        #ifdef DEBUG
-            printf("Sample[%i]: %i %i %i %i %i %i\n", i, 
-                    temp_gyro[0], temp_gyro[1], temp_gyro[2], 
-                    temp_accel[0], temp_accel[1], temp_accel[2]);
-        #endif
     }
 
     //disable FIFO and set length back to 0
@@ -368,6 +354,8 @@ void calibrate_IMU(){
     GYRO_BIAS[0] = GYRO_RES * (gyro_raw[0] / sample_count);
     GYRO_BIAS[1] = GYRO_RES * (gyro_raw[1] / sample_count);
     GYRO_BIAS[2] = GYRO_RES * (gyro_raw[2] / sample_count);
+
+    printf("done\n");
 
     #ifdef DEBUG
             printf("Calibrated GYRO: %2.4f %2.4f %2.4f\n",
@@ -383,7 +371,12 @@ void calibrate_IMU(){
                     ACCEL_BIAS[0], ACCEL_BIAS[1], ACCEL_BIAS[2]);
     #endif
 
-    //calibrate_mag();
+    calibrate_mag();
+
+     #ifdef DEBUG
+            printf("Calibrated MAG: %2.4f %2.4f %2.4f\n",
+                    MAG_BIAS[0], MAG_BIAS[1], MAG_BIAS[2]);
+    #endif
 }
 
 char init_IMU(){
@@ -419,6 +412,7 @@ char init_IMU(){
 	//     fprintf(stderr, "Error: I/O error on MAG_RESP\n");
 	//     return 1;
     // }
+
     #ifdef DEBUG
         printf("MAG response: %02x\t Expected response: %02x\n", mag_resp, 0x3d);
     #endif

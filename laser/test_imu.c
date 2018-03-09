@@ -11,6 +11,8 @@
 struct samples_x3 ACC, GYR, MAG;
 #define ACC_LSB  0.001F
 volatile unsigned char new_samples;
+volatile unsigned char CALIBRATION_COUNTER = 0;
+const unsigned char RECAL_MAX_COUNT = 9;
 
 void print_ACCEL(){
 	float pitch = asin( -ACC.x * ACC_LSB);
@@ -29,6 +31,7 @@ void print_ACCEL(){
 
 #define DECLINATION 11.32 //magnetic declination for Logan UT in degrees
 void print_MAG(){
+	printf("Mag: %3.3f %3.3f %3.3f\n", MAG.x, MAG.y, MAG.z);
 	float heading = 180*atan2(MAG.y, MAG.x)/PI;  // assume pitch, roll are 0
 	if(heading < 0)
 		heading += 360;
@@ -47,9 +50,9 @@ void alarmISR(int sig_num){
         MAG.x = curr_samples[6];
         MAG.y = curr_samples[7];
         MAG.z = curr_samples[8];
-	printf("ACC: %3.3f %3.3f %3.3f GYR: %3.3f %3.3f %3.3f MAG: %3.3f %3.3f %3.3f\n",
-		ACC.x, ACC.y, ACC.z, GYR.x, GYR.y, GYR.z, MAG.x, MAG.y, MAG.z);
-        new_samples = 1;
+        
+	new_samples = 1;
+	CALIBRATION_COUNTER++;
 	alarm(1);     // trigger a SIGALRM signal every second        
 
     }
@@ -75,6 +78,11 @@ int main(){
 		    new_samples = 0;
         	    print_ACCEL();
 	            print_MAG();
+	    }
+
+	    if(CALIBRATION_COUNTER >= RECAL_MAX_COUNT){
+		    calibrate_IMU();
+		    CALIBRATION_COUNTER = 1;
 	    }
     }
 
