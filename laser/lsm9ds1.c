@@ -20,20 +20,18 @@ float MAG_BIAS[3] = {0, 0, 0};
 #define I2C_SLAVE 0x0703
 
 //Gyroscope Declarations
-#define GYRO_SAMPLE_RATE    6           //952
 #define GYRO_SCALE          245
+#define GYRO_SAMPLE_RATE    6           //952
 #define GYRO_BANDWIDTH      0
 //Accelerometer Declarations
 #define ACCEL_SCALE         2           
 #define ACCEL_SAMPLE_RATE   6           //952 Hz
 #define ACCEL_BANDWIDTH     -1          //determined by sample rate
 //Magnetometer Declarations
-#define MAG_SCALE           4
+#define MAG_SCALE           16
 #define MAG_SAMPLE_RATE     7           //80 Hz
-#define MAG_BANDWIDTH       0
-#define MAG_TEMP_COMP_EN    0           //temperature compensation disabled
+#define MAG_TEMP_COMP_EN    1           //temperature compensation disabled
 #define MAG_PERFORMANCE     3           //ultra high power performance
-#define MAG_MODE            0           //continuous conversion
 //Some Res?
 const float GYRO_RES    =   0.007476807;
 const float ACCEL_RES   =   0.000061035;
@@ -65,7 +63,7 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest
     ioctl (fd, I2C_SMBUS, &io_data) ;
 
     //read back 6 bytes from device
-    unsigned char temp_data[6];
+    uint8_t temp_data[6];
     read(fd, temp_data, 6);
 
     //close the device
@@ -73,9 +71,16 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest
 
     //combine to integer values
     int16_t compiled_data[3];
-    compiled_data[0] = (temp_data[0] << 8) | temp_data[1];
-    compiled_data[1] = (temp_data[2] << 8) | temp_data[3];
-    compiled_data[2] = (temp_data[4] << 8) | temp_data[5];
+    if(addr == IMU_XG_ADDR){
+        compiled_data[0] = (temp_data[0] << 8) | temp_data[1];
+        compiled_data[1] = (temp_data[2] << 8) | temp_data[3];
+        compiled_data[2] = (temp_data[4] << 8) | temp_data[5];
+    }
+    else{
+        compiled_data[0] = (temp_data[1] << 8) | temp_data[0];
+        compiled_data[1] = (temp_data[3] << 8) | temp_data[2];
+        compiled_data[2] = (temp_data[5] << 8) | temp_data[4];    
+    }
     
     //determine type, apply bias to result
     if((sub_addr == OUT_X_L_XL) && (addr == IMU_XG_ADDR)){     //Accelerometer Read
