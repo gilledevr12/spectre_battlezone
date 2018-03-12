@@ -36,7 +36,7 @@
 
 // Server connection parameters
 #define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the pi
-#define MQTT_NAME "Anchor_"
+#define MQTT_NAME "Anchor_3"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 
@@ -65,8 +65,8 @@ static dwt_config_t config = {
 
 //comment out what isnt your tag name and corresponding anchor msg
 /* Frames used in the ranging process. See NOTE 3 below. */
-static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '#', 'A', '1', 0xE0, 0, 0};
-static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '#', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8 rx_poll_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '#', 'A', '3', 0xE0, 0, 0};
+static uint8 tx_resp_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '#', 0xE1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 /* Length of the common part of the message (up to and including the function code, see NOTE 3 below). */
 #define ALL_MSG_COMMON_LEN 8
 /* Index to access some of the fields in the frames involved in the process. */
