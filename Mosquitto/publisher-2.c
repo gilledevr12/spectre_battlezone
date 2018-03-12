@@ -108,6 +108,8 @@ int main(){
     mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
 
     char buf[7];
+    int tagCnt = 1;
+    int anchorCnt = 1;
 
     while(1){
         int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
@@ -116,7 +118,7 @@ int main(){
             sleep(1);
             mosquitto_reconnect(mosq_sub);
         }
-        sprintf(buf, "Round%i", 1);
+        sprintf(buf, "Anchor%d Tag%d", anchorCnt, tagCnt);
         if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
@@ -127,9 +129,10 @@ int main(){
             sleep(1);
             mosquitto_reconnect(mosq_sub);
         }
-        usleep(100000);
+        usleep(40000);
 
-        sprintf(buf, "Round%i", 2);
+        anchorCnt++;
+        sprintf(buf, "Anchor%d Tag%d", anchorCnt, tagCnt);
         if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
@@ -140,22 +143,29 @@ int main(){
             sleep(1);
             mosquitto_reconnect(mosq_sub);
         }
-        usleep(100000);
+        usleep(40000);
 
         //add when 6 tags + anchors are used
 
-        // sprintf(buf, "Round%i", 3);
-        // if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-        //     fprintf(stderr, "Could not publish to broker. Quitting\n");
-        //     exit(-3);
-        // }
-        // ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-        // if(ret){
-        //     fprintf(stderr, "Connection error. Reconnecting...\n");
-        //     sleep(1);
-        //     mosquitto_reconnect(mosq_sub);
-        // }
-        // usleep(500000);
+        anchorCnt++;
+        sprintf(buf, "Anchor%d Tag%d", anchorCnt, tagCnt);
+        if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+             fprintf(stderr, "Could not publish to broker. Quitting\n");
+             exit(-3);
+        }
+        ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+        if(ret){
+            fprintf(stderr, "Connection error. Reconnecting...\n");
+            sleep(1);
+            mosquitto_reconnect(mosq_sub);
+        }
+        usleep(40000);
+
+        anchorCnt = 1;
+        tagCnt++;
+        if (tagCnt == 3){
+            tagCnt = 1;
+        }
     }
 
     mosquitto_disconnect (mosq);
@@ -164,3 +174,4 @@ int main(){
 
     return 0;
 }
+
