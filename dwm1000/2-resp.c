@@ -34,8 +34,8 @@
 
 // Server connection parameters
 #define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the server
-#define MQTT_NAME "Tag_"
-#define MQTT_NAME_PUB "Pub_Tag_"
+#define MQTT_NAME "Tag_1"
+#define MQTT_NAME_PUB "Pub_Tag_1"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 #define MQTT_TOPIC_TAG "location_tag"
@@ -146,8 +146,8 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         tag = strtok(NULL, s);
     }
 
-    printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
-    sprintf(round, "Tag%d", rx_poll_msg[8]);
+    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
+    sprintf(round, "Tag%c", rx_poll_msg[8]);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
@@ -174,6 +174,7 @@ void runRanging(char *token){
     {
         uint32 frame_len;
 
+        printf("got\n");
         /* Clear good RX frame event in the DW1000 status register. */
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
 
@@ -209,12 +210,15 @@ void runRanging(char *token){
             dwt_writetxfctrl(sizeof(tx_resp_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
             ret = dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 
+            printf("read\n");
+
             /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
             if (ret == DWT_ERROR)
             {
-                continue;
+                return;
             }
 
+            printf("sent\n");
             /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
             while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)))
             { };
@@ -227,6 +231,7 @@ void runRanging(char *token){
                 /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
                 dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
 
+                printf("recieved\n");
                 /* A frame has been received, read it into the local buffer. */
                 frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFLEN_MASK;
                 if (frame_len <= RX_BUF_LEN)
@@ -243,6 +248,7 @@ void runRanging(char *token){
                     uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                     double Ra, Rb, Da, Db;
                     int64 tof_dtu;
+                    printf("correct\n");
 
                     /* Retrieve response transmission and final reception timestamps. */
                     resp_tx_ts = get_tx_timestamp_u64();
@@ -331,9 +337,8 @@ int main(void)
 //    spi_set_rate_low();
     if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR)
     {
-        lcd_display_str("INIT FAILED");
-        while (1)
-        { };
+        printf("INIT FAILED");
+        return 0;
     }
 //    spi_set_rate_high();
     setSpeed(HIGH);

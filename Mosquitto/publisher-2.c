@@ -163,7 +163,7 @@ int main(){
 
         anchorCnt = 1;
         tagCnt++;
-        if (tagCnt == 3){
+        if (tagCnt == 4){
             tagCnt = 1;
         }
     }

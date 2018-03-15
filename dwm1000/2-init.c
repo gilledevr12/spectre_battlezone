@@ -37,7 +37,7 @@
 
 // Server connection parameters
 #define MQTT_HOSTNAME "129.123.5.197" //change to the host name of the server
-#define MQTT_NAME "Anchor_"
+#define MQTT_NAME "Anchor_1"
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 
@@ -133,7 +133,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     /* get the first token */
     token = strtok((char*) message->payload, s);
 
-    sprintf(round, "Anchor%d", tx_poll_msg[6]);
+    sprintf(round, "Anchor%c", tx_poll_msg[6]);
     //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
@@ -166,6 +166,7 @@ void runRanging(){
     if (status_reg & SYS_STATUS_RXFCG)
     {
         uint32 frame_len;
+        printf("got\n");
 
         /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
@@ -184,6 +185,7 @@ void runRanging(){
         {
             uint32 final_tx_time;
             int ret;
+            printf("mine\n");
 
             /* Retrieve poll transmission and response reception timestamp. */
             poll_tx_ts = get_tx_timestamp_u64();
@@ -210,6 +212,7 @@ void runRanging(){
             /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 12 below. */
             if (ret == DWT_SUCCESS)
             {
+                printf("success\n");
                 /* Poll DW1000 until TX frame sent event set. See NOTE 9 below. */
                 while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
                 { };
@@ -255,9 +258,8 @@ int main(void)
 //    spi_set_rate_low();
     if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR)
     {
-        lcd_display_str("INIT FAILED");
-        while (1)
-        { };
+        printf("INIT FAILED");
+        return 0;
     }
     setSpeed(HIGH);
 
