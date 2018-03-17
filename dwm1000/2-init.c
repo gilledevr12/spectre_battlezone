@@ -81,7 +81,6 @@ static uint8 tx_final_msg[] = {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '#', 0x
 /* Frame sequence number, incremented after each transmission. */
 
 #define HIGH 1
-#define ANCHOR_TOT 3
 
 static uint8 frame_seq_nb = 0;
 
@@ -114,13 +113,13 @@ typedef unsigned long long uint64;
 static uint64 poll_tx_ts;
 static uint64 resp_rx_ts;
 static uint64 final_tx_ts;
-char round[7] = {0};
+char round_match[8] = {0};
 
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
 static uint64 get_rx_timestamp_u64(void);
 static void final_msg_set_ts(uint8 *ts_field, uint64 ts);
-void runRanging(void);
+void runRanging(char* token);
 
 //callback
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
@@ -130,25 +129,29 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
     const char s[2] = " ";
     char *token;
+    char *anchor;
     /* get the first token */
-    token = strtok((char*) message->payload, s);
-
-    sprintf(round, "Anchor%c", tx_poll_msg[6]);
+    anchor = strtok((char*) message->payload, s);
+    if ( token != NULL ) {
+        token = strtok(NULL, s);
+    }
+    sprintf(round_match, "Anchor%c", tx_poll_msg[6]);
     //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
-        mosquitto_topic_matches_sub(round, token, &matchTag);
+        mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
         if (matchTag){
-            runRanging();
+            runRanging(token);
         }
     }
 }
 
 
-void runRanging(){
+void runRanging(char* token){
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
+    tx_poll_msg[8] = token[(strlen(token) - 1)];
     dwt_writetxdata(sizeof(tx_poll_msg), tx_poll_msg, 0); /* Zero offset in TX buffer. */
     dwt_writetxfctrl(sizeof(tx_poll_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
 
@@ -166,7 +169,7 @@ void runRanging(){
     if (status_reg & SYS_STATUS_RXFCG)
     {
         uint32 frame_len;
-        printf("got\n");
+//        printf("got\n");
 
         /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
@@ -178,14 +181,18 @@ void runRanging(){
             dwt_readrxdata(rx_buffer, frame_len, 0);
         }
 
+        int ret = -1;
+        uint8 anch_num = rx_buffer[8];
+        uint8 tag_num = rx_buffer[6];
+        rx_resp_msg[6] = tag_num;
+
         /* Check that the frame is the expected response from the companion "DS TWR responder" example.
          * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
         rx_buffer[ALL_MSG_SN_IDX] = 0;
-        if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0)
+        if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0 && rx_resp_msg[8] = anch_num)
         {
             uint32 final_tx_time;
-            int ret;
-            printf("mine\n");
+//            printf("mine\n");
 
             /* Retrieve poll transmission and response reception timestamp. */
             poll_tx_ts = get_tx_timestamp_u64();
@@ -205,6 +212,7 @@ void runRanging(){
 
             /* Write and send final message. See NOTE 8 below. */
             tx_final_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
+            tx_final_msg[8] = tag_num;
             dwt_writetxdata(sizeof(tx_final_msg), tx_final_msg, 0); /* Zero offset in TX buffer. */
             dwt_writetxfctrl(sizeof(tx_final_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
             ret = dwt_starttx(DWT_START_TX_DELAYED);
@@ -212,7 +220,7 @@ void runRanging(){
             /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 12 below. */
             if (ret == DWT_SUCCESS)
             {
-                printf("success\n");
+//                printf("success\n");
                 /* Poll DW1000 until TX frame sent event set. See NOTE 9 below. */
                 while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
                 { };

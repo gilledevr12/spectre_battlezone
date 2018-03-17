@@ -16,15 +16,15 @@
 #define MQTT_TOPIC_TAG "location_tag"
 
 static struct mosquitto *mosq;
-static double a1_x = (-1)*(2.45*2);
-static double a1_y = (-1)*(.2*2);
-static double a2_x = (-1)*(2.95*2);
-static double a2_y = (-1)*(2.70*2);
-static double a3_x = (-1)*(.2*2);
-static double a3_y = (-1)*(1.25*2);
-static double a1_const = (2.45*2.45) + (.2*.2);
-static double a2_const = (2.95*2.95) + (2.70*2.70);
-static double a3_const = (.2*.2) + (1.25*1.25);
+static double a1_x;
+static double a1_y;
+static double a2_x;
+static double a2_y;
+static double a3_x;
+static double a3_y;
+static double a1_const;
+static double a2_const;
+static double a3_const;
 
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
@@ -107,9 +107,37 @@ int main(){
     mosquitto_message_callback_set(mosq_sub, message_callback);
     mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
 
-    char buf[7];
+    char buf[16];
     int tagCnt = 1;
     int anchorCnt = 1;
+
+    printf("Anchor 1 x position in meters (2 decimal points): ");
+    fgets(buf, strlen(buf), stdin);
+    double a1_x_dist = atof(buf);
+    a1_x = a1_x_dist * (-1) * 2;
+    printf("Anchor 1 y position in meters (2 decimal points): ");
+    fgets(buf, strlen(buf), stdin);
+    double a1_y_dist = atof(buf);
+    a1_y = a1_y_dist * (-1) * 2;
+    a1_const = pow(a1_x_dist,2) + pow(a1_y_dist,2);
+    printf("Anchor 2 x position in meters (2 decimal points): ");
+    fgets(buf, strlen(buf), stdin);
+    double a2_x_dist = atof(buf);
+    a2_x = a2_x_dist * (-1) * 2;
+    printf("Anchor 2 y position in meters (2 decimal points): ");
+    fgets(buf, strlen(buf), stdin);
+    double a2_y_dist = atof(buf);
+    a2_y = a2_y_dist * (-1) * 2;
+    a2_const = pow(a2_x_dist,2) + pow(a2_y_dist,2);
+    printf("Anchor 3 x position in meters (2 decimal points): ");
+    fgets(buf, strlen(buf), stdin);
+    double a3_x_dist = atof(buf);
+    a3_x = a3_x_dist * (-1) * 2;
+    printf("Anchor 3 y position in meters (2 decimal points): ");
+    fgets(buf, strlen(buf), stdin);
+    double a3_y_dist = atof(buf);
+    a3_y = a3_y_dist * (-1) * 2;
+    a3_const = pow(a3_x_dist,2) + pow(a3_y_dist,2);
 
     while(1){
         int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
