@@ -122,7 +122,7 @@ static struct mosquitto *mosq_pub;
 char dist_str_1[33] = {0};
 char dist_str_2[33] = {0};
 char dist_str_3[33] = {0};
-char dist_str[33 * ANCHOR_TOT] = {0};
+char dist_str[100] = {0};
 char round_match[6] = {0};
 
 /* Declaration of static functions. */
