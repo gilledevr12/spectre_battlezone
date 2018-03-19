@@ -20,6 +20,7 @@ void imu_write_byte(unsigned char addr, unsigned char sub_addr, unsigned char va
 void calibrate_IMU();
 char init_IMU();
 float* IMU_pull_samples();
+int16_t* IMU_pull_samples_int();
 void read_memory();
 
 #endif  //LSM9DS1_H

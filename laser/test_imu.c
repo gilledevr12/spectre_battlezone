@@ -8,11 +8,12 @@
 
 #define PI 3.14159
 
-struct samples_x3 ACC, GYR, MAG;
+//struct samples_x3 ACC, GYR, MAG;
+struct int_samples_x3 ACC, GYR, MAG;
 #define ACC_LSB  0.001F
 volatile unsigned char new_samples;
 volatile unsigned char CALIBRATION_COUNTER = 0;
-const unsigned char RECAL_MAX_COUNT = 9;
+const unsigned char RECAL_MAX_COUNT = 31;
 
 void print_ACCEL(){
 	float pitch = asin( -ACC.x * ACC_LSB);
@@ -31,16 +32,30 @@ void print_ACCEL(){
 
 #define DECLINATION 11.32 //magnetic declination for Logan UT in degrees
 void print_MAG(){
-	printf("Mag: %3.3f %3.3f %3.3f\n", MAG.x, MAG.y, MAG.z);
-	float heading = 180*atan2(MAG.y, MAG.x)/PI;  // assume pitch, roll are 0
-	if(heading < 0)
-		heading += 360;
-	printf("Heading: %3.3f\n", heading);
+	//printf("Mag: %3.3f %3.3f %3.3f\n", MAG.x, MAG.y, MAG.z);
+	printf("Mag: %i %i %i\t", MAG.x, MAG.y, MAG.z);
+	if(MAG.x < 0)
+		if(MAG.y < 0)
+			printf("Q3\t");
+		else
+			printf("Q2\t");
+	else
+		if(MAG.y < 0)
+			printf("Q4\t");
+		else
+			printf("Q1\t");
+
+	//printf("Mag: %i %i %i\n", MAG.x, MAG.y, MAG.z);
+	float heading = atan2(MAG.y, MAG.x);  // assume pitch, roll are 0
+	//if(heading < 0)
+	//	heading += 360;
+	printf("Heading: %3.4f\n", heading);
 }
 
 void alarmISR(int sig_num){
     if(sig_num == SIGALRM){
-        float* curr_samples = IMU_pull_samples();
+        //float* curr_samples = IMU_pull_samples();
+        int16_t* curr_samples = IMU_pull_samples_int();
         ACC.x = curr_samples[0];
         ACC.y = curr_samples[1];
         ACC.z = curr_samples[2];
@@ -53,13 +68,13 @@ void alarmISR(int sig_num){
         
 	new_samples = 1;
 	CALIBRATION_COUNTER++;
-	alarm(1);     // trigger a SIGALRM signal every second        
+	//alarm(1);     // trigger a SIGALRM signal every second        
 
     }
 }
 
 int main(){
-
+    printf("main is launching now...\n");
     //pull readings from sensors
     printf("Init the imu..");
     init_IMU();
@@ -68,20 +83,22 @@ int main(){
     //define the ISR called for the SIGALRM signal
     printf("Define the timer interrupt\n");
     signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
-//    ualarm(1000000, 1000000);     // trigger a SIGALRM signal every second        
-    alarm(1);     // trigger a SIGALRM signal every second        
+    ualarm(250000, 250000);     // trigger a SIGALRM signal every 1/4 second        
+//    alarm(1);     // trigger a SIGALRM signal every second        
 
     new_samples = 0;
-//    read_memory();
+    //read_memory();
     while(1){
 	    if(new_samples){
 		    new_samples = 0;
-        	    print_ACCEL();
+//        	    print_ACCEL();
 	            print_MAG();
 	    }
 
 	    if(CALIBRATION_COUNTER >= RECAL_MAX_COUNT){
+		    printf("Recalibrating...");
 		    calibrate_IMU();
+		    printf("done\n");
 		    CALIBRATION_COUNTER = 1;
 	    }
     }

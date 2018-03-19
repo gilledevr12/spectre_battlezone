@@ -11,6 +11,12 @@ struct samples_x3 {
     float z;
 };
 
+struct int_samples_x3 {
+    int16_t x;
+    int16_t y;
+    int16_t z;
+};
+
 //#define DEBUG
 #define CLIENT_ENABLE
 #define IMU_ENABLE

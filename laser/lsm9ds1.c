@@ -28,12 +28,13 @@ float MAG_BIAS[3] = {0, 0, 0};
 #define ACCEL_SAMPLE_RATE   6           //952 Hz
 #define ACCEL_BANDWIDTH     -1          //determined by sample rate
 //Magnetometer Declarations
-#define MAG_SCALE           4
+#define MAG_SCALE           16
 #define MAG_SAMPLE_RATE     7           //80 Hz
 #define MAG_BANDWIDTH       0
-#define MAG_TEMP_COMP_EN    0           //temperature compensation disabled
+#define MAG_TEMP_COMP_EN    1           //temperature compensation disabled
 #define MAG_PERFORMANCE     3           //ultra high power performance
 #define MAG_MODE            0           //continuous conversion
+#define MAG_CALIBRATION_COUNTER_MAX 31
 //Some Res?
 const float GYRO_RES    =   0.007476807;
 const float ACCEL_RES   =   0.000061035;
@@ -65,7 +66,7 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest
     ioctl (fd, I2C_SMBUS, &io_data) ;
 
     //read back 6 bytes from device
-    unsigned char temp_data[6];
+    uint8_t temp_data[6];
     read(fd, temp_data, 6);
 
     //close the device
@@ -95,7 +96,7 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest
         compiled_data[1] -= GYRO_BIAS[1];
         compiled_data[2] -= GYRO_BIAS[2];
     }
-    else{                           //Mag read 
+    else{                           //Mag read
         compiled_data[0] -= MAG_BIAS[0];
         compiled_data[1] -= MAG_BIAS[1];
         compiled_data[2] -= MAG_BIAS[2];
@@ -271,8 +272,12 @@ void init_mag(){
     imu_write_byte(IMU_MAG_ADDR, CTRL_REG4_M, data);
 
     //block domain update disable
-    data = 0x00;
+    data = 0x40;
     imu_write_byte(IMU_MAG_ADDR, CTRL_REG5_M, data);
+
+    //disable interrupt generation for X-Y-Z
+    data = 0x00;
+    imu_write_byte(IMU_MAG_ADDR, INT_CFG_M, data);
 
     #ifdef DEBUG
         printf("Init MAG complete\n");
@@ -287,8 +292,8 @@ void calibrate_mag(){
         read_device_bytes(IMU_MAG_ADDR, OUT_X_L_M, tmp_read);
         int16_t mag_min[3] = {tmp_read[0], tmp_read[1], tmp_read[2]};
         int16_t mag_max[3] = {tmp_read[0], tmp_read[1], tmp_read[2]};
-        //iterate 128 times for average values
-        for(int c=0; c<128; c++){
+        //iterate some number of times to get a valid average value for x y z
+        for(int c=0; c<MAG_CALIBRATION_COUNTER_MAX; c++){
 	    dev_ready = 0;
             while(!dev_ready){
 	        dev_ready = (imu_read_byte(IMU_MAG_ADDR, STATUS_REG_M) & 8) >> 3;
@@ -314,7 +319,6 @@ void calibrate_mag(){
 /*****            GENERAL IMU               *****/
 /************************************************/
 void calibrate_IMU(){
-    printf("Calibrating the IMU....");
     //enable FIFO and set length 0x1F
     unsigned char temp = imu_read_byte(IMU_XG_ADDR, CTRL_REG9);
     temp |= 2;
@@ -354,8 +358,6 @@ void calibrate_IMU(){
     GYRO_BIAS[0] = GYRO_RES * (gyro_raw[0] / sample_count);
     GYRO_BIAS[1] = GYRO_RES * (gyro_raw[1] / sample_count);
     GYRO_BIAS[2] = GYRO_RES * (gyro_raw[2] / sample_count);
-
-    printf("done\n");
 
     #ifdef DEBUG
             printf("Calibrated GYRO: %2.4f %2.4f %2.4f\n",
@@ -427,7 +429,7 @@ char init_IMU(){
 
     //reset the ACC/GYRO and MAG
     //imu_write_byte(IMU_XG_ADDR, CTRL_REG8, 0x05);
-    //imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, 0x0C);
+    imu_write_byte(IMU_MAG_ADDR, CTRL_REG2_M, 0x04);
 
     sleep(0.1);
 
@@ -473,22 +475,54 @@ float* IMU_pull_samples(){
     return samples;
 }
 
+int16_t* IMU_pull_samples_int(){
+    //sample read is defined int s[9]: {a1, a2, a3 g1, g2, g3, m1, m2, m3
+    static int16_t samples[9];
+    int16_t tmp[3] = {0, 0, 0};
+    //read accelerometer
+    unsigned char dev_ready = 0;
+    while(!dev_ready)
+        dev_ready = imu_read_byte(IMU_XG_ADDR, STATUS_REG_1) & 1;
+    read_device_bytes(IMU_XG_ADDR, OUT_X_L_XL, tmp);
+    samples[0] = tmp[0];// * ACCEL_RES;
+    samples[1] = tmp[1];// * ACCEL_RES;
+    samples[2] = tmp[2];// * ACCEL_RES;
+    //read gyroscope
+    dev_ready = 0;
+    while(!dev_ready)
+        dev_ready = (imu_read_byte(IMU_XG_ADDR, STATUS_REG_1) & 2) >> 1;
+    read_device_bytes(IMU_XG_ADDR, OUT_X_L_G, tmp);
+    samples[3] = tmp[0];// * GYRO_RES;
+    samples[4] = tmp[1];// * GYRO_RES;
+    samples[5] = tmp[2];// * GYRO_RES;
+    //read magnetometer
+    dev_ready = 0;
+    while(!dev_ready)
+        dev_ready = (imu_read_byte(IMU_MAG_ADDR, STATUS_REG_M) & 8) >> 3;
+    read_device_bytes(IMU_MAG_ADDR, OUT_X_L_M, tmp);
+    samples[6] = tmp[0];// * MAG_RES;
+    samples[7] = tmp[1];// * MAG_RES;
+    samples[8] = tmp[2];// * MAG_RES;
+
+    return samples;
+}
+
 void read_memory(){
     //Read XG Memory
     printf("XG Memory:\n");
     for(int i=0; i<0x36; i=i+4){
         printf("%02x: %02x\t%02x: %02x\t%02x: %02x\t%02x: %02x\n",
-            i, imu_read_byte(IMU_XG_ADDR, i), i+1, imu_read_byte(IMU_XG_ADDR, i+1),
-            i+2, imu_read_byte(IMU_XG_ADDR, i+2), i+3, imu_read_byte(IMU_XG_ADDR, i+3));
+            i, imu_read_byte(IMU_XG_ADDR, i), imu_read_byte(IMU_XG_ADDR, i+1),
+            imu_read_byte(IMU_XG_ADDR, i+2), imu_read_byte(IMU_XG_ADDR, i+3));
     }
     printf("\n\n");
 
     //Read XG Memory
     printf("Mag Memory:\n");
     for(int i=0; i<0x32; i=i+4){
-        printf("%02x: %02x\t%02x: %02x\t%02x: %02x\t%02x: %02x\n",
-            i, imu_read_byte(IMU_MAG_ADDR, i), i+1, imu_read_byte(IMU_MAG_ADDR, i+1),
-            i+2, imu_read_byte(IMU_MAG_ADDR, i+2), i+3, imu_read_byte(IMU_MAG_ADDR, i+3));
+        printf("%02x: %02x %02x %02x %02x\n",
+            i, (int) imu_read_byte(IMU_MAG_ADDR, i)  , (int) imu_read_byte(IMU_MAG_ADDR, i+1),
+               (int) imu_read_byte(IMU_MAG_ADDR, i+2), (int) imu_read_byte(IMU_MAG_ADDR, i+3));
     }
     printf("\n\n");
 }

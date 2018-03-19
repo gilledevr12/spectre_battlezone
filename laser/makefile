@@ -2,7 +2,8 @@
 CC = gcc
 CFLAGS  = -lm -g -Wall
 
-default: laser-brains
+#default: laser-brains
+default: test-imu
 
 # For the laser-brains executable, list here all object files to be included
 laser-brains:  main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
@@ -41,4 +42,4 @@ rifle_variables.o: rifle_variables.c rifle_variables.h
 		$(CC) $(CFLAGS) -c rifle_variables.c
 
 clean:
-	$(RM) laser-brains *.o *~
+	$(RM) -rf laser-brains test-imu *.o *~
