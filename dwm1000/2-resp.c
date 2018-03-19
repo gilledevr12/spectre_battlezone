@@ -39,6 +39,7 @@
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 #define MQTT_TOPIC_TAG "location_tag"
+#define MQTT_TOPIC_INIT "location_init"
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "DS TWR RESP v1.2"
@@ -288,6 +289,10 @@ void runRanging(char *token){
                     if (strcmp(token,"Anchor1") == 0){
                         sprintf(dist_str_1, "Tag: %c Anchor: 1 Dist: %3.2f m\n", rx_poll_msg[8], distance);
                         printf(dist_str_1);
+                        if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_1), dist_str_1, 0, false)) {
+                            fprintf(stderr, "Could not publish to broker. Quitting\n");
+                            exit(-3);
+                        }
                     } else if (strcmp(token,"Anchor2") == 0){
                         sprintf(dist_str_2, "Tag: %c Anchor: 2 Dist: %3.2f m\n", rx_poll_msg[8], distance);
                         printf(dist_str_2);

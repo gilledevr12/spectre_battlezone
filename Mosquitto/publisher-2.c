@@ -27,8 +27,8 @@ static double a1_const;
 static double a2_const;
 static double a3_const;
 static double dist_buf[10];
-static int index;
-static bool access;
+static int ind;
+static bool mtx;
 
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
@@ -86,7 +86,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
     bool match = 0;
-    index += 1;
+    ind += 1;
     //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     mosquitto_topic_matches_sub(MQTT_TOPIC_INIT, message->topic, &match);
     if (match) {
@@ -115,16 +115,16 @@ void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosqu
             token = strtok(NULL, s);
         }
 
-        dist_buf[index] = d1;
+        dist_buf[ind] = d1;
 
-        if (index == 9) access = true;
+        if (ind == 9) mtx = true;
 
         //printf("%.*s\n", message->payloadlen, (char*) message->payload);
         //printf("got message for %s topic\n", MQTT_TOPIC);
     }
 }
 
-void getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, char axis){
+double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, char axis){
     size_t BLEN = 16;
     char* buf = 0;
     int tag = 1;
@@ -132,7 +132,7 @@ void getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, cha
     printf("Position the tag please for Anchor %d %c position \n", anchor, axis);
     usleep(10000000);
     int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-    index = -1;
+    ind = -1;
     for(int i = 0; i < 10; i++) {
         if(ret){
             fprintf(stderr, "Connection error. Reconnecting...\n");
@@ -140,7 +140,7 @@ void getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, cha
             mosquitto_reconnect(mosq_sub);
         }
         sprintf(buf, "Anchor%d Tag%d", anchor, tag);
-        if(mosquitto_publish(mosq, NULL, MQTT_TOPIC_INIT, strlen(buf), buf, 0, false)){
+        if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
         }
@@ -149,13 +149,13 @@ void getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, cha
     }
 //    usleep(1000000);
     //wait to access buffer
-    while (!access) {};
+    while (!mtx) {};
     double total;
     for (int i = 0; i < 10; i++){
         total += dist_buf[i];
     }
     total = total/10;
-    access = false;
+    mtx = false;
     printf("Anchor %d %c position in meters (2 decimal points): ", anchor, axis);
 //    getline(&buf, &BLEN, stdin);
     return total;
@@ -163,8 +163,8 @@ void getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, cha
 
 int main(){
 
-    index = 0;
-    access = false;
+    ind = 0;
+    mtx = false;
     mosquitto_lib_init();
     mosq = mosquitto_new(MQTT_NAME, true, NULL);
     if(!mosq){
@@ -191,6 +191,7 @@ int main(){
     mosquitto_message_callback_set(mosq_sub, message_callback);
     mosquitto_message_callback_set(mosq_sub, message_callback_init);
     mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
+    mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_INIT, 1);
 
     double a1_x_dist = getDist(mosq, mosq_sub, 1, 'x');
     a1_x = a1_x_dist * (-1) * 2;
