@@ -6,14 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include "publish.h"
 
-// Server connection parameters
-#define MQTT_HOSTNAME "129.123.5.197"
-#define MQTT_NAME "Server_Publisher"
-#define MQTT_NAME_SUB "Server_Subscriber"
-#define MQTT_PORT 1883
-#define MQTT_TOPIC "location_sync"
-#define MQTT_TOPIC_TAG "location_tag"
 static char *MQTT_TOPIC_INIT = "location_init";
 
 static struct mosquitto *mosq;
@@ -154,8 +148,7 @@ double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, c
     return total;
 }
 
-int main(){
-
+void publish(){
     ind = 0;
     mtx = false;
     mosquitto_lib_init();
@@ -272,7 +265,5 @@ int main(){
     mosquitto_disconnect (mosq);
     mosquitto_destroy (mosq);
     mosquitto_lib_cleanup();
-
-    return 0;
 }
 

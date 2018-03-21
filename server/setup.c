@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include "setup.h"
+#include "../Mosquitto/publisher-2.h"
 #include "bool.h"
 
 extern struct location_data loc_dat;
@@ -25,7 +26,7 @@ bool get_active_status(){
 void create_map(){
     bool active = false;
     char map_ftype[5];
-    strcpy(map_ftype, ".sbm");
+    strcpy(map_ftype, ".sbp");
     size_t buf_size = 32;
     size_t chars;
     char* map_name;

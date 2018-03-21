@@ -4,5 +4,5 @@ subscriber:
 publisher:
 	gcc -lm publisher.c -l mosquitto -o pub
 
-2-publisher:
-	gcc -lm publisher-2.c -l mosquitto -o pub-2
+publish:
+	gcc -lm publish.c -l mosquitto -o pub

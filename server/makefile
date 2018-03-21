@@ -5,8 +5,8 @@ CFLAGS  = -g -Wall -l pthread
 default: hub
 
 # For the hub executable, list here all object files to be included
-hub:  main.o players.o rifle_variables.o server.o setup.o play.o inventory.h bool.h
-	$(CC) $(CFLAGS) -o hub main.o players.o rifle_variables.o server.o setup.o play.o
+hub:  main.o players.o rifle_variables.o server.o setup.o play.o publish.o inventory.h bool.h
+	$(CC) $(CFLAGS) -o hub main.o players.o rifle_variables.o server.o setup.o play.o publish.o
 
 # For each subsequent object file, define source files
 main.o: main.c
@@ -26,6 +26,9 @@ setup.o: setup.c setup.h
 
 play.o: play.c play.h
 	$(CC) $(CFLAGS) -c play.c
+
+publish.o: publish.c publish.h
+	$(CC) $(CFLAGS) -c publish.c
 
 clean:
 	$(RM) hub *.o *~
