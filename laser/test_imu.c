@@ -1,11 +1,23 @@
 // Client side C/C++ program to demonstrate Socket programming
 #include <math.h>
-#include <stdio.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 
-#include "main.h"
+#include "lsm9ds1.h"
 
+struct samples_x3 {
+    float x;
+    float y;
+    float z;
+};
+
+struct int_samples_x3 {
+    int16_t x;
+    int16_t y;
+    int16_t z;
+};
 #define PI 3.14159
 
 //struct samples_x3 ACC, GYR, MAG;
@@ -14,8 +26,22 @@ struct int_samples_x3 ACC, GYR, MAG;
 volatile unsigned char new_samples;
 volatile unsigned char CALIBRATION_COUNTER = 0;
 const unsigned char RECAL_MAX_COUNT = 31;
+#define ACC_FLAT	1500
+#define ACC_UP		15500
+#define ACC_DOWN 	-16000
 
 void print_ACCEL(){
+	//each axis will return a value [-16500, +16500]
+	if((ACC.x < ACC_FLAT) && (ACC.x > -ACC_FLAT) && (ACC.y < ACC_FLAT) && (ACC.y > -ACC_FLAT)) 
+		printf("Flat enough to shoot!\n");
+	else if(ACC.x < ACC_DOWN)
+		printf("Straight down\n");
+	else if(ACC.x > ACC_UP)
+		printf("Straight up\n");
+	else
+		printf("Pointed in an invalid direction: %i %i %i\n", ACC.x, ACC.y, ACC.z);
+	return;
+
 	float pitch = asin( -ACC.x * ACC_LSB);
 	float roll = asin(ACC.y * ACC_LSB / cos(pitch));
       
@@ -32,24 +58,30 @@ void print_ACCEL(){
 
 #define DECLINATION 11.32 //magnetic declination for Logan UT in degrees
 void print_MAG(){
-	//printf("Mag: %3.3f %3.3f %3.3f\n", MAG.x, MAG.y, MAG.z);
 	printf("Mag: %i %i %i\t", MAG.x, MAG.y, MAG.z);
-	if(MAG.x < 0)
-		if(MAG.y < 0)
-			printf("Q3\t");
-		else
-			printf("Q2\t");
-	else
-		if(MAG.y < 0)
-			printf("Q4\t");
-		else
-			printf("Q1\t");
-
-	//printf("Mag: %i %i %i\n", MAG.x, MAG.y, MAG.z);
 	float heading = atan2(MAG.y, MAG.x);  // assume pitch, roll are 0
-	//if(heading < 0)
-	//	heading += 360;
-	printf("Heading: %3.4f\n", heading);
+	heading *= 180 / PI;
+	heading = heading + 180 - DECLINATION;
+		
+	printf("Heading: %3.4f ", heading);
+	if(heading < 22.5)
+		printf("EAST\n");
+	else if(heading < 67.5)
+		printf("NORTH-EAST\n");
+	else if(heading < 112.5)
+		printf("NORTH\n");
+	else if(heading < 157.5)
+		printf("NORTH-WEST\n");
+	else if(heading < 202.5)
+		printf("WEST\n");
+	else if(heading < 247.5)
+		printf("SOUTH-WEST\n");
+	else if(heading < 292.5)
+		printf("SOUTH\n");
+	else if(heading < 337.5)
+		printf("SOUTH-EAST\n");
+	else
+		printf("EAST\n");
 }
 
 void alarmISR(int sig_num){
@@ -74,31 +106,34 @@ void alarmISR(int sig_num){
 }
 
 int main(){
-    printf("main is launching now...\n");
+    //printf("main is launching now...\n");
     //pull readings from sensors
     printf("Init the imu..");
     init_IMU();
     printf("done\n");
     
     //define the ISR called for the SIGALRM signal
-    printf("Define the timer interrupt\n");
+    //printf("Define the timer interrupt\n");
     signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
     ualarm(250000, 250000);     // trigger a SIGALRM signal every 1/4 second        
 //    alarm(1);     // trigger a SIGALRM signal every second        
 
     new_samples = 0;
     //read_memory();
+    printf("x y\n");
     while(1){
 	    if(new_samples){
 		    new_samples = 0;
-//        	    print_ACCEL();
-	            print_MAG();
+//		    printf("%i %i %i\n", ACC.x, ACC.y, ACC.z);
+        	    print_ACCEL();
+//	            print_MAG();
+//		    printf("%i %i %i\n", MAG.x, MAG.y, MAG.z);
 	    }
 
 	    if(CALIBRATION_COUNTER >= RECAL_MAX_COUNT){
-		    printf("Recalibrating...");
+		    //printf("Recalibrating...");
 		    calibrate_IMU();
-		    printf("done\n");
+		    //printf("done\n");
 		    CALIBRATION_COUNTER = 1;
 	    }
     }

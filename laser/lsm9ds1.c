@@ -35,6 +35,8 @@ float MAG_BIAS[3] = {0, 0, 0};
 #define MAG_PERFORMANCE     3           //ultra high power performance
 #define MAG_MODE            0           //continuous conversion
 #define MAG_CALIBRATION_COUNTER_MAX 31
+#define MAG_X_OFFSET 	    545
+#define MAG_Y_OFFSET	    515
 //Some Res?
 const float GYRO_RES    =   0.007476807;
 const float ACCEL_RES   =   0.000061035;
@@ -97,8 +99,8 @@ void read_device_bytes(unsigned char addr, unsigned char sub_addr, int16_t* dest
         compiled_data[2] -= GYRO_BIAS[2];
     }
     else{                           //Mag read
-        compiled_data[0] -= MAG_BIAS[0];
-        compiled_data[1] -= MAG_BIAS[1];
+        compiled_data[0] = compiled_data[0] - MAG_BIAS[0] - MAG_X_OFFSET;
+        compiled_data[1] = compiled_data[1] - MAG_BIAS[1] - MAG_Y_OFFSET;
         compiled_data[2] -= MAG_BIAS[2];
     }
 
@@ -511,7 +513,7 @@ void read_memory(){
     //Read XG Memory
     printf("XG Memory:\n");
     for(int i=0; i<0x36; i=i+4){
-        printf("%02x: %02x\t%02x: %02x\t%02x: %02x\t%02x: %02x\n",
+        printf("%02x: %02x %02x %02x %02x\n",
             i, imu_read_byte(IMU_XG_ADDR, i), imu_read_byte(IMU_XG_ADDR, i+1),
             imu_read_byte(IMU_XG_ADDR, i+2), imu_read_byte(IMU_XG_ADDR, i+3));
     }

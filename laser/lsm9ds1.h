@@ -1,8 +1,6 @@
 #ifndef LSM9DS1_H
 #define LSM9DS1_H
 
-#include "main.h"
-
 /* GYROSCOPE Functions */
 void init_gyro();
 
