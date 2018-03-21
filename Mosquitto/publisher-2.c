@@ -14,7 +14,7 @@
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 #define MQTT_TOPIC_TAG "location_tag"
-#define MQTT_TOPIC_INIT "location_init"
+static char *MQTT_TOPIC_INIT = "location_init";
 
 static struct mosquitto *mosq;
 static double a1_x;
@@ -33,7 +33,6 @@ static bool mtx;
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
     bool match = 0;
-    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     mosquitto_topic_matches_sub(MQTT_TOPIC_TAG, message->topic, &match);
     if (match) {
         double d1;
@@ -78,8 +77,6 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         double x = (eq2_f - ((eq2_y*eq1_f)/eq1_y))/(eq2_x - ((eq2_y*eq1_x)/eq1_y));
         double y = (eq1_f - (eq1_x * x))/(eq1_y);
         printf("Tag %d position: (%f, %f)\n", tag, x, y);
-        //printf("%.*s\n", message->payloadlen, (char*) message->payload);
-        //printf("got message for %s topic\n", MQTT_TOPIC);
     }
 }
 
@@ -87,7 +84,6 @@ void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosqu
 {
     bool match = 0;
     ind += 1;
-    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     mosquitto_topic_matches_sub(MQTT_TOPIC_INIT, message->topic, &match);
     if (match) {
         double d1;
@@ -100,7 +96,6 @@ void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosqu
         bool setTag = false;
         /* walk through other tokens */
         while( token != NULL ) {
-            //printf( "%s\n", token);
             if (strcmp(token,"m") != 0) cnt += 1;
             if (setTag){
                 tag = atoi(token);
@@ -109,7 +104,7 @@ void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosqu
             if (strcmp(token,"Tag:") == 0) setTag = true;
             if (!(cnt % 6)) {
                 if ((cnt / 6) == 1){
-                    d1 = pow(atof(token),2.0);
+                    d1 = atof(token);
                 }
             }
             token = strtok(NULL, s);
@@ -117,23 +112,24 @@ void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosqu
 
         dist_buf[ind] = d1;
 
-        if (ind == 9) mtx = true;
-
-        //printf("%.*s\n", message->payloadlen, (char*) message->payload);
-        //printf("got message for %s topic\n", MQTT_TOPIC);
+        if (ind == 9) {
+            mtx = true;
+            ind = 0;
+        }
     }
 }
 
 double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, char axis){
-    size_t BLEN = 16;
-    char* buf = 0;
+    char buf[16];
     int tag = 1;
-    //prep in your spot
+    for (int i = 0; i < 10; i++){
+        dist_buf[i] = 0;
+    }
     printf("Position the tag please for Anchor %d %c position \n", anchor, axis);
-    usleep(10000000);
     int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+    usleep(5000000);
     ind = -1;
-    for(int i = 0; i < 10; i++) {
+    while (!mtx) {
         if(ret){
             fprintf(stderr, "Connection error. Reconnecting...\n");
             sleep(1);
@@ -143,21 +139,18 @@ double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, c
         if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
-        }
+        }  
         ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-        usleep(40000);
+        usleep(100000);
     }
-//    usleep(1000000);
-    //wait to access buffer
-    while (!mtx) {};
+
     double total;
     for (int i = 0; i < 10; i++){
         total += dist_buf[i];
     }
     total = total/10;
     mtx = false;
-    printf("Anchor %d %c position in meters (2 decimal points): ", anchor, axis);
-//    getline(&buf, &BLEN, stdin);
+    printf("Anchor %d %c position in meters (2 decimal points): %f", anchor, axis, total);
     return total;
 }
 
@@ -188,11 +181,10 @@ int main(){
         exit(-2);
     }
 
-    mosquitto_message_callback_set(mosq_sub, message_callback);
     mosquitto_message_callback_set(mosq_sub, message_callback_init);
-    mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
     mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_INIT, 1);
 
+    char buf[16];  
     double a1_x_dist = getDist(mosq, mosq_sub, 1, 'x');
     a1_x = a1_x_dist * (-1) * 2;
     double a1_y_dist = getDist(mosq, mosq_sub, 1, 'y');
@@ -211,38 +203,14 @@ int main(){
     a3_y = a3_y_dist * (-1) * 2;
     a3_const = pow(a3_x_dist,2) + pow(a3_y_dist,2);
 
-    size_t BLEN = 16;
-    char* buf = 0;
+    MQTT_TOPIC_INIT = "location_poop";
+
     int tagCnt = 1;
     int anchorCnt = 1;
 
-//    printf("Anchor 1 x position in meters (2 decimal points): ");
-//    getline(&buf, &BLEN, stdin);
-//    double a1_x_dist = atof(buf);
-//    a1_x = a1_x_dist * (-1) * 2;
-//    printf("Anchor 1 y position in meters (2 decimal points): ");
-//    getline(&buf, &BLEN, stdin);
-//    double a1_y_dist = atof(buf);
-//    a1_y = a1_y_dist * (-1) * 2;
-//    a1_const = pow(a1_x_dist,2) + pow(a1_y_dist,2);
-//    printf("Anchor 2 x position in meters (2 decimal points): ");
-//    getline(&buf, &BLEN, stdin);
-//    double a2_x_dist = atof(buf);
-//    a2_x = a2_x_dist * (-1) * 2;
-//    printf("Anchor 2 y position in meters (2 decimal points): ");
-//    getline(&buf, &BLEN, stdin);
-//    double a2_y_dist = atof(buf);
-//    a2_y = a2_y_dist * (-1) * 2;
-//    a2_const = pow(a2_x_dist,2) + pow(a2_y_dist,2);
-//    printf("Anchor 3 x position in meters (2 decimal points): ");
-//    getline(&buf, &BLEN, stdin);
-//    double a3_x_dist = atof(buf);
-//    a3_x = a3_x_dist * (-1) * 2;
-//    printf("Anchor 3 y position in meters (2 decimal points): ");
-//    getline(&buf, &BLEN, stdin);
-//    double a3_y_dist = atof(buf);
-//    a3_y = a3_y_dist * (-1) * 2;
-//    a3_const = pow(a3_x_dist,2) + pow(a3_y_dist,2);
+    mosquitto_message_callback_set(mosq_sub, message_callback);
+    mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
+    
 
     while(1){
         int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
@@ -262,7 +230,7 @@ int main(){
             sleep(1);
             mosquitto_reconnect(mosq_sub);
         }
-        usleep(40000);
+        usleep(80000);
 
         anchorCnt++;
         sprintf(buf, "Anchor%d Tag%d", anchorCnt, tagCnt);
@@ -276,7 +244,7 @@ int main(){
             sleep(1);
             mosquitto_reconnect(mosq_sub);
         }
-        usleep(40000);
+        usleep(80000);
 
         //add when 6 tags + anchors are used
 
@@ -292,7 +260,7 @@ int main(){
             sleep(1);
             mosquitto_reconnect(mosq_sub);
         }
-        usleep(40000);
+        usleep(80000);
 
         anchorCnt = 1;
         tagCnt++;
