@@ -28,7 +28,7 @@ play.o: play.c play.h
 	$(CC) $(CFLAGS) -c play.c
 
 publish.o: publish.c publish.h
-	$(CC) $(CFLAGS) -c publish.c
+	$(CC) $(CFLAGS) -lm -l mosquitto -c publish.c
 
 clean:
 	$(RM) hub *.o *~

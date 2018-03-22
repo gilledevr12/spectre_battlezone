@@ -4,19 +4,26 @@
 #include <string.h>
 #include <time.h>
 #include "setup.h"
-#include "../Mosquitto/publisher-2.h"
+#include "publish.h"
 #include "bool.h"
 
 extern struct location_data loc_dat;
 
 location_data current_location;
+FILE* map;
 
 location_data get_location(){
     location_data current_location;
     current_location.x = 1;
     current_location.y = 2;
-    current_location.z = 3;
+    current_location.z = 0;
     return current_location;
+}
+
+void init_location(){
+    current_location.x = 1;
+    current_location.y = 2;
+    current_location.z = 0;
 }
 
 bool get_active_status(){
@@ -36,8 +43,9 @@ void create_map(){
     map_name = strtok(map_name, "\n");
     strcat(map_name,map_ftype);
     printf("The file we'll be using is %s\n",map_name);
-    FILE* map;
     map = fopen(map_name, "w");
+    init_location();
+    publish();
     /*while(active){
         get_active_status();
         current_location = get_location();

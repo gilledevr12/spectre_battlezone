@@ -7,8 +7,11 @@
 #include <unistd.h>
 #include <math.h>
 #include "publish.h"
+#include "setup.h"
 
 static char *MQTT_TOPIC_INIT = "location_init";
+extern struct location_data current_location;
+extern FILE* map;
 
 static struct mosquitto *mosq;
 static double a1_x;
@@ -70,7 +73,12 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         double eq2_f = d1 - d3 - eq2_const;
         double x = (eq2_f - ((eq2_y*eq1_f)/eq1_y))/(eq2_x - ((eq2_y*eq1_x)/eq1_y));
         double y = (eq1_f - (eq1_x * x))/(eq1_y);
-        printf("Tag %d position: (%f, %f)\n", tag, x, y);
+//        printf("Tag %d position: (%f, %f)\n", tag, x, y);
+        current_location.x = x;
+        current_location.y = y;
+//        current_location.z = 1;
+        fprintf(map, "%f, %f\n", current_location.x, current_location.y);
+//        printf("Tag %d position: (%f, %f)\n", tag, x, y);
     }
 }
 
@@ -195,8 +203,6 @@ void publish(){
     double a3_y_dist = getDist(mosq, mosq_sub, 3, 'y');
     a3_y = a3_y_dist * (-1) * 2;
     a3_const = pow(a3_x_dist,2) + pow(a3_y_dist,2);
-
-    MQTT_TOPIC_INIT = "location_poop";
 
     int tagCnt = 1;
     int anchorCnt = 1;
