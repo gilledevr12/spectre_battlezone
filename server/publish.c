@@ -81,8 +81,8 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         // current_location.x = x;
         // current_location.y = y;
 //        current_location.z = 1;
-        fprintf(map, "%c %f %f\n", wallType, x, y);
-        printf("%c %f %f\n", wallType, x, y);        
+        fprintf(map, "%c %3.2f %3.2f\n", wallType, x, y);
+        printf("%c %3.2f %3.2f\n", wallType, x, y);
 //        printf("Tag %d position: (%f, %f)\n", tag, x, y);
     }
 }
@@ -178,30 +178,43 @@ void interruptExit(int signal){
 }
 
 void ranging(struct mosquitto* mosq, struct mosquitto* mosq_sub, bool play){
-    int tagCnt = 1;
+    int tagCnt[3][3] = {
+            {1, 2, 3},
+            {3, 1, 2},
+            {2, 3, 1}
+    };
+
     char buf[16];  
     int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
         
     while(active && !exitMode){
-        for (int anchorCnt = 1; anchorCnt < 4; anchorCnt++){
+        for (int anchorCnt = 0; anchorCnt < 3; anchorCnt++){
             if(ret){
                 fprintf(stderr, "Connection error. Reconnecting...\n");
                 sleep(1);
                 mosquitto_reconnect(mosq_sub);
             }
-            sprintf(buf, "Anchor%d Tag%d", anchorCnt, tagCnt);
+            sprintf(buf, "Anchor%d Tag%d", 1, tagCnt[0][anchorCnt]);
             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
-            usleep(25000);
+            usleep(5000);
+            sprintf(buf, "Anchor%d Tag%d", 2, tagCnt[1][anchorCnt]);
             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
+            usleep(5000);
+            sprintf(buf, "Anchor%d Tag%d", 3, tagCnt[2][anchorCnt]);
+            if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                fprintf(stderr, "Could not publish to broker. Quitting\n");
+                exit(-3);
+            }
+
             ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-            
-            usleep(200000);
+
+            usleep(65000);
         }
 
         if (play) tagCnt++;

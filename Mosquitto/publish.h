@@ -23,6 +23,4 @@ void message_callback_init(struct mosquitto*, void*, const struct mosquitto_mess
 
 double getDist(struct mosquitto*, struct mosquitto*, int, char);
 
-void publish();
-
 #endif
