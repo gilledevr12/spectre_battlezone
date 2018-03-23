@@ -169,7 +169,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if (match) {
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
-            int num = atoi(token[strlen(token) - 1]);
+            int num =token[strlen(token) - 1] - '0';
             runRanging(token, num);
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
@@ -415,10 +415,10 @@ int main(void)
     printf("Which Tag am I? ");
     char* bufNum;
     size_t buf_size = 3;
-    chars = getline(&bufNum, &buf_size, stdin);
+    getline(&bufNum, &buf_size, stdin);
 
-    strcat(MQTT_NAME,bufNum[0]);
-    strcat(MQTT_NAME_PUB,bufNum[0]);
+    strcat(MQTT_NAME,bufNum);
+    strcat(MQTT_NAME_PUB,bufNum);
     for (int i = 0; i < 3; i++){
         rx_poll_msg[i][8] = bufNum[0];
         tx_resp_msg[i][6] = bufNum[0];

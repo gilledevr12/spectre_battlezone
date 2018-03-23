@@ -155,7 +155,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if (match) {
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
         if (matchTag){
-            int num = atoi(token[strlen(token) - 1]);
+            int num = token[strlen(token) - 1] - '0';
             runRanging(token, num - 1);
         }
     }
@@ -307,9 +307,9 @@ int main(void)
     printf("Which Anchor am I? ");
     char* bufNum;
     size_t buf_size = 3;
-    chars = getline(&bufNum, &buf_size, stdin);
+    getline(&bufNum, &buf_size, stdin);
 
-    strcat(MQTT_NAME,bufNum[0]);
+    strcat(MQTT_NAME,bufNum);
     for (int i = 0; i < 3; i++){
         tx_poll_msg[i][6] = bufNum[0];
         rx_resp_msg[i][8] = bufNum[0];
