@@ -1,6 +1,6 @@
 # Define the compiler being used with the compiler flags
 CC = gcc
-CFLAGS  = -g -Wall -l pthread
+CFLAGS  = -g -Wall -l pthread -lm -l mosquitto
 
 default: hub
 
@@ -28,7 +28,7 @@ play.o: play.c play.h
 	$(CC) $(CFLAGS) -c play.c
 
 publish.o: publish.c publish.h
-	$(CC) $(CFLAGS) -lm -l mosquitto -c publish.c
+	$(CC) $(CFLAGS) -c publish.c
 
 clean:
 	$(RM) hub *.o *~

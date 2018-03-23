@@ -5,7 +5,8 @@
 #include <time.h>
 #include "setup.h"
 #include "publish.h"
-#include "bool.h"
+// #include "bool.h"
+#include <stdbool.h>
 
 extern struct location_data loc_dat;
 
@@ -26,12 +27,7 @@ void init_location(){
     current_location.z = 0;
 }
 
-bool get_active_status(){
-    return false;
-}
-
 void create_map(){
-    bool active = false;
     char map_ftype[5];
     strcpy(map_ftype, ".sbp");
     size_t buf_size = 32;
@@ -46,6 +42,7 @@ void create_map(){
     map = fopen(map_name, "w");
     init_location();
     publish();
+    fclose(map);
     /*while(active){
         get_active_status();
         current_location = get_location();

@@ -18,11 +18,12 @@
 #define MQTT_TOPIC_TAG "location_tag"
 
 void message_callback(struct mosquitto*, void*, const struct mosquitto_message*);
-
 void message_callback_init(struct mosquitto*, void*, const struct mosquitto_message*);
-
 double getDist(struct mosquitto*, struct mosquitto*, int, char);
-
 void publish();
+void toggle_active();
+void interrupt(int);
+void interruptExit(int);
+void ranging(struct mosquitto*, struct mosquitto*, bool);
 
 #endif

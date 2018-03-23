@@ -2,7 +2,8 @@
 
 #ifndef SETUP_H
 #define SETUP_H
-#include "bool.h"
+// #include "bool.h"
+#include <stdbool.h>
 
 typedef struct { int x; int y; int z; } location_data;
 

@@ -3,8 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include "play.h"
 #include "setup.h"
+#include "publish.h"
 #include "bool.h"
 
 void print_help(){
@@ -22,6 +24,8 @@ char* get_map_name(){
 }
 
 int main(int argc, char *argv[]){
+    signal(SIGTSTP, interrupt);
+    signal(SIGINT, interruptExit);    
     int len;    // argument length
     int ch;     // character buffer
     char *str;  // string buffer

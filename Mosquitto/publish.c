@@ -148,7 +148,7 @@ double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, c
     return total;
 }
 
-void publish(){
+void main(){
     ind = 0;
     mtx = false;
     mosquitto_lib_init();
