@@ -41,7 +41,7 @@
 #define MQTT_TOPIC "location_sync"
 
 //#define MQTT_NAME "Anchor_"
-static char* MQTT_NAME = "Anchor_";
+static char MQTT_NAME[10] = "Anchor_";
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "DS TWR INIT v1.2"
@@ -307,7 +307,6 @@ int main(void)
     printf("Which Anchor am I? ");
     char* bufNum;
     size_t buf_size = 3;
-    bufNum = (char *) malloc (buf_size + 1);
     getline(&bufNum, &buf_size, stdin);
 
     strcat(MQTT_NAME,bufNum);

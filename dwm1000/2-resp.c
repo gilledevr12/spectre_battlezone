@@ -41,8 +41,8 @@
 #define MQTT_TOPIC_TAG "location_tag"
 #define MQTT_TOPIC_INIT "location_init"
 
-static char* MQTT_NAME = "Tag_";
-static char* MQTT_NAME_PUB = "Pub_Tag_";
+static char MQTT_NAME[10] = "Tag_";
+static char MQTT_NAME_PUB[15] = "Pub_Tag_";
 
 
 /* Example application name and version to display on LCD screen. */
@@ -415,7 +415,6 @@ int main(void)
     printf("Which Tag am I? ");
     char* bufNum;
     size_t buf_size = 3;
-    bufNum = (char *) malloc (buf_size + 1);
     getline(&bufNum, &buf_size, stdin);
 
     strcat(MQTT_NAME,bufNum);
