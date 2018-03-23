@@ -415,6 +415,7 @@ int main(void)
     printf("Which Tag am I? ");
     char* bufNum;
     size_t buf_size = 3;
+    bufNum = (char *) malloc (buf_size + 1);
     getline(&bufNum, &buf_size, stdin);
 
     strcat(MQTT_NAME,bufNum);
