@@ -170,7 +170,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
             int num =token[strlen(token) - 1] - '0';
-            runRanging(token, num);
+            runRanging(token, num - 1);
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
     }

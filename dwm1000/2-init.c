@@ -165,7 +165,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 void runRanging(char* token, int num){
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     tx_poll_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
-    tx_poll_msg[num][8] = num + 1;
+    tx_poll_msg[num][8] = token[strlen(token) - 1];
     dwt_writetxdata(sizeof(tx_poll_msg[num]), tx_poll_msg[num], 0); /* Zero offset in TX buffer. */
     dwt_writetxfctrl(sizeof(tx_poll_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
 
