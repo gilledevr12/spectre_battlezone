@@ -217,10 +217,10 @@ void ranging(struct mosquitto* mosq, struct mosquitto* mosq_sub, bool play){
             usleep(65000);
         }
 
-        if (play) tagCnt++;
-        if (tagCnt == 4){
-            tagCnt = 1;
-        }
+//        if (play) tagCnt++;
+//        if (tagCnt == 4){
+//            tagCnt = 1;
+//        }
         while(!active){}
     }
     exitMode = false;

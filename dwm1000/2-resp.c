@@ -156,14 +156,14 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     const char s[2] = " ";
     char *token;
     char *tag;
+    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     /* get the first token */
     token = strtok((char*) message->payload, s);
     if ( token != NULL ) {
         tag = strtok(NULL, s);
     }
 
-    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
-    sprintf(round_match, "Tag%c", rx_poll_msg[8]);
+    sprintf(round_match, "Tag%c", rx_poll_msg[0][8]);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
