@@ -123,9 +123,9 @@ static uint32 status_reg = 0;
 /* Time-stamps of frames transmission/reception, expressed in device time units.
  * As they are 40-bit wide, we need to define a 64-bit int type to handle them. */
 typedef unsigned long long uint64;
-static uint64 poll_tx_ts;
-static uint64 resp_rx_ts;
-static uint64 final_tx_ts;
+static uint64 poll_tx_ts[3];
+static uint64 resp_rx_ts[3];
+static uint64 final_tx_ts[3];
 char round_match[8] = {0};
 
 /* Declaration of static functions. */
@@ -149,7 +149,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if ( token != NULL ) {
         token = strtok(NULL, s);
     }
-    sprintf(round_match, "Anchor%c", tx_poll_msg[0][6]);
+    sprintf(round_match, "Anchor%c", tx_poll_msg[6]);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
@@ -210,20 +210,20 @@ void runRanging(char* token, int num){
 //                correctTag = true;
 
                 /* Retrieve poll transmission and response reception timestamp. */
-                poll_tx_ts = get_tx_timestamp_u64();
-                resp_rx_ts = get_rx_timestamp_u64();
+                poll_tx_ts[num] = get_tx_timestamp_u64();
+                resp_rx_ts[num] = get_rx_timestamp_u64();
 
                 /* Compute final message transmission time. See NOTE 10 below. */
-                final_tx_time = (resp_rx_ts + (RESP_RX_TO_FINAL_TX_DLY_UUS * UUS_TO_DWT_TIME)) >> 8;
+                final_tx_time = (resp_rx_ts[num] + (RESP_RX_TO_FINAL_TX_DLY_UUS * UUS_TO_DWT_TIME)) >> 8;
                 dwt_setdelayedtrxtime(final_tx_time);
 
                 /* Final TX timestamp is the transmission time we programmed plus the TX antenna delay. */
-                final_tx_ts = (((uint64) (final_tx_time & 0xFFFFFFFEUL)) << 8) + TX_ANT_DLY;
+                final_tx_ts[num] = (((uint64) (final_tx_time & 0xFFFFFFFEUL)) << 8) + TX_ANT_DLY;
 
                 /* Write all timestamps in the final message. See NOTE 11 below. */
-                final_msg_set_ts(&tx_final_msg[FINAL_MSG_POLL_TX_TS_IDX], poll_tx_ts);
-                final_msg_set_ts(&tx_final_msg[FINAL_MSG_RESP_RX_TS_IDX], resp_rx_ts);
-                final_msg_set_ts(&tx_final_msg[FINAL_MSG_FINAL_TX_TS_IDX], final_tx_ts);
+                final_msg_set_ts(&tx_final_msg[FINAL_MSG_POLL_TX_TS_IDX], poll_tx_ts[num]);
+                final_msg_set_ts(&tx_final_msg[FINAL_MSG_RESP_RX_TS_IDX], resp_rx_ts[num]);
+                final_msg_set_ts(&tx_final_msg[FINAL_MSG_FINAL_TX_TS_IDX], final_tx_ts[num]);
 
                 /* Write and send final message. See NOTE 8 below. */
                 tx_final_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
@@ -258,7 +258,7 @@ void runRanging(char* token, int num){
             /* Reset RX to properly reinitialise LDE operation. */
             dwt_rxreset();
         }
-    }
+//    }
 }
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
@@ -310,10 +310,10 @@ int main(void)
     getline(&bufNum, &buf_size, stdin);
 
     strcat(MQTT_NAME,bufNum);
-    for (int i = 0; i < 3; i++){
-        tx_poll_msg[i][6] = bufNum[0];
-        rx_resp_msg[i][8] = bufNum[0];
-        tx_final_msg[i][6] = bufNum[0];
+    for (int i = 0; i < 1; i++){
+        tx_poll_msg[6] = bufNum[0];
+        rx_resp_msg[8] = bufNum[0];
+        tx_final_msg[6] = bufNum[0];
     }
 
     printf("\nI am %s\n", MQTT_NAME);
