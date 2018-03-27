@@ -77,6 +77,12 @@ static dwt_txconfig_t txconfig = {
 #define TX_ANT_DLY 16436
 #define RX_ANT_DLY 16436
 
+static int tagCnt[3][3] = {
+        {1, 2, 3},
+        {2, 3, 1},
+        {3, 1, 2}
+};
+
 /* Frames used in the ranging process. See NOTE 2 below. */
 static uint8 rx_poll_msg[3][12] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x21, 0, 0},
@@ -144,7 +150,7 @@ static uint64 final_rx_ts[3];
 static double tof[3];
 static double distance[3];
 static struct mosquitto *mosq_pub; //this could possibly be a problem
-static bool mutex = true;
+static int anchCnt = 0;
 
 /* String used to display measured distance on LCD screen (16 characters maximum). */
 char dist_str_1[33] = {0};
@@ -180,7 +186,6 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if (match) {
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
-//            while (!mutex) {}
             int num = token[strlen(token) - 1] - '0';
             runRanging(token, num - 1);
         }
@@ -191,7 +196,6 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 void runRanging(char *token, int num){
 
 //    bool correctAnchor = false;
-//    mutex = false;
 
 //    while(!correctAnchor) {
 
@@ -376,7 +380,19 @@ void runRanging(char *token, int num){
             dwt_rxreset();
         }
 //    }
-//    mutex = true;
+
+    //try tag responsible ranging
+    char buf[16];
+    int tag = rx_final_msg[num][8] - '0';
+    tag++;
+    if (tag == 4) tag = 1;
+    sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][ancCnt], tag);
+    if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+        fprintf(stderr, "Could not publish to broker. Quitting\n");
+        exit(-3);
+    }
+    anchCnt++;
+    if (anchCnt == 3) anchCnt = 0;
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
