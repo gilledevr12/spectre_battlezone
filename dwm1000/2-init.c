@@ -127,6 +127,7 @@ static uint64 poll_tx_ts[3];
 static uint64 resp_rx_ts[3];
 static uint64 final_tx_ts[3];
 char round_match[8] = {0};
+static bool mutex = true;
 
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
@@ -155,6 +156,8 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if (match) {
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
         if (matchTag){
+            while (!mutex) {}
+
             int num = token[strlen(token) - 1] - '0';
             runRanging(token, num - 1);
         }
@@ -163,6 +166,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 
 void runRanging(char* token, int num){
+    mutex = false;
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
     tx_poll_msg[8] = token[(strlen(token) - 1)];
@@ -259,6 +263,7 @@ void runRanging(char* token, int num){
             dwt_rxreset();
         }
 //    }
+    mutex = true;
 }
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
