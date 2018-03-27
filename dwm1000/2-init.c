@@ -63,6 +63,17 @@ static dwt_config_t config = {
     (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
 };
 
+// TX CONFIG SETTINGS
+static dwt_txconfig_t txconfig = {
+        0xC2, //PGdly
+//TX POWER
+//31:24 BOOST_0.125ms_PWR
+//23:16 BOOST_0.25ms_PWR-TX_SHR_PWR
+//15:8 BOOST_0.5ms_PWR-TX_PHR_PWR
+//7:0 DEFAULT_PWR-TX_DATA_PWR
+        0x67676767 //power
+};
+
 /* Default antenna delay values for 64 MHz PRF. See NOTE 1 below. */
 #define TX_ANT_DLY 16436
 #define RX_ANT_DLY 16436
@@ -156,7 +167,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if (match) {
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
         if (matchTag){
-            while (!mutex) {}
+//            while (!mutex) {}
 
             int num = token[strlen(token) - 1] - '0';
             runRanging(token, num - 1);
@@ -298,6 +309,7 @@ int main(void)
 
     /* Configure DW1000. See NOTE 7 below. */
     dwt_configure(&config);
+    dwt_configuretxrf(&txconfig);
 
     /* Apply default antenna delay value. See NOTE 1 below. */
     dwt_setrxantennadelay(RX_ANT_DLY);
