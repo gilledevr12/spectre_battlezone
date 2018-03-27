@@ -78,23 +78,23 @@ static dwt_txconfig_t txconfig = {
 #define RX_ANT_DLY 16436
 
 /* Frames used in the ranging process. See NOTE 2 below. */
-static uint8 rx_poll_msg[] = {
-        0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0
-//        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0},
-//        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0}
+static uint8 rx_poll_msg[3][12] = {
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x21, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x21, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x21, 0, 0}
 };
-static uint8 tx_resp_msg[] = {
-        0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0
-//        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0},
-//        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0}
+static uint8 tx_resp_msg[3][15] = {
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '1', 0x10, 0x02, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '2', 0x10, 0x02, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '3', 0x10, 0x02, 0, 0, 0, 0}
 };
-static uint8 rx_final_msg[] = {
-        0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-//        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-//        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+static uint8 rx_final_msg[3][24] = {
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 /* Length of the common part of the message (up to and including the function code, see NOTE 2 below). */
-#define ALL_MSG_COMMON_LEN 8
+#define ALL_MSG_COMMON_LEN 9
 /* Index to access some of the fields in the frames involved in the process. */
 #define ALL_MSG_SN_IDX 2
 #define FINAL_MSG_POLL_TX_TS_IDX 10
@@ -174,7 +174,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         tag = strtok(NULL, s);
     }
 
-    sprintf(round_match, "Tag%c", rx_poll_msg[8]);
+    sprintf(round_match, "Tag%c", rx_poll_msg[0][8]);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
@@ -191,7 +191,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 void runRanging(char *token, int num){
 
 //    bool correctAnchor = false;
-    mutex = false;
+//    mutex = false;
 
 //    while(!correctAnchor) {
 
@@ -219,13 +219,12 @@ void runRanging(char *token, int num){
             }
 
             int ret = -1;
-            uint8 anch_num = rx_buffer[6];
-            uint8 tag_num = rx_buffer[8];
-            rx_poll_msg[6] = anch_num;
+//            uint8 anch_num = rx_buffer[6];
+//            uint8 tag_num = rx_buffer[8];
             /* Check that the frame is a poll sent by "DS TWR initiator" example.
              * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
             rx_buffer[ALL_MSG_SN_IDX] = 0;
-            if (memcmp(rx_buffer, rx_poll_msg, ALL_MSG_COMMON_LEN) == 0 && tag_num == rx_poll_msg[8]) {
+            if (memcmp(rx_buffer, rx_poll_msg[num], ALL_MSG_COMMON_LEN) == 0) {
                 uint32 resp_tx_time;
 //                correctAnchor = true;
 
@@ -241,11 +240,10 @@ void runRanging(char *token, int num){
                 dwt_setrxtimeout(FINAL_RX_TIMEOUT_UUS);
 
                 /* Write and send the response message. See NOTE 10 below.*/
-                tx_resp_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
-                tx_resp_msg[8] = anch_num;
+                tx_resp_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
 
-                dwt_writetxdata(sizeof(tx_resp_msg), tx_resp_msg, 0); /* Zero offset in TX buffer. */
-                dwt_writetxfctrl(sizeof(tx_resp_msg), 0, 1); /* Zero offset in TX buffer, ranging. */
+                dwt_writetxdata(sizeof(tx_resp_msg[num]), tx_resp_msg[num], 0); /* Zero offset in TX buffer. */
+                dwt_writetxfctrl(sizeof(tx_resp_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
                 ret = dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 
 //            printf("read\n");
@@ -279,15 +277,11 @@ void runRanging(char *token, int num){
                         }
 
                         ret = -1;
-                        anch_num = rx_buffer[6];
-                        tag_num = rx_buffer[8];
-                        rx_final_msg[6] = anch_num;
 
                         /* Check that the frame is a final message sent by "DS TWR initiator" example.
                          * As the sequence number field of the frame is not used in this example, it can be zeroed to ease the validation of the frame. */
                         rx_buffer[ALL_MSG_SN_IDX] = 0;
-                        if (memcmp(rx_buffer, rx_final_msg, ALL_MSG_COMMON_LEN) == 0 &&
-                            rx_final_msg[8] == tag_num) {
+                        if (memcmp(rx_buffer, rx_final_msg[num], ALL_MSG_COMMON_LEN) == 0) {
 //                            correctAnchor = true;
                             uint32 poll_tx_ts, resp_rx_ts, final_tx_ts;
                             uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
@@ -322,7 +316,7 @@ void runRanging(char *token, int num){
 //                    printf(dist_str);
 
                             if (strcmp(token, "Anchor1") == 0) {
-                                sprintf(dist_str_1, "Tag: %c Anchor: 1 Dist: %3.2f m\n", rx_poll_msg[8],
+                                sprintf(dist_str_1, "Tag: %c Anchor: 1 Dist: %3.2f m\n", rx_poll_msg[num][8],
                                         distance[num]);
                                 printf(dist_str_1);
                                 if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_1), dist_str_1,
@@ -332,7 +326,7 @@ void runRanging(char *token, int num){
                                     exit(-3);
                                 }
                             } else if (strcmp(token, "Anchor2") == 0) {
-                                sprintf(dist_str_2, "Tag: %c Anchor: 2 Dist: %3.2f m\n", rx_poll_msg[8],
+                                sprintf(dist_str_2, "Tag: %c Anchor: 2 Dist: %3.2f m\n", rx_poll_msg[num][8],
                                         distance[num]);
                                 printf(dist_str_2);
                                 if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_2), dist_str_2,
@@ -342,7 +336,7 @@ void runRanging(char *token, int num){
                                     exit(-3);
                                 }
                             } else if (strcmp(token, "Anchor3") == 0) {
-                                sprintf(dist_str_3, "Tag: %c Anchor: 3 Dist: %3.2f m\n", rx_poll_msg[8],
+                                sprintf(dist_str_3, "Tag: %c Anchor: 3 Dist: %3.2f m\n", rx_poll_msg[num][8],
                                         distance[num]);
                                 printf(dist_str_3);
                                 if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_3), dist_str_3,
@@ -382,7 +376,7 @@ void runRanging(char *token, int num){
             dwt_rxreset();
         }
 //    }
-    mutex = true;
+//    mutex = true;
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
@@ -435,9 +429,9 @@ int main(void)
     strcat(MQTT_NAME,bufNum);
     strcat(MQTT_NAME_PUB,bufNum);
     for (int i = 0; i < 3; i++){
-        rx_poll_msg[8] = bufNum[0];
-        tx_resp_msg[6] = bufNum[0];
-        rx_final_msg[8] = bufNum[0];
+        rx_poll_msg[i][8] = bufNum[0];
+        tx_resp_msg[i][6] = bufNum[0];
+        rx_final_msg[i][8] = bufNum[0];
     }
 
     printf("\nI am %s\n", MQTT_NAME);
