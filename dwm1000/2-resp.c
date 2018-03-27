@@ -68,17 +68,17 @@ static dwt_config_t config = {
 
 /* Frames used in the ranging process. See NOTE 2 below. */
 static uint8 rx_poll_msg[] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0}
+        0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0
 //        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0},
 //        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0}
 };
 static uint8 tx_resp_msg[] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0}
+        0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0
 //        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0},
 //        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0}
 };
 static uint8 rx_final_msg[] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 //        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 //        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
@@ -277,7 +277,7 @@ void runRanging(char *token, int num){
                         rx_buffer[ALL_MSG_SN_IDX] = 0;
                         if (memcmp(rx_buffer, rx_final_msg, ALL_MSG_COMMON_LEN) == 0 &&
                             rx_final_msg[8] == tag_num) {
-                            correctAnchor = true;
+//                            correctAnchor = true;
                             uint32 poll_tx_ts, resp_rx_ts, final_tx_ts;
                             uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                             double Ra, Rb, Da, Db;
