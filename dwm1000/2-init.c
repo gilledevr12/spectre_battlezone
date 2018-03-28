@@ -196,7 +196,7 @@ void runRanging(char* token, int num){
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
                  (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
-                time_taken < .055) {
+                time_taken < .065) {
             t = clock() - t;
             time_taken = ((double)t)/CLOCKS_PER_SEC;
         };
