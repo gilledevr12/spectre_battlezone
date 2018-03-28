@@ -207,14 +207,12 @@ void runRanging(char *token, int num){
         dwt_rxenable(DWT_START_RX_IMMEDIATE);
         clock_t t;
         t = clock();
-        t = clock() - t;
-        double time_taken = ((double)t)/CLOCKS_PER_SEC;
+        double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
 
     /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
                  (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
-            t = clock() - t;
-            time_taken = ((double)t)/CLOCKS_PER_SEC;
+            time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
 
         if (status_reg & SYS_STATUS_RXFCG) {
@@ -286,15 +284,13 @@ void runRanging(char *token, int num){
 
 //                while (!correctAnchor) {
                     t = clock();
-                    t = clock() - t;
-                    time_taken = ((double)t)/CLOCKS_PER_SEC;
+                    time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
 
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                     while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
                              (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
-                            time_taken < .065) {
-                        t = clock() - t;
-                        time_taken = ((double)t)/CLOCKS_PER_SEC;
+                            time_taken < 2) {
+                        time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
                     };
 
                     /* Increment frame sequence number after transmission of the response message (modulo 256). */
