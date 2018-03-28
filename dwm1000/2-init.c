@@ -167,8 +167,6 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if (match) {
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
         if (matchTag){
-//            while (!mutex) {}
-
             int num = token[strlen(token) - 1] - '0';
             runRanging(token, num - 1);
         }
@@ -177,7 +175,6 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 
 void runRanging(char* token, int num){
-    mutex = false;
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
     tx_poll_msg[8] = token[(strlen(token) - 1)];
@@ -192,9 +189,17 @@ void runRanging(char* token, int num){
     /* Increment frame sequence number after transmission of the poll message (modulo 256). */
 //    while(!correctTag) {
 
+        clock_t t;
+        t = clock();
+        t = clock() - t;
+        double time_taken = ((double)t)/CLOCKS_PER_SEC;
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {};
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
+                time_taken < .055) {
+            t = clock() - t;
+            time_taken = ((double)t)/CLOCKS_PER_SEC;
+        };
 
         frame_seq_nb++;
 
@@ -274,7 +279,6 @@ void runRanging(char* token, int num){
             dwt_rxreset();
         }
 //    }
-    mutex = true;
 }
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
