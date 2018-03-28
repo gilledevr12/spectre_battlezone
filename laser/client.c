@@ -40,8 +40,7 @@ void open_client_socket(){
     }
 }
 
-void send_status(struct samples_x3 acc, struct samples_x3 mag, int shot, int weight){
-    /*Main loop: get/send lines of text*/
+void send_status(struct IMU_samples_x3 acc, struct IMU_samples_x3 gyrpo, struct IMU_samples_x3 mag, int shot, int weight){    /*Main loop: get/send lines of text*/
     int packet_length;
     char *packet_buffer;
     sprintf(packet_buffer, "%s %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %i %i", 

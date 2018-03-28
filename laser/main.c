@@ -1,129 +1,226 @@
-// Client side C/C++ program to demonstrate Socket programming
-#include <stdio.h>
+/* main.c
+ *
+ * This file will compile into the main laser-brains method.
+ * 
+ */
+
+#include <math.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
-// #include <wiringPi.h>
 
 #include "main.h"
 
-#define TRIGGER_PIN 26
-#define V_SOURCE_PIN 25
+/////////////////////////////////////////
+//          Compilation Flags          //
+/////////////////////////////////////////
+#define DEBUG
+//#define MQTT_ACTIVE
+#define IMU_ACTIVE
+#define UWB_ACTIVE
+//#define RPI
 
-volatile unsigned char trig_press;
+/////////////////////////////////////////
+//     Constants / Global Variables    //
+/////////////////////////////////////////
+struct IMU_samples_x3 ACC  = {0, 0, 0};
+struct IMU_samples_x3 GYRO = {0, 0, 0};
+struct IMU_samples_x3 MAG  = {0, 0, 0};
+struct UWB_samples_x3 UWB  = {0, 0, 0};
+#define TRIGGER_PIN     29      //actual pin 40
+#define V_SOURCE_PIN    28      //actual pin 38
+//#define GND_PIN use GND from actual pin 39
+#define PI              3.14159
+#define DECLINATION     11.32   //magnetic declination for Logan UT in degrees
+#define ACC_LSB         0.001F
+#define ACC_FLAT	    1500
+#define ACC_UP		    15500
+#define ACC_DOWN 	    -16000
 
-char wiringPiSetup();
-char digitalRead(char p);
-void digitalWrite(char p, char v);
-void pinMode(char c, char m);
-#define INPUT 0
-#define OUTPUT 1
+//hande compiling on not the PI
+#ifdef RPI
+    #include <wiringPi.h>
+#else
+    //RPI must be defined for actual operation. These prototypes allow for
+    //development outside of the RPI 
+    #define wiringPiSetup(VOID) 0
+    #define digitalRead(pin) 0
+    #define digitalWrite(pin, val) 0
+    #define pinMode(pin, mode) 0
+    #define INPUT 0
+    #define OUTPUT 1
+    #define LOW 0
+    #define HIGH 1
+#endif
 
-char CLIENT_STATUS;
-//  status descriptions
-//      0: GAMEPLAY NORMAL OPERATING MODE
-//      1: HALT - client is in halt mode, waiting for valid response
-//      2: NA
+/////////////////////////////////////////
+//            IMU Functions            //
+/////////////////////////////////////////
+void print_ACCEL(){
+	//each axis will return a value [-16500, +16500]
+	if((ACC.x < ACC_FLAT) && (ACC.x > -ACC_FLAT) && (ACC.y < ACC_FLAT) && (ACC.y > -ACC_FLAT)) 
+		printf("Flat enough to shoot!\n");
+	else if(ACC.x < ACC_DOWN)
+		printf("Straight down\n");
+	else if(ACC.x > ACC_UP)
+		printf("Straight up\n");
+	else
+		printf("Pointed in an invalid direction: %i %i %i\n", ACC.x, ACC.y, ACC.z);
+	return;
 
-struct float_x3 ACCEL, GYRO, MAG;
+	float pitch = asin( -ACC.x * ACC_LSB);
+	float roll = asin(ACC.y * ACC_LSB / cos(pitch));
+      
+	float xh = MAG.x * cos(pitch) + MAG.z * sin(pitch);
+	float yh = MAG.x * sin(roll) * sin(pitch) + MAG.y * cos(roll) -MAG.z * sin(roll) * cos(pitch);
+    //float zh = -MAG.x * cos(roll) * sin(pitch) + MAG.y * sin(roll) + MAG.z * cos(roll) * cos(pitch);
 
-void alarmISR(int sig_num){
-    #ifdef DEBUG
-        printf("ISR called for signal: %i\n", sig_num);
-    #endif
-    if(sig_num == SIGALRM){
-        #ifdef IMU_ENABLE
-            float* curr_samples = IMU_pull_samples();
-            ACCEL.x = curr_samples[0];
-            ACCEL.y = curr_samples[1];
-            ACCEL.z = curr_samples[2];
-            GYRO.x = curr_samples[3];
-            GYRO.y = curr_samples[4];
-            GYRO.z = curr_samples[5];
-            MAG.x = curr_samples[6];
-            MAG.y = curr_samples[7];
-            MAG.z = curr_samples[8];
-            
-        #else
-            //send test packet
-            ACCEL.x = 1.00;
-            ACCEL.y = 2.00;
-            ACCEL.z = 3.00;
-            GYRO.x = 4.00;
-            GYRO.y = 5.00;
-            GYRO.z = 6.00;
-            MAG.x = 7.00;
-            MAG.y = 8.00;
-            MAG.z = 9.00;
-        #endif
-
-        #ifdef CLIENT_ENABLE
-            open_client_socket();
-            send_status(ACCEL, GYRO, MAG, trig_press, 0); 
-            close_client_socket();
-        #else
-            printf("A:%2.5f %2.5f %2.5f \t\tG:%2.5f %2.5f %2.5f \t\tM:%2.5f %2.5f %2.5f\n",
-                ACCEL.x, ACCEL.y, ACCEL.z, GYRO.x, GYRO.y, GYRO.z, MAG.x, MAG.y, MAG.z);
-        #endif
-
-        trig_press = 0;
-    }
+	float heading = 180 * atan2(yh, xh)/PI;
+	if (yh < 0)
+		heading += 36;
+	printf("Pitch: %3.3f \tRoll: %3.3f \txh: %3.3f \tyh: %3.3f\n", pitch, roll, xh, yh);
+	printf("Tilt: %3.3f\n", heading);
 }
 
-int main(){
-
-    if(wiringPiSetup() < 0){
-        printf("Wiring pi setup failed. Quitting\n");
+void print_MAG(){
+	printf("Mag: %i %i %i\t", MAG.x, MAG.y, MAG.z);
+	float heading = atan2(MAG.y, MAG.x);  // assume pitch, roll are 0
+	heading *= 180 / PI;
+	heading = heading + 180 - DECLINATION;
+		
+	printf("Heading: %3.4f ", heading);
+	if(heading < 22.5)
+		printf("EAST\n");
+	else if(heading < 67.5)
+		printf("NORTH-EAST\n");
+	else if(heading < 112.5)
+		printf("NORTH\n");
+	else if(heading < 157.5)
+		printf("NORTH-WEST\n");
+	else if(heading < 202.5)
+		printf("WEST\n");
+	else if(heading < 247.5)
+		printf("SOUTH-WEST\n");
+	else if(heading < 292.5)
+		printf("SOUTH\n");
+	else if(heading < 337.5)
+		printf("SOUTH-EAST\n");
+	else
+		printf("EAST\n");
+}
+/////////////////////////////////////////
+//          wiringPi Functions         //
+/////////////////////////////////////////
+unsigned char pin_setup(){
+    if (wiringPiSetup() < 0){
+        printf("Failed to initialize wiring pi. Quitting\n");
         return 1;
     }
     pinMode(TRIGGER_PIN, INPUT);
     pinMode(V_SOURCE_PIN, OUTPUT);
     digitalWrite(V_SOURCE_PIN, HIGH);
+    return 0;
+}
 
-    #ifdef IMU_ENABLE
+unsigned char get_trigger(){
+    return digitalRead(TRIGGER_PIN) & 0x1;
+}
+
+/////////////////////////////////////////
+//           Comms Functions           //
+/////////////////////////////////////////
+void send_response(){
+    //if we respond before we poll new values, other rifles wont have to 
+    //wait while we are polling.
+    #ifdef MQTT_ACTIVE
+        //do some MQTT
+    #else
+        printf("A: %i %i %i\t\tG: %i %i %i\t\tM: %i %i %i\n",
+            ACC.x, ACC.y, ACC.z, GYRO.x, GYRO.y, GYRO.z, MAG.x, MAG.y, MAG.z);
+        printf("A1: %3.3f\t\tA2: %3.3f\t\tA3: %3.3f", UWB.A1, UWB.A2, UWB.A3);
+        printf("Shots Fired: %i\n\n", get_trigger());
+    #endif
+
+    #ifdef IMU_ACTIVE
+        float* curr_samples = IMU_pull_samples();
+        ACC.x = curr_samples[0];
+        ACC.y = curr_samples[1];
+        ACC.z = curr_samples[2];
+        GYRO.x = curr_samples[3];
+        GYRO.y = curr_samples[4];
+        GYRO.z = curr_samples[5];
+        MAG.x = curr_samples[6];
+        MAG.y = curr_samples[7];
+        MAG.z = curr_samples[8];
+        
+    #else
+        //send default packet
+        ACCEL.x = 1.00;
+        ACCEL.y = 2.00;
+        ACCEL.z = 3.00;
+        GYRO.x = 4.00;
+        GYRO.y = 5.00;
+        GYRO.z = 6.00;
+        MAG.x = 7.00;
+        MAG.y = 8.00;
+        MAG.z = 9.00;
+    #endif
+
+    #ifdef MQTT_ACTIVE
+        //do some MQTT
+    #else
+        printf("A: %i %i %i\t\tG: %i %i %i\t\tM: %i %i %i\n",
+            ACC.x, ACC.y, ACC.z, GYRO.x, GYRO.y, GYRO.z, MAG.x, MAG.y, MAG.z);
+        printf("A1: %3.3f\t\tA2: %3.3f\t\tA3: %3.3f", UWB.A1, UWB.A2, UWB.A3);
+        printf("Shots Fired: %i\n\n", get_trigger());
+    #endif
+}
+
+void alarmISR(int sig_num){
+    if(sig_num == SIGALRM){
+        alarm(1);
+        send_response();
+    }
+}
+
+/////////////////////////////////////////
+//                MAIN                 //
+/////////////////////////////////////////
+int main(){
+    #ifdef RPI
+        if(pin_setup()){
+            printf("Failed to init wiring pi. Quitting\n");
+            return 1;
+        }
+    #endif //RPI
+
+    #ifdef IMU_ACTIVE
         #ifdef DEBUG
             printf("Begin IMU Initialization\n");
         #endif
-        //pull readings from sensors
-        if(init_IMU() > 0)
+        if(init_IMU())
             return 1;
-        calibrate_IMU();
-
+        #ifdef DEBUG
+            printf("Begin IMU Initialization\n");
+        #endif
     #else
         #ifdef DEBUG
             printf("Skipping the IMU Initialization\n");
         #endif
-    #endif  //IMU_ENABLE
+    #endif  //IMU_ACTIVE
 
-    #ifdef CLIENT_ENABLE
-        #ifdef DEBUG
-            printf("Begin client-communication initialization\n");
-        #endif
-
-        open_client_socket();
-        close_client_socket();  //Don't leave open.. this should really be closed... 
-
-        if(pull_DEVICE_MAC() > 0)
-            return 1;
-
+    #ifdef MQTT_ACTIVE
+        //do something amazing here
     #else
-        printf("Client-comms not enabled. Messages will be sent to the console\n");
-    #endif  //CLIENT_ENABLE
-
-    int packet_count = 0, SLEEP_DELAY = 1000000;
-
-    //define the ISR called for the SIGALRM signal
-    signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
-    ualarm(250000, 250000);     // trigger a SIGALRM signal every 1/4 second
+        printf("MQTT not enabled. Messages will be sent to the console\n");
+        //define the ISR called for the SIGALRM signal
+        signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
+        alarm(1);     // trigger a SIGALRM signal 1 second
+    #endif  //MQTT_ACTIVE
     
     //initialize the laser to be doing no work until told to do so
-    CLIENT_STATUS = 1;          
-
-    trig_press = 0;
-    while(1){
-        if(!trig_press) //only continue to sample if it hasn't already been pressed
-            if(digitalRead(TRIGGER_PIN))
-                trig_press = 0b1;
-    }
+    while(1){}
 
     return 0;
 }

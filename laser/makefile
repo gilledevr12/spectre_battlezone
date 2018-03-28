@@ -1,13 +1,14 @@
 # Define the compiler being used with the compiler flags
 CC = gcc
 CFLAGS  = -lm -g -Wall
+#CFLAGS  = -lm -lwiringPi -g -Wall
 
 #default: laser-brains
-default: test-imu
+default: laser-brains
 
 # For the laser-brains executable, list here all object files to be included
-laser-brains:  main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
-	$(CC) $(CFLAGS) -l wiringpi -o laser-brains main.o client.o dwm1000.o lsm9ds1.o rifle_variables.o
+laser-brains:  main.o dwm1000.o lsm9ds1.o mqtt.o
+	$(CC) $(CFLAGS) main.o dwm1000.o lsm9ds1.o -o laser-brains
 
 test-imu: test_imu.o lsm9ds1.o 
 	$(CC) $(CFLAGS) test_imu.o lsm9ds1.o -o test-imu 
@@ -31,6 +32,9 @@ lsm303.o: lsm303.c lsm303.h
 
 lsm9ds1.o: lsm9ds1.c lsm9ds1.h
 		$(CC) $(CFLAGS) -c lsm9ds1.c
+
+mqtt.o: mqtt.c mqtt.h
+		$(CC) $(CFLAGS) -c mqtt.c
 
 main.o: main.c main.h
 		$(CC) $(CFLAGS) -c main.c
