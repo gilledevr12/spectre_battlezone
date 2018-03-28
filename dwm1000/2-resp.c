@@ -402,6 +402,7 @@ void runRanging(char *token, int num){
     tag++;
     if (tag == 4) {
         anchCnt++;
+        if (anchCnt == 3) anchCnt = 0;
         tag = 1;
     }
     sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
