@@ -19,6 +19,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "decadriver/dwm_api/my_deca_spi.h"
 #include "decadriver/dwm_api/deca_device_api.h"
 #include "decadriver/dwm_api/deca_regs.h"
@@ -62,28 +63,45 @@ static dwt_config_t config = {
     (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
 };
 
+// TX CONFIG SETTINGS
+static dwt_txconfig_t txconfig = {
+        0xC2, //PGdly
+//TX POWER
+//31:24 BOOST_0.125ms_PWR
+//23:16 BOOST_0.25ms_PWR-TX_SHR_PWR
+//15:8 BOOST_0.5ms_PWR-TX_PHR_PWR
+//7:0 DEFAULT_PWR-TX_DATA_PWR
+        0x67676767 //power
+};
+
 /* Default antenna delay values for 64 MHz PRF. See NOTE 1 below. */
 #define TX_ANT_DLY 16436
 #define RX_ANT_DLY 16436
 
+static int tagCnt[3][3] = {
+        {1, 2, 3},
+        {2, 3, 1},
+        {3, 1, 2}
+};
+
 /* Frames used in the ranging process. See NOTE 2 below. */
 static uint8 rx_poll_msg[3][12] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x21, 0, 0}
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x21, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x21, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x21, 0, 0}
 };
 static uint8 tx_resp_msg[3][15] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '#', 0x10, 0x02, 0, 0, 0, 0}
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '1', 0x10, 0x02, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '2', 0x10, 0x02, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '3', 0x10, 0x02, 0, 0, 0, 0}
 };
-static uint8 rx_final_msg[3][25] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '#', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+static uint8 rx_final_msg[3][24] = {
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 /* Length of the common part of the message (up to and including the function code, see NOTE 2 below). */
-#define ALL_MSG_COMMON_LEN 8
+#define ALL_MSG_COMMON_LEN 9
 /* Index to access some of the fields in the frames involved in the process. */
 #define ALL_MSG_SN_IDX 2
 #define FINAL_MSG_POLL_TX_TS_IDX 10
@@ -133,7 +151,7 @@ static uint64 final_rx_ts[3];
 static double tof[3];
 static double distance[3];
 static struct mosquitto *mosq_pub; //this could possibly be a problem
-
+static int anchCnt = 0;
 
 /* String used to display measured distance on LCD screen (16 characters maximum). */
 char dist_str_1[33] = {0};
@@ -156,21 +174,21 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     const char s[2] = " ";
     char *token;
     char *tag;
+    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     /* get the first token */
     token = strtok((char*) message->payload, s);
     if ( token != NULL ) {
         tag = strtok(NULL, s);
     }
 
-    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
-    sprintf(round_match, "Tag%c", rx_poll_msg[8]);
+    sprintf(round_match, "Tag%c", rx_poll_msg[0][8]);
 
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
-            int num =token[strlen(token) - 1] - '0';
-            runRanging(token, num);
+            int num = token[strlen(token) - 1] - '0';
+            runRanging(token, num - 1);
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
     }
@@ -178,19 +196,26 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 void runRanging(char *token, int num){
 
-    bool correctAnchor = false;
+//    bool correctAnchor = false;
 
-    while(!correctAnchor) {
+//    while(!correctAnchor) {
 
         /* Clear reception timeout to start next ranging process. */
         dwt_setrxtimeout(0);
 
         /* Activate reception immediately. */
         dwt_rxenable(DWT_START_RX_IMMEDIATE);
+        clock_t t;
+        t = clock();
+        t = clock() - t;
+        double time_taken = ((double)t)/CLOCKS_PER_SEC;
 
-        /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
+    /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {};
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
+            t = clock() - t;
+            time_taken = ((double)t)/CLOCKS_PER_SEC;
+        };
 
         if (status_reg & SYS_STATUS_RXFCG) {
             uint32 frame_len;
@@ -206,15 +231,14 @@ void runRanging(char *token, int num){
             }
 
             int ret = -1;
-            uint8 anch_num = rx_buffer[6];
-            uint8 tag_num = rx_buffer[8];
-            rx_poll_msg[num][6] = anch_num;
+//            uint8 anch_num = rx_buffer[6];
+//            uint8 tag_num = rx_buffer[8];
             /* Check that the frame is a poll sent by "DS TWR initiator" example.
              * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
             rx_buffer[ALL_MSG_SN_IDX] = 0;
-            if (memcmp(rx_buffer, rx_poll_msg[num], ALL_MSG_COMMON_LEN) == 0 && tag_num == rx_poll_msg[num][8]) {
+            if (memcmp(rx_buffer, rx_poll_msg[num], ALL_MSG_COMMON_LEN) == 0) {
                 uint32 resp_tx_time;
-                correctAnchor = true;
+//                correctAnchor = true;
 
                 /* Retrieve poll reception timestamp. */
                 poll_rx_ts[num] = get_rx_timestamp_u64();
@@ -229,7 +253,6 @@ void runRanging(char *token, int num){
 
                 /* Write and send the response message. See NOTE 10 below.*/
                 tx_resp_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
-                tx_resp_msg[num][8] = anch_num;
 
                 dwt_writetxdata(sizeof(tx_resp_msg[num]), tx_resp_msg[num], 0); /* Zero offset in TX buffer. */
                 dwt_writetxfctrl(sizeof(tx_resp_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
@@ -239,17 +262,40 @@ void runRanging(char *token, int num){
 
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
                 if (ret == DWT_ERROR) {
+                    //try tag responsible ranging
+                    char buf[16];
+                    int tag = rx_final_msg[num][8] - '0';
+                    tag++;
+                    if (tag == 4) {
+                        anchCnt++;
+                        if (anchCnt == 3) anchCnt = 0;
+                        tag = 1;
+                    }
+                    sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+                    if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                        fprintf(stderr, "Could not publish to broker. Quitting\n");
+                        exit(-3);
+                    }
+                    if (tag != 1) anchCnt++;
+                    if (anchCnt == 3) anchCnt = 0;
                     return;
                 }
 
 //            printf("sent\n");
-                correctAnchor = false;
+//                correctAnchor = false;
 
-                while (!correctAnchor) {
+//                while (!correctAnchor) {
+                    t = clock();
+                    t = clock() - t;
+                    time_taken = ((double)t)/CLOCKS_PER_SEC;
 
-                    /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
+                /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                     while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {};
+                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
+                            time_taken < .065) {
+                        t = clock() - t;
+                        time_taken = ((double)t)/CLOCKS_PER_SEC;
+                    };
 
                     /* Increment frame sequence number after transmission of the response message (modulo 256). */
                     frame_seq_nb++;
@@ -266,16 +312,12 @@ void runRanging(char *token, int num){
                         }
 
                         ret = -1;
-                        anch_num = rx_buffer[6];
-                        tag_num = rx_buffer[8];
-                        rx_final_msg[num][6] = anch_num;
 
                         /* Check that the frame is a final message sent by "DS TWR initiator" example.
                          * As the sequence number field of the frame is not used in this example, it can be zeroed to ease the validation of the frame. */
                         rx_buffer[ALL_MSG_SN_IDX] = 0;
-                        if (memcmp(rx_buffer, rx_final_msg[num], ALL_MSG_COMMON_LEN) == 0 &&
-                            rx_final_msg[num][8] == tag_num) {
-                            correctAnchor = true;
+                        if (memcmp(rx_buffer, rx_final_msg[num], ALL_MSG_COMMON_LEN) == 0) {
+//                            correctAnchor = true;
                             uint32 poll_tx_ts, resp_rx_ts, final_tx_ts;
                             uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                             double Ra, Rb, Da, Db;
@@ -359,7 +401,7 @@ void runRanging(char *token, int num){
                         /* Reset RX to properly reinitialise LDE operation. */
                         dwt_rxreset();
                     }
-                }
+//                }
             }
         } else {
             /* Clear RX error/timeout events in the DW1000 status register. */
@@ -368,7 +410,24 @@ void runRanging(char *token, int num){
             /* Reset RX to properly reinitialise LDE operation. */
             dwt_rxreset();
         }
+//    }
+
+    //try tag responsible ranging
+    char buf[16];
+    int tag = rx_final_msg[num][8] - '0';
+    tag++;
+    if (tag == 4) {
+        anchCnt++;
+        if (anchCnt == 3) anchCnt = 0;
+        tag = 1;
     }
+    sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+    if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+        fprintf(stderr, "Could not publish to broker. Quitting\n");
+        exit(-3);
+    }
+    if (tag != 1) anchCnt++;
+    if (anchCnt == 3) anchCnt = 0;
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
@@ -404,6 +463,7 @@ int main(void)
 
     /* Configure DW1000. See NOTE 7 below. */
     dwt_configure(&config);
+    dwt_configuretxrf(&txconfig);
 
     /* Apply default antenna delay value. See NOTE 1 below. */
     dwt_setrxantennadelay(RX_ANT_DLY);

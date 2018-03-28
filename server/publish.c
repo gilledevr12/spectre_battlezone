@@ -231,6 +231,13 @@ sprintf(buf, "Anchor%d Tag%d", 1, 1);
                 mosquitto_reconnect(mosq_sub);
         }
 
+<<<<<<< HEAD
+=======
+//        if (play) tagCnt++;
+//        if (tagCnt == 4){
+//            tagCnt = 1;
+//        }
+>>>>>>> 845b4655e76802796937153fc98661009434720e
         while(!active){}
     }
     exitMode = false;
