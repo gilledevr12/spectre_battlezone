@@ -385,13 +385,16 @@ void runRanging(char *token, int num){
     char buf[16];
     int tag = rx_final_msg[num][8] - '0';
     tag++;
-    if (tag == 4) tag = 1;
+    if (tag == 4) {
+        anchCnt++;
+        tag = 1;
+    }
     sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
     if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
         fprintf(stderr, "Could not publish to broker. Quitting\n");
         exit(-3);
     }
-    anchCnt++;
+    if (tag != 1) anchCnt++;
     if (anchCnt == 3) anchCnt = 0;
 }
 
