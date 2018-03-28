@@ -19,6 +19,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "decadriver/dwm_api/my_deca_spi.h"
 #include "decadriver/dwm_api/deca_device_api.h"
 #include "decadriver/dwm_api/deca_regs.h"
