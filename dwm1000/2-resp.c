@@ -164,7 +164,7 @@ char round_match[6] = {0};
 static uint64 get_tx_timestamp_u64(void);
 static uint64 get_rx_timestamp_u64(void);
 static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts);
-void runRanging(char *token, int num);
+void runRanging(char *token, int num, char* play);
 
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
@@ -174,11 +174,16 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     const char s[2] = " ";
     char *token;
     char *tag;
+    char *play;
+
     //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     /* get the first token */
     token = strtok((char*) message->payload, s);
     if ( token != NULL ) {
         tag = strtok(NULL, s);
+    }
+    if ( tag != NULL ) {
+        play = strtok(NULL, s);
     }
 
     sprintf(round_match, "Tag%c", rx_poll_msg[0][8]);
@@ -188,13 +193,13 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            runRanging(token, num - 1);
+            runRanging(token, num - 1, play);
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
     }
 }
 
-void runRanging(char *token, int num){
+void runRanging(char *token, int num, char* play){
 
 //    bool correctAnchor = false;
 
@@ -260,22 +265,25 @@ void runRanging(char *token, int num){
 
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
                 if (ret == DWT_ERROR) {
-                    //try tag responsible ranging
-                    char buf[16];
-                    int tag = rx_final_msg[num][8] - '0';
-                    tag++;
-                    if (tag == 4) {
-                        anchCnt++;
+                    printf("error\n");
+                    if (memcmp(play, "play", 4) == 0){
+                        //try tag responsible ranging
+                        char buf[16];
+                        int tag = rx_final_msg[num][8] - '0';
+                        tag++;
+                        if (tag == 4) {
+                            anchCnt++;
+                            if (anchCnt == 3) anchCnt = 0;
+                            tag = 1;
+                        }
+                        sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+                        if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                            fprintf(stderr, "Could not publish to broker. Quitting\n");
+                            exit(-3);
+                        }
+                        if (tag != 1) anchCnt++;
                         if (anchCnt == 3) anchCnt = 0;
-                        tag = 1;
                     }
-                    sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
-                    if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-                        fprintf(stderr, "Could not publish to broker. Quitting\n");
-                        exit(-3);
-                    }
-                    if (tag != 1) anchCnt++;
-                    if (anchCnt == 3) anchCnt = 0;
                     return;
                 }
 
@@ -289,7 +297,7 @@ void runRanging(char *token, int num){
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                     while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
                              (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
-                            time_taken < 2) {
+                            time_taken < 1) {
                         time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
                     };
 
@@ -408,22 +416,25 @@ void runRanging(char *token, int num){
         }
 //    }
 
-    //try tag responsible ranging
-//    char buf[16];
-//    int tag = rx_final_msg[num][8] - '0';
-//    tag++;
-//    if (tag == 4) {
-//        anchCnt++;
-//        if (anchCnt == 3) anchCnt = 0;
-//        tag = 1;
-//    }
-//    sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
-//    if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-//        fprintf(stderr, "Could not publish to broker. Quitting\n");
-//        exit(-3);
-//    }
-//    if (tag != 1) anchCnt++;
-//    if (anchCnt == 3) anchCnt = 0;
+    if (memcmp(play, "play", 4) == 0){
+        //try tag responsible ranging
+        char buf[16];
+        int tag = rx_final_msg[num][8] - '0';
+        tag++;
+        if (tag == 4) {
+            anchCnt++;
+            if (anchCnt == 3) anchCnt = 0;
+            tag = 1;
+        }
+        sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+        if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+            fprintf(stderr, "Could not publish to broker. Quitting\n");
+            exit(-3);
+        }
+        if (tag != 1) anchCnt++;
+        if (anchCnt == 3) anchCnt = 0;
+    }
+
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------

@@ -175,7 +175,9 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 
 void runRanging(char* token, int num){
+    bool blink = false;
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
+    while(!blink) {
     tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
     tx_poll_msg[8] = token[(strlen(token) - 1)];
     dwt_writetxdata(sizeof(tx_poll_msg), tx_poll_msg, 0); /* Zero offset in TX buffer. */
@@ -184,10 +186,8 @@ void runRanging(char* token, int num){
     /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
      * set by dwt_setrxaftertxdelay() has elapsed. */
     dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
-//    bool correctTag = false;
 
-    /* Increment frame sequence number after transmission of the poll message (modulo 256). */
-//    while(!correctTag) {
+        /* Increment frame sequence number after transmission of the poll message (modulo 256). */
 
         clock_t t;
         t = clock();
@@ -195,7 +195,7 @@ void runRanging(char* token, int num){
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
                  (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
-                time_taken < 2) {
+                time_taken < .7) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
 
@@ -225,7 +225,7 @@ void runRanging(char* token, int num){
             if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0 && rx_resp_msg[8] == anch_num) {
                 uint32 final_tx_time;
 //            printf("mine\n");
-//                correctTag = true;
+                blink = true;
 
                 /* Retrieve poll transmission and response reception timestamp. */
                 poll_tx_ts[num] = get_tx_timestamp_u64();
@@ -276,7 +276,7 @@ void runRanging(char* token, int num){
             /* Reset RX to properly reinitialise LDE operation. */
             dwt_rxreset();
         }
-//    }
+    }
 }
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
