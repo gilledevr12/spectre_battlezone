@@ -211,7 +211,7 @@ void runRanging(char *token, int num){
 
     /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < 2) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
 
@@ -409,21 +409,21 @@ void runRanging(char *token, int num){
 //    }
 
     //try tag responsible ranging
-    char buf[16];
-    int tag = rx_final_msg[num][8] - '0';
-    tag++;
-    if (tag == 4) {
-        anchCnt++;
-        if (anchCnt == 3) anchCnt = 0;
-        tag = 1;
-    }
-    sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
-    if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-        fprintf(stderr, "Could not publish to broker. Quitting\n");
-        exit(-3);
-    }
-    if (tag != 1) anchCnt++;
-    if (anchCnt == 3) anchCnt = 0;
+//    char buf[16];
+//    int tag = rx_final_msg[num][8] - '0';
+//    tag++;
+//    if (tag == 4) {
+//        anchCnt++;
+//        if (anchCnt == 3) anchCnt = 0;
+//        tag = 1;
+//    }
+//    sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+//    if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+//        fprintf(stderr, "Could not publish to broker. Quitting\n");
+//        exit(-3);
+//    }
+//    if (tag != 1) anchCnt++;
+//    if (anchCnt == 3) anchCnt = 0;
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
