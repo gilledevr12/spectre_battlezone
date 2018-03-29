@@ -183,64 +183,70 @@ void ranging(struct mosquitto* mosq, struct mosquitto* mosq_sub, bool play){
             {2, 3, 1},
             {3, 1, 2}
     };
-
+    
     char buf[16];  
-    // int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-        
-sprintf(buf, "Anchor%d Tag%d", 1, 1);
+    char* mode = (char*)malloc(7);
+    if (play) {
+        mode = "play";
+    } else {
+        mode = "setup";
+    }
+
+        //play stuff
+// sprintf(buf, "Anchor%d Tag%d", 1, 1);
+//             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+//                 fprintf(stderr, "Could not publish to broker. Quitting\n");
+//                 exit(-3);
+//             }
+
+    int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+
+    while(active && !exitMode){
+        for (int anchorCnt = 0; anchorCnt < 3; anchorCnt++){
+            if(ret){
+                fprintf(stderr, "Connection error. Reconnecting...\n");
+                sleep(1);
+                mosquitto_reconnect(mosq_sub);
+            }
+            sprintf(buf, "Anchor%d Tag%d %s", tagCnt[0][anchorCnt], 1, mode);
             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
-
-    while(active && !exitMode){
-        // for (int anchorCnt = 0; anchorCnt < 3; anchorCnt++){
-        //     if(ret){
-        //         fprintf(stderr, "Connection error. Reconnecting...\n");
-        //         sleep(1);
-        //         mosquitto_reconnect(mosq_sub);
-        //     }
-        //     sprintf(buf, "Anchor%d Tag%d", tagCnt[0][anchorCnt], 1);
-        //     if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-        //         fprintf(stderr, "Could not publish to broker. Quitting\n");
-        //         exit(-3);
-        //     }
-        //     usleep(80000);
-        //     ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-        //     sprintf(buf, "Anchor%d Tag%d", tagCnt[1][anchorCnt], 2);
-        //     if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-        //         fprintf(stderr, "Could not publish to broker. Quitting\n");
-        //         exit(-3);
-        //     }
-        //     usleep(80000);
-        //     ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-        //     sprintf(buf, "Anchor%d Tag%d", tagCnt[2][anchorCnt], 3);
-        //     if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-        //         fprintf(stderr, "Could not publish to broker. Quitting\n");
-        //         exit(-3);
-        //     }
-        //     usleep(80000);
-        //     ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-        // }
+            usleep(200000);
+            if (play){
+                ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+                sprintf(buf, "Anchor%d Tag%d %s", tagCnt[1][anchorCnt], 2, mode);
+                if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                    fprintf(stderr, "Could not publish to broker. Quitting\n");
+                    exit(-3);
+                }
+                usleep(80000);
+                ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+                sprintf(buf, "Anchor%d Tag%d %s", tagCnt[2][anchorCnt], 3, mode);
+                if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                    fprintf(stderr, "Could not publish to broker. Quitting\n");
+                    exit(-3);
+                }
+                usleep(80000);
+            }
+            ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+        }
         
 
-        int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-        if(ret){
-                fprintf(stderr, "Connection error. Reconnecting...\n");
-                sleep(1);
-                mosquitto_reconnect(mosq_sub);
-        }
+        
 
-<<<<<<< HEAD
-=======
-//        if (play) tagCnt++;
-//        if (tagCnt == 4){
-//            tagCnt = 1;
-//        }
->>>>>>> 845b4655e76802796937153fc98661009434720e
         while(!active){}
     }
     exitMode = false;
+
+    //play stuff
+    // int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+    //     if(ret){
+    //             fprintf(stderr, "Connection error. Reconnecting...\n");
+    //             sleep(1);
+    //             mosquitto_reconnect(mosq_sub);
+    //     }
 }
 
 void publish(){
@@ -294,9 +300,9 @@ void publish(){
     mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
 
     wallType = 'B';
-    ranging(mosq, mosq_sub, true);
+    ranging(mosq, mosq_sub, false);
     wallType = 'W';    
-    ranging(mosq, mosq_sub, true);
+    ranging(mosq, mosq_sub, false);
 
     mosquitto_disconnect (mosq);
     mosquitto_destroy (mosq);
