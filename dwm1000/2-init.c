@@ -151,11 +151,11 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 {
     bool match = 0;
     bool matchTag = 0;
-
+    printf("enter\n");
     const char s[2] = " ";
     char *token;
     char *anchor;
-    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
+    printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     /* get the first token */
     anchor = strtok((char*) message->payload, s);
     if ( token != NULL ) {
@@ -171,6 +171,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
             runRanging(token, num - 1);
         }
     }
+    printf("left\n");
 }
 
 
@@ -195,7 +196,7 @@ void runRanging(char* token, int num){
         double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < 1) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
 
@@ -203,7 +204,7 @@ void runRanging(char* token, int num){
 
         if (status_reg & SYS_STATUS_RXFCG) {
             uint32 frame_len;
-//        printf("got\n");
+        printf("got\n");
 
             /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
             dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
@@ -224,7 +225,7 @@ void runRanging(char* token, int num){
             rx_buffer[ALL_MSG_SN_IDX] = 0;
             if (memcmp(rx_buffer, rx_resp_msg, ALL_MSG_COMMON_LEN) == 0 && rx_resp_msg[8] == anch_num) {
                 uint32 final_tx_time;
-//            printf("mine\n");
+            printf("mine\n");
                 blink = true;
 
                 /* Retrieve poll transmission and response reception timestamp. */
@@ -252,9 +253,13 @@ void runRanging(char* token, int num){
 
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 12 below. */
                 if (ret == DWT_SUCCESS) {
-//                printf("success\n");
+                printf("success\n");
                     /* Poll DW1000 until TX frame sent event set. See NOTE 9 below. */
-                    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS)) {};
+                    t = clock();
+                    double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
+                    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS) && time_taken < 1) {
+                        time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
+                    };
 
                     /* Clear TXFRS event. */
                     dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);

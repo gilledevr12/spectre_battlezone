@@ -216,7 +216,7 @@ void runRanging(char *token, int num, char* play){
 
     /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < 1) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
 
@@ -296,7 +296,7 @@ void runRanging(char *token, int num, char* play){
 
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                     while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
+                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < 1) {
                         time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
                     };
 
@@ -383,12 +383,12 @@ void runRanging(char *token, int num, char* play){
                                     fprintf(stderr, "Could not publish to broker. Quitting\n");
                                     exit(-3);
                                 }
-                                sprintf(dist_str, "%s%s%s\n", dist_str_1, dist_str_2, dist_str_3);
-                                if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0,
-                                                      false)) {
-                                    fprintf(stderr, "Could not publish to broker. Quitting\n");
-                                    exit(-3);
-                                }
+//                                sprintf(dist_str, "%s%s%s\n", dist_str_1, dist_str_2, dist_str_3);
+//                                if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(dist_str), dist_str, 0,
+//                                                      false)) {
+//                                    fprintf(stderr, "Could not publish to broker. Quitting\n");
+//                                    exit(-3);
+//                                }
                             }
                         } else {
                             //second fail
