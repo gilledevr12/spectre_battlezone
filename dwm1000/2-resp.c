@@ -216,7 +216,7 @@ void runRanging(char *token, int num, char* play){
 
     /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < 2) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
 
@@ -296,8 +296,7 @@ void runRanging(char *token, int num, char* play){
 
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                     while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
-                            time_taken < 1) {
+                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
                         time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
                     };
 

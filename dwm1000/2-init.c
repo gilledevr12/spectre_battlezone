@@ -178,6 +178,7 @@ void runRanging(char* token, int num){
     bool blink = false;
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     while(!blink) {
+        blink = true;
     tx_poll_msg[ALL_MSG_SN_IDX] = frame_seq_nb;
     tx_poll_msg[8] = token[(strlen(token) - 1)];
     dwt_writetxdata(sizeof(tx_poll_msg), tx_poll_msg, 0); /* Zero offset in TX buffer. */
@@ -194,8 +195,7 @@ void runRanging(char* token, int num){
         double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
-                time_taken < .7) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
 
