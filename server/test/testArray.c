@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include "array.h"
+#include "../array.h"
 
 void test(){
     map_array map;
-    int x = 3, y = 5;
+    float x = 3.5, y = 5.3;
     char type = 'W';
 
     //x = y = 0;
@@ -12,7 +12,7 @@ void test(){
     for(int i=0; i<40; i++){
         if(i < 20){ type = 'B'; }
         else{ type = 'W'; }
-        x++; y++;
+        x+=0.56; y+=0.38;
         coordinate temp;
         temp.x = x;
         temp.y = y;
@@ -21,7 +21,7 @@ void test(){
     }
 
     for(int i=0; i<map.size; i++){
-        printf("%c: %i,%i\n",map.array[i].type,map.array[i].x,map.array[i].y);
+        printf("%c: %.02f,%.02f\n",map.array[i].type,map.array[i].x,map.array[i].y);
     }
 
     free_array(&map);

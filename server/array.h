@@ -3,8 +3,8 @@
 #include <stdlib.h>
 
 typedef struct{
-    int x;
-    int y;
+    float x;
+    float y;
     char type;
 } coordinate;
 

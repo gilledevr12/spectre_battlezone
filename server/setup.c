@@ -5,10 +5,12 @@
 #include <time.h>
 #include "setup.h"
 #include "publish.h"
-// #include "bool.h"
 #include <stdbool.h>
+#include "array.h"
+#include "cartographer.h"
 
 extern struct location_data loc_dat;
+map_array map_data;
 
 location_data current_location;
 FILE* map;
@@ -43,6 +45,7 @@ void create_map(){
     init_location();
     publish();
     fclose(map);
+    build_array(map,&map_data);
     /*while(active){
         get_active_status();
         current_location = get_location();

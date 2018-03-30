@@ -5,7 +5,7 @@ CFLAGS  = -g -Wall -l pthread -lm -l mosquitto
 default: hub
 
 # For the hub executable, list here all object files to be included
-hub:  main.o players.o rifle_variables.o server.o setup.o play.o publish.o inventory.h bool.h
+hub:  main.o players.o rifle_variables.o server.o setup.o play.o publish.o inventory.h bool.h array.h cartographer.h
 	$(CC) $(CFLAGS) -o hub main.o players.o rifle_variables.o server.o setup.o play.o publish.o
 
 # For each subsequent object file, define source files
