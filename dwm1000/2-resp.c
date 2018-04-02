@@ -216,9 +216,10 @@ void runRanging(char *token, int num, char* play){
 
     /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < 1) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
+        printf("time %f", time_taken);
 
         if (status_reg & SYS_STATUS_RXFCG) {
             uint32 frame_len;
@@ -296,11 +297,12 @@ void runRanging(char *token, int num, char* play){
 
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
                     while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < 1) {
+                             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR))) {
                         time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
                     };
+                    printf("time %f", time_taken);
 
-                    /* Increment frame sequence number after transmission of the response message (modulo 256). */
+                /* Increment frame sequence number after transmission of the response message (modulo 256). */
                     frame_seq_nb++;
 
                     if (status_reg & SYS_STATUS_RXFCG) {
