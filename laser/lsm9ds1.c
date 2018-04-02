@@ -479,7 +479,9 @@ float* IMU_pull_samples(){
 
 int16_t* IMU_pull_samples_int(){
     //sample read is defined int s[9]: {a1, a2, a3 g1, g2, g3, m1, m2, m3
-    static int16_t samples[9];
+    //currently only reading ACC and MAG, GYRO is commented out
+
+    static int16_t samples[6];
     int16_t tmp[3] = {0, 0, 0};
     //read accelerometer
     unsigned char dev_ready = 0;
@@ -490,21 +492,21 @@ int16_t* IMU_pull_samples_int(){
     samples[1] = tmp[1];// * ACCEL_RES;
     samples[2] = tmp[2];// * ACCEL_RES;
     //read gyroscope
-    dev_ready = 0;
-    while(!dev_ready)
-        dev_ready = (imu_read_byte(IMU_XG_ADDR, STATUS_REG_1) & 2) >> 1;
-    read_device_bytes(IMU_XG_ADDR, OUT_X_L_G, tmp);
-    samples[3] = tmp[0];// * GYRO_RES;
-    samples[4] = tmp[1];// * GYRO_RES;
-    samples[5] = tmp[2];// * GYRO_RES;
+    // dev_ready = 0;
+    // while(!dev_ready)
+    //     dev_ready = (imu_read_byte(IMU_XG_ADDR, STATUS_REG_1) & 2) >> 1;
+    // read_device_bytes(IMU_XG_ADDR, OUT_X_L_G, tmp);
+    // samples[3] = tmp[0];// * GYRO_RES;
+    // samples[4] = tmp[1];// * GYRO_RES;
+    // samples[5] = tmp[2];// * GYRO_RES;
     //read magnetometer
     dev_ready = 0;
     while(!dev_ready)
         dev_ready = (imu_read_byte(IMU_MAG_ADDR, STATUS_REG_M) & 8) >> 3;
     read_device_bytes(IMU_MAG_ADDR, OUT_X_L_M, tmp);
-    samples[6] = tmp[0];// * MAG_RES;
-    samples[7] = tmp[1];// * MAG_RES;
-    samples[8] = tmp[2];// * MAG_RES;
+    samples[3] = tmp[0];// * MAG_RES;
+    samples[4] = tmp[1];// * MAG_RES;
+    samples[5] = tmp[2];// * MAG_RES;
 
     return samples;
 }

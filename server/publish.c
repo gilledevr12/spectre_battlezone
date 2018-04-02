@@ -130,6 +130,8 @@ void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosqu
 double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, char axis){
     char buf[16];
     int tag = 1;
+    char* mode = (char*)malloc(7);
+    mode = "setup";
     for (int i = 0; i < 10; i++){
         dist_buf[i] = 0;
     }
@@ -143,7 +145,7 @@ double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, c
             sleep(1);
             mosquitto_reconnect(mosq_sub);
         }
-        sprintf(buf, "Anchor%d Tag%d", anchor, tag);
+        sprintf(buf, "Anchor%d Tag%d %s", anchor, tag, mode);
         if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
@@ -213,23 +215,39 @@ void ranging(struct mosquitto* mosq, struct mosquitto* mosq_sub, bool play){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
-            usleep(200000);
-            if (play){
-                ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+            usleep(100000);
+            if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                fprintf(stderr, "Could not publish to broker. Quitting\n");
+                exit(-3);
+            }
+            usleep(100000);
+            // if (play){
+                // ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
                 sprintf(buf, "Anchor%d Tag%d %s", tagCnt[1][anchorCnt], 2, mode);
                 if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                     fprintf(stderr, "Could not publish to broker. Quitting\n");
                     exit(-3);
                 }
-                usleep(80000);
-                ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
+                usleep(100000);
+            if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                fprintf(stderr, "Could not publish to broker. Quitting\n");
+                exit(-3);
+            }
+            usleep(100000);
+                // ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
                 sprintf(buf, "Anchor%d Tag%d %s", tagCnt[2][anchorCnt], 3, mode);
                 if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                     fprintf(stderr, "Could not publish to broker. Quitting\n");
                     exit(-3);
                 }
-                usleep(80000);
+                usleep(100000);
+                
+            if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                fprintf(stderr, "Could not publish to broker. Quitting\n");
+                exit(-3);
             }
+            usleep(100000);
+            // }
             ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
         }
         
@@ -278,21 +296,21 @@ void publish(){
     mosquitto_message_callback_set(mosq_sub, message_callback_init);
     mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_INIT, 1);
 
-    double a1_x_dist = 3.2;//= getDist(mosq, mosq_sub, 1, 'x');
+    double a1_x_dist = getDist(mosq, mosq_sub, 1, 'x');
     a1_x = a1_x_dist * (-1) * 2;
-    double a1_y_dist = .2;//= getDist(mosq, mosq_sub, 1, 'y');
+    double a1_y_dist = getDist(mosq, mosq_sub, 1, 'y');
     a1_y = a1_y_dist * (-1) * 2;
     a1_const = pow(a1_x_dist,2) + pow(a1_y_dist,2);
 
-    double a2_x_dist = .2;//= getDist(mosq, mosq_sub, 2, 'x');
+    double a2_x_dist = getDist(mosq, mosq_sub, 2, 'x');
     a2_x = a2_x_dist * (-1) * 2;
-    double a2_y_dist = 3.6;//= getDist(mosq, mosq_sub, 2, 'y');
+    double a2_y_dist = getDist(mosq, mosq_sub, 2, 'y');
     a2_y = a2_y_dist * (-1) * 2;
     a2_const = pow(a2_x_dist,2) + pow(a2_y_dist,2);
 
-    double a3_x_dist = 3.4;//= getDist(mosq, mosq_sub, 3, 'x');
+    double a3_x_dist = getDist(mosq, mosq_sub, 3, 'x');
     a3_x = a3_x_dist * (-1) * 2;
-    double a3_y_dist = 6.0;//= getDist(mosq, mosq_sub, 3, 'y');
+    double a3_y_dist = getDist(mosq, mosq_sub, 3, 'y');
     a3_y = a3_y_dist * (-1) * 2;
     a3_const = pow(a3_x_dist,2) + pow(a3_y_dist,2);
 

@@ -40,9 +40,9 @@
 /////////////////////////////////////////
 #define DEBUG
 //#define MQTT_ACTIVE
-//#define WIFI_ACTIVE
+#define WIFI_ACTIVE
 #define IMU_ACTIVE
-#define UWB_ACTIVE
+//#define UWB_ACTIVE
 //#define RPI
 
 /////////////////////////////////////////
@@ -51,7 +51,9 @@
 struct IMU_samples_x3 ACC  = {0, 0, 0};
 struct IMU_samples_x3 GYRO = {0, 0, 0};
 struct IMU_samples_x3 MAG  = {0, 0, 0};
-struct UWB_samples_x3 UWB  = {0, 0, 0};
+struct UWB_samples_x3 UWB  = {0, 0, 0}; //from anchors A1, A2 and A3 respectively
+volatile static uint8_t SHOTS_FIRED;
+volatile static uint8_t POLL_SAMPLES = 0;
 #define TRIGGER_PIN     29      //actual pin 40
 #define V_SOURCE_PIN    28      //actual pin 38
 #define GND_PIN         28.5    //actual pin 39
@@ -63,20 +65,9 @@ struct UWB_samples_x3 UWB  = {0, 0, 0};
 #define ACC_UP		    15500
 #define ACC_DOWN 	    -16000
 
-//hande compiling on not the PI
+//handle compiling on not the PI
 #ifdef RPI
     #include <wiringPi.h>
-#else
-    //RPI must be defined for actual operation. These prototypes allow for
-    //development and compilation checks outside of the RPI.
-    #define wiringPiSetup(VOID) 0
-    #define digitalRead(pin) 0
-    #define digitalWrite(pin, val) 0
-    #define pinMode(pin, mode) 0
-    #define INPUT 0
-    #define OUTPUT 1
-    #define LOW 0
-    #define HIGH 1
 #endif
 
 /////////////////////////////////////////
@@ -138,83 +129,49 @@ void print_MAG(){
 //          wiringPi Functions         //
 /////////////////////////////////////////
 unsigned char pin_setup(){
-    if (wiringPiSetup() < 0){
-        printf("Failed to initialize wiring pi. Quitting\n");
+    #ifdef RPI
+        if (wiringPiSetup() < 0){
+            printf("Failed to initialize wiring pi. Quitting\n");
+            return 1;
+        }
+        pinMode(TRIGGER_PIN, INPUT);
+        pinMode(V_SOURCE_PIN, OUTPUT);
+        digitalWrite(V_SOURCE_PIN, HIGH);
+        return 0;
+    #else
         return 1;
-    }
-    pinMode(TRIGGER_PIN, INPUT);
-    pinMode(V_SOURCE_PIN, OUTPUT);
-    digitalWrite(V_SOURCE_PIN, HIGH);
-    return 0;
+    #endif
 }
 
 unsigned char get_trigger(){
-    return digitalRead(TRIGGER_PIN) & 0x1;
+    #ifdef RPI
+        return digitalRead(TRIGGER_PIN) & 0x1;
+    #else
+        return 0;
+    #endif
 }
 
 /////////////////////////////////////////
 //           Comms Functions           //
 /////////////////////////////////////////
 void send_response(){
-    //if we respond before we poll new values, other rifles wont have to 
-    //wait while we are polling.
-    #ifdef UWB_ACTIVE
-        //poll the UWB modules for data
-    #else
-        printf("A: %i %i %i\t\tG: %i %i %i\t\tM: %i %i %i\n",
-            ACC.x, ACC.y, ACC.z, GYRO.x, GYRO.y, GYRO.z, MAG.x, MAG.y, MAG.z);
-        printf("A1: %3.3f\t\tA2: %3.3f\t\tA3: %3.3f", UWB.A1, UWB.A2, UWB.A3);
-        printf("Shots Fired: %i\n\n", get_trigger());
-    #endif
+    send_status(ACC, /*GYRO,*/ MAG, UWB, SHOTS_FIRED);
+}
 
-    #ifdef IMU_ACTIVE
-        float* curr_samples = IMU_pull_samples();
-        ACC.x = curr_samples[0];
-        ACC.y = curr_samples[1];
-        ACC.z = curr_samples[2];
-        GYRO.x = curr_samples[3];
-        GYRO.y = curr_samples[4];
-        GYRO.z = curr_samples[5];
-        MAG.x = curr_samples[6];
-        MAG.y = curr_samples[7];
-        MAG.z = curr_samples[8];
-        
-    #else
-        //send default packet
-        ACCEL.x = 1.00;
-        ACCEL.y = 2.00;
-        ACCEL.z = 3.00;
-        GYRO.x = 4.00;
-        GYRO.y = 5.00;
-        GYRO.z = 6.00;
-        MAG.x = 7.00;
-        MAG.y = 8.00;
-        MAG.z = 9.00;
-    #endif
-
-    #ifdef MQTT_ACTIVE
-        //do some MQTT
-    #else
-        printf("A: %i %i %i\t\tG: %i %i %i\t\tM: %i %i %i\n",
-            ACC.x, ACC.y, ACC.z, GYRO.x, GYRO.y, GYRO.z, MAG.x, MAG.y, MAG.z);
-        printf("A1: %3.3f\t\tA2: %3.3f\t\tA3: %3.3f", UWB.A1, UWB.A2, UWB.A3);
-        printf("Shots Fired: %i\n\n", get_trigger());
-    #endif
+void print_response(){
+    printf("ACC: %i %i %i\n", ACC.x, ACC.y, ACC.z);
+    printf("MAG: %i %i %i\n", MAG.x, MAG.y, MAG.z);
+    printf("UWB: %3.2f %3.2f %4.2f\n", UWB.A1, UWB.A2, UWB.A3);
+    if(SHOTS_FIRED)     printf("Shots fired!\n");
+    else                printf("No shots fired\n");
+    //reset SHOTS_FIRED reg
+    SHOTS_FIRED = 0;
+    printf("\n");
 }
 
 void alarmISR(int sig_num){
     if(sig_num == SIGALRM){
-        //get UWB data
-
-        //get IMU data
-
-        #ifdef WIFI_ACTIVE
-            //send responde over wifi
-            send_response();
-        #else
-            //wifi is not enabled, print to screen
-
-        #endif
+        POLL_SAMPLES = 1;
     }
 }
 
@@ -223,43 +180,76 @@ void alarmISR(int sig_num){
 /////////////////////////////////////////
 int main(){
     #ifdef RPI
+        #ifdef DEBUG
+        printf("Using RPI setup\n");
+        #endif
+
         if(pin_setup()){
             printf("Failed to init wiring pi. Quitting\n");
             return 1;
         }
+    #else
+        #ifdef DEBUG
+        printf("RPI not defined! Using external setup\n");
+        #endif
     #endif //RPI
 
     #ifdef IMU_ACTIVE
         #ifdef DEBUG
-            printf("Begin IMU Initialization\n");
+        printf("Using IMU. Initializing...");
         #endif
+
         if(init_IMU())
             return 1;
+
         #ifdef DEBUG
-            printf("Begin IMU Initialization\n");
+        printf("done!\n");
         #endif
     #else
         #ifdef DEBUG
-            printf("Skipping the IMU Initialization\n");
+        printf("IMU not defined. Skipping...\n");
         #endif
     #endif  //IMU_ACTIVE
 
+    #ifdef UWB_ACTIVE
+        #ifdef DEBUG
+        printf("Using UWB. Initializing...");
+        #endif
+
+        // if(init_IMU())
+        //     return 1;
+
+        #ifdef DEBUG
+        printf("done!\n");
+        #endif
+    #else
+        #ifdef DEBUG
+        printf("UWB not defined. Skipping...\n");
+        #endif
+    #endif  //UWB_ACTIVE
+
     //define synchronized trigger source
     #ifdef MQTT_ACTIVE
-        //do something amazing here
+        #ifdef DEBUG
+        printf("MQTT enabled. Timing will be initiated by incoming MQTT prompts\n");
+        #endif
     #else
+        #ifdef DEBUG
         printf("MQTT not enabled. Timing will be defined by internal timer interrupts\n");
+        #endif
         //define the ISR called for the SIGALRM signal
         signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
         ualarm(500000, 500000);     // trigger a SIGALRM signal 1/2 second
     #endif  //MQTT_ACTIVE
 
     #ifdef WIFI_ACTIVE
-        //send some message about how we're using wifi
-    #else
-        //wifi is not active, using stdout as output method
         #ifdef DEBUG
-            printf("Wifi not enabled, sending output to stdout\n");
+        printf("Wifi enabled! Output will be sent to gameserver\n");
+        #endif
+    #else
+        #ifdef DEBUG
+        //wifi is not active, using stdout as output method
+        printf("Wifi not enabled, sending output to stdout\n");
         #endif
     #endif
     
@@ -267,6 +257,55 @@ int main(){
     while(1){
         #ifdef MQTT_ACTIVE
             //do something to wait for a 'begin' signal
+            //basically, if MQTT signal is for me, set POLL_SAMPLES ISR
+           
+        #endif   //implied else -> POLL_SAMPLES flag set by AlarmISR
+
+        if(POLL_SAMPLES){
+            POLL_SAMPLES = 0;
+            //get UWB data
+            #ifdef UWB_ACTIVE
+                float* UWB_data = UWB_pull_samples();
+                UWB.A1 = UWB_data[0];
+                UWB.A2 = UWB_data[1];
+                UWB.A3 = UWB_data[2];
+            #endif  //implied else - values initialized to 0
+
+            #ifdef MQTT_ACTIVE
+                //when finished with IMU, respond back to allow for next module to begin
+                //do something amazing here
+            #endif
+
+            //get IMU data
+            #ifdef IMU_ACTIVE
+                int16_t* IMU_data = IMU_pull_samples_int();
+                ACC.x   =   IMU_data[0];
+                ACC.y   =   IMU_data[1];
+                ACC.z   =   IMU_data[2];
+                // GYRO.x  =   IMU_data[3];
+                // GYRO.y  =   IMU_data[4];
+                // GYRO.z  =   IMU_data[5];        
+                MAG.x   =   IMU_data[3];
+                MAG.y   =   IMU_data[4];
+                MAG.z   =   IMU_data[5];
+            #endif //implied else - values initialized to 0
+
+            //send out data
+            #ifdef WIFI_ACTIVE
+                //send responde over wifi
+                send_response();
+            #else
+                //wifi is not enabled, print to screen
+                print_response();
+            #endif
+        }
+        
+        //read trigger whenever possible. if pressed, store until next raw packet is sent
+        #ifdef RPI
+            if(!SHOTS_FIRED)
+                SHOTS_FIRED = get_trigger();
+        #else
+            SHOTS_FIRED = 0;
         #endif
     }
 
