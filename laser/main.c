@@ -1,6 +1,29 @@
 /* main.c
  *
  * This file will compile into the main laser-brains method.
+ * The underlying flow of the laser-brains is broken into several sequential
+ * steps, as follows:
+ * 
+ *  1) Receive 'begin' signal from gameserver
+ *      This signal is used to guarantee syncronization between the other players
+ *      in order to prevent collisions. A collision would occur in the UWB modules
+ *      due to only one message being able to be sent at one time across the entire 
+ *      UWB network.The 'begin' signal will contain the tag-name of the player rifle
+ *      and will be sent using MQTT
+ * 
+ *  2) Poll UWB location data
+ *      Upon receiving the begin signal the player rifle will begin requesting and 
+ *      receiving data from each of the 3 location anchors, sequentially. This 
+ *      communication happens across the UWB network.
+ * 
+ *  3) Respond with 'finished' signal to gameserver
+ *      This allows for the UWB network to not be delayed unnecessarily. 
+ * 
+ *  4) Poll IMU sensor for data
+ *      This action is relatively short and can be treated as instantanous retrieval
+ * 
+ *  5) Push current raw-data to gameserver
+ *      Using wifi, data should be pushed to the gameserver for processing.
  * 
  */
 
@@ -17,6 +40,7 @@
 /////////////////////////////////////////
 #define DEBUG
 //#define MQTT_ACTIVE
+//#define WIFI_ACTIVE
 #define IMU_ACTIVE
 #define UWB_ACTIVE
 //#define RPI
@@ -30,7 +54,8 @@ struct IMU_samples_x3 MAG  = {0, 0, 0};
 struct UWB_samples_x3 UWB  = {0, 0, 0};
 #define TRIGGER_PIN     29      //actual pin 40
 #define V_SOURCE_PIN    28      //actual pin 38
-//#define GND_PIN use GND from actual pin 39
+#define GND_PIN         28.5    //actual pin 39
+
 #define PI              3.14159
 #define DECLINATION     11.32   //magnetic declination for Logan UT in degrees
 #define ACC_LSB         0.001F
@@ -43,7 +68,7 @@ struct UWB_samples_x3 UWB  = {0, 0, 0};
     #include <wiringPi.h>
 #else
     //RPI must be defined for actual operation. These prototypes allow for
-    //development outside of the RPI 
+    //development and compilation checks outside of the RPI.
     #define wiringPiSetup(VOID) 0
     #define digitalRead(pin) 0
     #define digitalWrite(pin, val) 0
@@ -133,8 +158,8 @@ unsigned char get_trigger(){
 void send_response(){
     //if we respond before we poll new values, other rifles wont have to 
     //wait while we are polling.
-    #ifdef MQTT_ACTIVE
-        //do some MQTT
+    #ifdef UWB_ACTIVE
+        //poll the UWB modules for data
     #else
         printf("A: %i %i %i\t\tG: %i %i %i\t\tM: %i %i %i\n",
             ACC.x, ACC.y, ACC.z, GYRO.x, GYRO.y, GYRO.z, MAG.x, MAG.y, MAG.z);
@@ -179,8 +204,17 @@ void send_response(){
 
 void alarmISR(int sig_num){
     if(sig_num == SIGALRM){
-        alarm(1);
-        send_response();
+        //get UWB data
+
+        //get IMU data
+
+        #ifdef WIFI_ACTIVE
+            //send responde over wifi
+            send_response();
+        #else
+            //wifi is not enabled, print to screen
+
+        #endif
     }
 }
 
@@ -210,17 +244,31 @@ int main(){
         #endif
     #endif  //IMU_ACTIVE
 
+    //define synchronized trigger source
     #ifdef MQTT_ACTIVE
         //do something amazing here
     #else
-        printf("MQTT not enabled. Messages will be sent to the console\n");
+        printf("MQTT not enabled. Timing will be defined by internal timer interrupts\n");
         //define the ISR called for the SIGALRM signal
         signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
-        alarm(1);     // trigger a SIGALRM signal 1 second
+        ualarm(500000, 500000);     // trigger a SIGALRM signal 1/2 second
     #endif  //MQTT_ACTIVE
+
+    #ifdef WIFI_ACTIVE
+        //send some message about how we're using wifi
+    #else
+        //wifi is not active, using stdout as output method
+        #ifdef DEBUG
+            printf("Wifi not enabled, sending output to stdout\n");
+        #endif
+    #endif
     
     //initialize the laser to be doing no work until told to do so
-    while(1){}
+    while(1){
+        #ifdef MQTT_ACTIVE
+            //do something to wait for a 'begin' signal
+        #endif
+    }
 
     return 0;
 }
