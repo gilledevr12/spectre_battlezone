@@ -7,8 +7,8 @@ CFLAGS  = -lm -g -Wall
 default: laser-brains
 
 # For the laser-brains executable, list here all object files to be included
-laser-brains:  main.o dwm1000.o lsm9ds1.o mqtt.o
-	$(CC) $(CFLAGS) main.o dwm1000.o lsm9ds1.o -o laser-brains
+laser-brains:  main.o client.o dwm1000.o lsm9ds1.o mqtt.o
+	$(CC) $(CFLAGS) main.o client.o dwm1000.o lsm9ds1.o mqtt.o -o laser-brains
 
 test-imu: test_imu.o lsm9ds1.o 
 	$(CC) $(CFLAGS) test_imu.o lsm9ds1.o -o test-imu 

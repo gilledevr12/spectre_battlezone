@@ -40,11 +40,11 @@ void open_client_socket(){
     }
 }
 
-void send_status(struct IMU_samples_x3 acc, struct IMU_samples_x3 gyrpo, struct IMU_samples_x3 mag, int shot, int weight){    /*Main loop: get/send lines of text*/
+void send_status(struct IMU_samples_x3 acc, /*struct IMU_samples_x3 gyro,*/ struct IMU_samples_x3 mag, struct UWB_samples_x3 uwb, uint8_t shots_fired){
     int packet_length;
-    char *packet_buffer;
-    sprintf(packet_buffer, "%s %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %3.5f %i %i", 
-        DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, shot, weight);
+    static char packet_buffer[200];
+    sprintf(packet_buffer, "%s %i %i %i %i %i %i %3.2f %3.2f %3.2f %i", 
+        DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, uwb.A1, uwb.A2, uwb.A3, shots_fired);
 
     #ifdef DEBUG
         printf("Sending client packet: %s\n", packet_buffer);
