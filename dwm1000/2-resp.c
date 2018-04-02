@@ -201,7 +201,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 void runRanging(char *token, int num, char* play){
 
-    int LIMIT;
+    double LIMIT;
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
     } else {
