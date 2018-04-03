@@ -138,7 +138,7 @@ static uint64 poll_tx_ts[3];
 static uint64 resp_rx_ts[3];
 static uint64 final_tx_ts[3];
 char round_match[8] = {0};
-static bool mutex = true;
+static bool quitting = true;
 
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
@@ -200,6 +200,7 @@ void runRanging(char* token, int num){
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
         printf("time %f", time_taken);
+        if (time_taken > .07) quitting = true;
 
         frame_seq_nb++;
 
@@ -295,40 +296,6 @@ void runRanging(char* token, int num){
  */
 int main(void)
 {
-    /* Start with board specific hardware init. */
-    //peripherals_init();
-
-    /* Display application name on LCD. */
-    //lcd_display_str(APP_NAME);
-
-    /* Reset and initialise DW1000.
-     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
-     * performance. */
-    //reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
-//    spi_set_rate_low();
-    if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR)
-    {
-        printf("INIT FAILED");
-        return 0;
-    }
-    setSpeed(HIGH);
-
-    //spi_set_rate_high();
-
-    /* Configure DW1000. See NOTE 7 below. */
-    dwt_configure(&config);
-    dwt_configuretxrf(&txconfig);
-
-    /* Apply default antenna delay value. See NOTE 1 below. */
-    dwt_setrxantennadelay(RX_ANT_DLY);
-    dwt_settxantennadelay(TX_ANT_DLY);
-
-    /* Set expected response's delay and timeout. See NOTE 4, 5 and 6 below.
-     * As this example only handles one incoming frame with always the same delay and timeout, those values can be set here once for all. */
-    dwt_setrxaftertxdelay(POLL_TX_TO_RESP_RX_DLY_UUS);
-    dwt_setrxtimeout(RESP_RX_TIMEOUT_UUS);
-//    dwt_setpreambledetecttimeout(PRE_TIMEOUT);
-
     printf("Which Anchor am I? ");
     char* bufNum;
     size_t buf_size = 3;
@@ -343,36 +310,72 @@ int main(void)
 
     printf("\nI am %s\n", MQTT_NAME);
 
-    /* Loop forever initiating ranging exchanges. */
-    mosquitto_lib_init();
-    struct mosquitto *mosq = mosquitto_new(MQTT_NAME, true, NULL);
-    if(!mosq){
-        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
-        exit(-1);
-    }
-
-    if(mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)){
-        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
-        exit(-2);
-    }
-
-    char buf[7];
-
-    mosquitto_message_callback_set(mosq, message_callback);
-    mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
-
-    /* Loop forever initiating ranging exchanges. */
     while (1) {
-        int ret = mosquitto_loop(mosq, 250, 1);
-        if (ret) {
-            fprintf(stderr, "Connection error. Reconnecting...\n");
-            sleep(1);
-            mosquitto_reconnect(mosq);
-        }
-    }
+        /* Start with board specific hardware init. */
+        //peripherals_init();
 
-    mosquitto_destroy(mosq);
-    mosquitto_lib_cleanup();
+        /* Display application name on LCD. */
+        //lcd_display_str(APP_NAME);
+
+        /* Reset and initialise DW1000.
+         * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
+         * performance. */
+        //reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
+//    spi_set_rate_low();
+        if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR) {
+            printf("INIT FAILED");
+            return 0;
+        }
+        setSpeed(HIGH);
+
+        //spi_set_rate_high();
+
+        /* Configure DW1000. See NOTE 7 below. */
+        dwt_configure(&config);
+        dwt_configuretxrf(&txconfig);
+
+        /* Apply default antenna delay value. See NOTE 1 below. */
+        dwt_setrxantennadelay(RX_ANT_DLY);
+        dwt_settxantennadelay(TX_ANT_DLY);
+
+        /* Set expected response's delay and timeout. See NOTE 4, 5 and 6 below.
+         * As this example only handles one incoming frame with always the same delay and timeout, those values can be set here once for all. */
+        dwt_setrxaftertxdelay(POLL_TX_TO_RESP_RX_DLY_UUS);
+        dwt_setrxtimeout(RESP_RX_TIMEOUT_UUS);
+//    dwt_setpreambledetecttimeout(PRE_TIMEOUT);
+
+        /* Loop forever initiating ranging exchanges. */
+        mosquitto_lib_init();
+        struct mosquitto *mosq = mosquitto_new(MQTT_NAME, true, NULL);
+        if (!mosq) {
+            fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+            exit(-1);
+        }
+
+        if (mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)) {
+            fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+            exit(-2);
+        }
+
+        char buf[7];
+
+        mosquitto_message_callback_set(mosq, message_callback);
+        mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
+
+        /* Loop forever initiating ranging exchanges. */
+        while (!quitting) {
+            int ret = mosquitto_loop(mosq, 250, 1);
+            if (ret) {
+                fprintf(stderr, "Connection error. Reconnecting...\n");
+                sleep(1);
+                mosquitto_reconnect(mosq);
+            }
+        }
+
+        quitting = false;
+        mosquitto_destroy(mosq);
+        mosquitto_lib_cleanup();
+    }
 
 }
 
