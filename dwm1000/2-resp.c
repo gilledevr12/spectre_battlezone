@@ -159,6 +159,7 @@ char dist_str_2[33] = {0};
 char dist_str_3[33] = {0};
 char dist_str[100] = {0};
 char round_match[6] = {0};
+static bool quitting = false;
 
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
@@ -205,7 +206,7 @@ void runRanging(char *token, int num, char* play){
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
     } else {
-        LIMIT = .12;
+        LIMIT = .11;
     }
 //    bool correctAnchor = false;
 
@@ -226,6 +227,9 @@ void runRanging(char *token, int num, char* play){
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
         printf("time %f", time_taken);
+        if (time_taken > LIMIT){
+            quitting = true;
+        }
 
         if (status_reg & SYS_STATUS_RXFCG) {
             uint32 frame_len;
@@ -453,8 +457,7 @@ void runRanging(char *token, int num, char* play){
  *
  * @return none
  */
-int main(void)
-{
+int main(void) {
     /* Start with board specific hardware init. */
 //    peripherals_init();
 
@@ -466,8 +469,7 @@ int main(void)
      * performance. */
 //    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
 //    spi_set_rate_low();
-    if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR)
-    {
+    if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR) {
         printf("INIT FAILED");
         return 0;
     }
@@ -487,62 +489,65 @@ int main(void)
 //    dwt_setpreambledetecttimeout(PRE_TIMEOUT);
 
     printf("Which Tag am I? ");
-    char* bufNum;
+    char *bufNum;
     size_t buf_size = 3;
     getline(&bufNum, &buf_size, stdin);
 
-    strcat(MQTT_NAME,bufNum);
-    strcat(MQTT_NAME_PUB,bufNum);
-    for (int i = 0; i < 3; i++){
+    strcat(MQTT_NAME, bufNum);
+    strcat(MQTT_NAME_PUB, bufNum);
+    for (int i = 0; i < 3; i++) {
         rx_poll_msg[i][8] = bufNum[0];
         tx_resp_msg[i][6] = bufNum[0];
         rx_final_msg[i][8] = bufNum[0];
     }
 
     printf("\nI am %s\n", MQTT_NAME);
+    while (1){
 
-    /* Loop forever responding to ranging requests. */
-    mosquitto_lib_init();
-    struct mosquitto *mosq = mosquitto_new(MQTT_NAME, true, NULL);
-    if(!mosq){
-        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
-        exit(-1);
-    }
 
-    if(mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)){
-        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
-        exit(-2);
-    }
-
-    mosq_pub = mosquitto_new(MQTT_NAME_PUB, true, NULL);
-    if(!mosq_pub){
-        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
-        exit(-1);
-    }
-
-    if(mosquitto_connect(mosq_pub, MQTT_HOSTNAME, MQTT_PORT, 0)){
-        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
-        exit(-2);
-    }
-
-    char buf[7];
-
-    mosquitto_message_callback_set(mosq, message_callback);
-    mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
-
-    /* Loop forever initiating ranging exchanges. */
-    while (1) {
-        int ret = mosquitto_loop(mosq, 250, 1);
-        if (ret) {
-            fprintf(stderr, "Connection error. Reconnecting...\n");
-            sleep(1);
-            mosquitto_reconnect(mosq);
+        /* Loop forever responding to ranging requests. */
+        mosquitto_lib_init();
+        struct mosquitto *mosq = mosquitto_new(MQTT_NAME, true, NULL);
+        if (!mosq) {
+            fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+            exit(-1);
         }
+
+        if (mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)) {
+            fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+            exit(-2);
+        }
+
+        mosq_pub = mosquitto_new(MQTT_NAME_PUB, true, NULL);
+        if (!mosq_pub) {
+            fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+            exit(-1);
+        }
+
+        if (mosquitto_connect(mosq_pub, MQTT_HOSTNAME, MQTT_PORT, 0)) {
+            fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+            exit(-2);
+        }
+
+        char buf[7];
+
+        mosquitto_message_callback_set(mosq, message_callback);
+        mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
+
+        /* Loop forever initiating ranging exchanges. */
+        while (!quitting) {
+            int ret = mosquitto_loop(mosq, 250, 1);
+            if (ret) {
+                fprintf(stderr, "Connection error. Reconnecting...\n");
+                sleep(1);
+                mosquitto_reconnect(mosq);
+            }
+        }
+
+        quitting = false;
+        mosquitto_destroy(mosq);
+        mosquitto_lib_cleanup();
     }
-
-    mosquitto_destroy(mosq);
-    mosquitto_lib_cleanup();
-
 }
 
 /*! ------------------------------------------------------------------------------------------------------------------
