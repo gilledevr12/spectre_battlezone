@@ -205,7 +205,7 @@ void runRanging(char *token, int num, char* play){
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
     } else {
-        LIMIT = .09;
+        LIMIT = .12;
     }
 //    bool correctAnchor = false;
 
