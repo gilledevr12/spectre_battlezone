@@ -458,36 +458,6 @@ void runRanging(char *token, int num, char* play){
  * @return none
  */
 int main(void) {
-    /* Start with board specific hardware init. */
-//    peripherals_init();
-
-    /* Display application name on LCD. */
-//    lcd_display_str(APP_NAME);
-
-    /* Reset and initialise DW1000.
-     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
-     * performance. */
-//    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
-//    spi_set_rate_low();
-    if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR) {
-        printf("INIT FAILED");
-        return 0;
-    }
-//    spi_set_rate_high();
-    setSpeed(HIGH);
-
-
-    /* Configure DW1000. See NOTE 7 below. */
-    dwt_configure(&config);
-    dwt_configuretxrf(&txconfig);
-
-    /* Apply default antenna delay value. See NOTE 1 below. */
-    dwt_setrxantennadelay(RX_ANT_DLY);
-    dwt_settxantennadelay(TX_ANT_DLY);
-
-    /* Set preamble timeout for expected frames. See NOTE 6 below. */
-//    dwt_setpreambledetecttimeout(PRE_TIMEOUT);
-
     printf("Which Tag am I? ");
     char *bufNum;
     size_t buf_size = 3;
@@ -502,8 +472,37 @@ int main(void) {
     }
 
     printf("\nI am %s\n", MQTT_NAME);
-    while (1){
 
+    /* Start with board specific hardware init. */
+//    peripherals_init();
+
+    /* Display application name on LCD. */
+//    lcd_display_str(APP_NAME);
+
+    /* Reset and initialise DW1000.
+     * For initialisation, DW1000 clocks must be temporarily set to crystal speed. After initialisation SPI rate can be increased for optimum
+     * performance. */
+//    reset_DW1000(); /* Target specific drive of RSTn line into DW1000 low for a period. */
+//    spi_set_rate_low();
+    while (1){
+        if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR) {
+            printf("INIT FAILED");
+            return 0;
+        }
+    //    spi_set_rate_high();
+        setSpeed(HIGH);
+
+
+        /* Configure DW1000. See NOTE 7 below. */
+        dwt_configure(&config);
+        dwt_configuretxrf(&txconfig);
+
+        /* Apply default antenna delay value. See NOTE 1 below. */
+        dwt_setrxantennadelay(RX_ANT_DLY);
+        dwt_settxantennadelay(TX_ANT_DLY);
+
+        /* Set preamble timeout for expected frames. See NOTE 6 below. */
+    //    dwt_setpreambledetecttimeout(PRE_TIMEOUT);
 
         /* Loop forever responding to ranging requests. */
         mosquitto_lib_init();
