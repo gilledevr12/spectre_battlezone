@@ -1,14 +1,14 @@
 # Define the compiler being used with the compiler flags
 CC = gcc
-CFLAGS  = -lm -g -Wall
-#CFLAGS  = -lm -lwiringPi -g -Wall
+CFLAGS  = -g  #-l wiringPi
+DECAFILES = decadriver/dwm_api/deca_device.c decadriver/dwm_api/deca_params_init.c decadriver/dwm_api/my_deca_spi.c
 
 #default: laser-brains
 default: laser-brains
 
 # For the laser-brains executable, list here all object files to be included
-laser-brains:  main.o client.o dwm1000.o lsm9ds1.o mqtt.o
-	$(CC) $(CFLAGS) main.o client.o dwm1000.o lsm9ds1.o mqtt.o -o laser-brains
+laser-brains:   client.o dwm1000.o lsm9ds1.o mqtt.o main.o
+	$(CC) $(CFLAGS) -lm -lmosquitto main.o client.o dwm1000.o lsm9ds1.o mqtt.o $(DECAFILES) -o laser-brains
 
 test-imu: test_imu.o lsm9ds1.o 
 	$(CC) $(CFLAGS) test_imu.o lsm9ds1.o -o test-imu 
@@ -22,7 +22,7 @@ client.o: client.c client.h
 	$(CC) $(CFLAGS) -c client.c
 
 dwm1000.o: dwm1000.c dwm1000.h
-		$(CC) $(CFLAGS) -c dwm1000.c
+		$(CC) $(CFLAGS) -lmosquitto -c dwm1000.c $(DECAFILES)
 
 gen_mac.o: gen_mac.c
 	$(CC) $(CFLAGS) -c gen_mac.c
@@ -34,7 +34,7 @@ lsm9ds1.o: lsm9ds1.c lsm9ds1.h
 		$(CC) $(CFLAGS) -c lsm9ds1.c
 
 mqtt.o: mqtt.c mqtt.h
-		$(CC) $(CFLAGS) -c mqtt.c
+		$(CC) $(CFLAGS) -lmosquitto -c mqtt.c
 
 main.o: main.c main.h
 		$(CC) $(CFLAGS) -c main.c

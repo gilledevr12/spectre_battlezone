@@ -45,7 +45,7 @@ void create_map(){
     init_location();
     publish();
     fclose(map);
-    build_array(map,&map_data);
+    // build_array(map,&map_data);
     /*while(active){
         get_active_status();
         current_location = get_location();

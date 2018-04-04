@@ -31,8 +31,7 @@ bool active = true;
 bool exitMode = false;
 char wallType = '-';
 
-void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
-{
+void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message){
     bool match = 0;
     mosquitto_topic_matches_sub(MQTT_TOPIC_TAG, message->topic, &match);
     if (match) {
@@ -77,18 +76,17 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         double eq2_f = d1 - d3 - eq2_const;
         double x = (eq2_f - ((eq2_y*eq1_f)/eq1_y))/(eq2_x - ((eq2_y*eq1_x)/eq1_y));
         double y = (eq1_f - (eq1_x * x))/(eq1_y);
-//        printf("Tag %d position: (%f, %f)\n", tag, x, y);
+ //        printf("Tag %d position: (%f, %f)\n", tag, x, y);
         // current_location.x = x;
         // current_location.y = y;
-//        current_location.z = 1;
+ //        current_location.z = 1;
         fprintf(map, "%c %3.2f %3.2f\n", wallType, x, y);
         printf("%c %3.2f %3.2f\n", wallType, x, y);
-//        printf("Tag %d position: (%f, %f)\n", tag, x, y);
+ //        printf("Tag %d position: (%f, %f)\n", tag, x, y);
     }
 }
 
-void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
-{
+void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message){
     bool match = 0;
     ind += 1;
     // printf("hello\n");
@@ -131,7 +129,7 @@ double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, c
     char buf[16];
     int tag = 1;
     char* mode = (char*)malloc(7);
-    mode = "setup";
+    mode = "locate";
     for (int i = 0; i < 10; i++){
         dist_buf[i] = 0;
     }
@@ -160,7 +158,7 @@ double getDist(struct mosquitto *mosq, struct mosquitto *mosq_sub, int anchor, c
     }
     total = total/10;
     mtx = false;
-    printf("Anchor %d %c position in meters (2 decimal points): %f\n", anchor, axis, total);
+    printf("Anchor %d %c position in meters (2 decimal points): %3.2f\n", anchor, axis, total);
     return total;
 }
 
@@ -188,6 +186,7 @@ void ranging(struct mosquitto* mosq, struct mosquitto* mosq_sub, bool play){
     
     char buf[16];  
     char* mode = (char*)malloc(7);
+    char* poll = (char*)malloc(7);
     if (play) {
         mode = "play";
     } else {
@@ -195,64 +194,65 @@ void ranging(struct mosquitto* mosq, struct mosquitto* mosq_sub, bool play){
     }
 
         //play stuff
-// sprintf(buf, "Anchor%d Tag%d", 1, 1);
-//             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-//                 fprintf(stderr, "Could not publish to broker. Quitting\n");
-//                 exit(-3);
-//             }
+ // sprintf(buf, "Anchor%d Tag%d", 1, 1);
+ //             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+ //                 fprintf(stderr, "Could not publish to broker. Quitting\n");
+ //                 exit(-3);
+ //             }
 
     int ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
 
     while(active && !exitMode){
+        poll = "idle";
         for (int anchorCnt = 0; anchorCnt < 3; anchorCnt++){
+            if (anchorCnt == 2) {
+                poll = "poll";
+            }
             if(ret){
                 fprintf(stderr, "Connection error. Reconnecting...\n");
                 sleep(1);
                 mosquitto_reconnect(mosq_sub);
             }
-            sprintf(buf, "Anchor%d Tag%d %s", tagCnt[0][anchorCnt], 1, mode);
+            sprintf(buf, "Anchor%d Tag%d %s %s", tagCnt[0][anchorCnt], 1, mode, poll);
             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
-            usleep(100000);
+            usleep(90000);
             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
-            usleep(100000);
+            usleep(90000);
             // if (play){
                 // ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-                sprintf(buf, "Anchor%d Tag%d %s", tagCnt[1][anchorCnt], 2, mode);
+                sprintf(buf, "Anchor%d Tag%d %s %s", tagCnt[1][anchorCnt], 2, mode, poll);
                 if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                     fprintf(stderr, "Could not publish to broker. Quitting\n");
                     exit(-3);
                 }
-                usleep(100000);
+                usleep(90000);
             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
-            usleep(100000);
+            usleep(90000);
                 // ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
-                sprintf(buf, "Anchor%d Tag%d %s", tagCnt[2][anchorCnt], 3, mode);
+                sprintf(buf, "Anchor%d Tag%d %s %s", tagCnt[2][anchorCnt], 3, mode, poll);
                 if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                     fprintf(stderr, "Could not publish to broker. Quitting\n");
                     exit(-3);
                 }
-                usleep(100000);
+                usleep(90000);
                 
             if(mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
-            usleep(100000);
+            usleep(90000);
             // }
             ret = mosquitto_loop(mosq_sub, 250, 1); //different thread?
         }
-        
-
-        
 
         while(!active){}
     }
@@ -326,4 +326,3 @@ void publish(){
     mosquitto_destroy (mosq);
     mosquitto_lib_cleanup();
 }
-

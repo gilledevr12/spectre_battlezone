@@ -1,9 +1,11 @@
 #ifndef DWM1000_H
 #define DWM1000_H
 
-#include "../dwm1000/decadriver/dwm_api/my_deca_spi.h"
-#include "../dwm1000/decadriver/dwm_api/deca_device_api.h"
-#include "../dwm1000/decadriver/dwm_api/deca_regs.h"
+#include "decadriver/dwm_api/my_deca_spi.h"
+#include "decadriver/dwm_api/deca_device_api.h"
+#include "decadriver/dwm_api/deca_regs.h"
+#include "main.h"
+#include <stdbool.h>
 
 static dwt_config_t config = {
         2,               /* Channel number. */
@@ -99,23 +101,10 @@ static double tof[3];
 static double distance[3];
 static int anchCnt = 0;
 
-/* String used to display measured distance on LCD screen (16 characters maximum). */
-char dist_str_1[33] = {0};
-char dist_str_2[33] = {0};
-char dist_str_3[33] = {0};
-char dist_str[100] = {0};
-static bool quitting = false;
-
-static int tagCnt[3][3] = {
-        {1, 2, 3},
-        {2, 3, 1},
-        {3, 1, 2}
-};
-
 static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts);
 static uint64 get_rx_timestamp_u64(void);
 static uint64 get_tx_timestamp_u64(void);
 int init_dwm();
-void runRanging(char *token, int num, char* play);
+void runRanging(char *token, int num, char* play, char* poll);
 
 #endif //DWM1000_H

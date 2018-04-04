@@ -9,10 +9,9 @@
 #define MQTT_TOPIC "location_sync"
 #define MQTT_TOPIC_TAG "location_tag"
 #define MQTT_TOPIC_INIT "location_init"
+#define MQTT_NAME "Tag_"
+#define MQTT_NAME_PUB "Pub_Tag_"
 
-static char MQTT_NAME[10] = "Tag_";
-static char MQTT_NAME_PUB[15] = "Pub_Tag_";
-char round_match[6] = {0};
 static struct mosquitto *mosq;
 static struct mosquitto *mosq_pub;
 

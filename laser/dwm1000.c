@@ -4,7 +4,23 @@
 #include <time.h>
 #include "mqtt.h"
 
-void runRanging(char *token, int num, char* play){
+/* String used to display measured distance on LCD screen (16 characters maximum). */
+char dist_str_1[33] = {0};
+char dist_str_2[33] = {0};
+char dist_str_3[33] = {0};
+char dist_str[100] = {0};
+bool quitting = false;
+extern unsigned char POLL_SAMPLES;
+
+static int tagCnt[3][3] = {
+        {1, 2, 3},
+        {2, 3, 1},
+        {3, 1, 2}
+};
+
+float UWB_Curr_Distance[3];
+
+void runRanging(char *token, int num, char* play, char* poll){
 
     double LIMIT;
     if (memcmp(play, "locate", 6) == 0) {
@@ -35,7 +51,7 @@ void runRanging(char *token, int num, char* play){
     if (status_reg & SYS_STATUS_RXFCG) {
         uint32 frame_len;
 
-//        printf("got\n");
+ //        printf("got\n");
         /* Clear good RX frame event in the DW1000 status register. */
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
 
@@ -70,7 +86,7 @@ void runRanging(char *token, int num, char* play){
             dwt_writetxfctrl(sizeof(tx_resp_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
             ret = dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 
-//            printf("read\n");
+ //            printf("read\n");
 
             /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
             if (ret == DWT_ERROR) {
@@ -98,7 +114,7 @@ void runRanging(char *token, int num, char* play){
                 return;
             }
 
-//            printf("sent\n");
+ //            printf("sent\n");
 
             t = clock();
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
@@ -117,7 +133,7 @@ void runRanging(char *token, int num, char* play){
                 /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
                 dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
 
-//                printf("recieved\n");
+ //                printf("recieved\n");
                 /* A frame has been received, read it into the local buffer. */
                 frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFLEN_MASK;
                 if (frame_len <= RX_BUF_LEN) {
@@ -134,7 +150,7 @@ void runRanging(char *token, int num, char* play){
                     uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                     double Ra, Rb, Da, Db;
                     int64 tof_dtu;
-//                    printf("correct\n");
+ //                    printf("correct\n");
 
                     /* Retrieve response transmission and final reception timestamps. */
                     resp_tx_ts[num] = get_tx_timestamp_u64();
@@ -159,35 +175,41 @@ void runRanging(char *token, int num, char* play){
                     distance[num] = tof[num] * SPEED_OF_LIGHT;
 
                     if (strcmp(token, "Anchor1") == 0) {
-                        sprintf(dist_str_1, "Tag: %c Anchor: 1 Dist: %3.2f m\n", rx_poll_msg[num][8],
-                                distance[num]);
-                        printf(dist_str_1);
-                        if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_1), dist_str_1,
-                                              0,
-                                              false)) {
-                            fprintf(stderr, "Could not publish to broker. Quitting\n");
-                            exit(-3);
-                        }
+                        // sprintf(dist_str_1, "Tag: %c Anchor: 1 Dist: %3.2f m\n", rx_poll_msg[num][8],
+                        //         distance[num]);
+                        // printf(dist_str_1);
+                        // if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_1), dist_str_1,
+                        //                       0,
+                        //                       false)) {
+                        //     fprintf(stderr, "Could not publish to broker. Quitting\n");
+                        //     exit(-3);
+                        // }
+                        UWB_Curr_Distance[0] = distance[num];
                     } else if (strcmp(token, "Anchor2") == 0) {
-                        sprintf(dist_str_2, "Tag: %c Anchor: 2 Dist: %3.2f m\n", rx_poll_msg[num][8],
-                                distance[num]);
-                        printf(dist_str_2);
-                        if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_2), dist_str_2,
-                                              0,
-                                              false)) {
-                            fprintf(stderr, "Could not publish to broker. Quitting\n");
-                            exit(-3);
-                        }
+                        // sprintf(dist_str_2, "Tag: %c Anchor: 2 Dist: %3.2f m\n", rx_poll_msg[num][8],
+                        //         distance[num]);
+                        // printf(dist_str_2);
+                        // if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_2), dist_str_2,
+                        //                       0,
+                        //                       false)) {
+                        //     fprintf(stderr, "Could not publish to broker. Quitting\n");
+                        //     exit(-3);
+                        // }
+                        UWB_Curr_Distance[1] = distance[num];
                     } else if (strcmp(token, "Anchor3") == 0) {
-                        sprintf(dist_str_3, "Tag: %c Anchor: 3 Dist: %3.2f m\n", rx_poll_msg[num][8],
-                                distance[num]);
-                        printf(dist_str_3);
-                        if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_3), dist_str_3,
-                                              0,
-                                              false)) {
-                            fprintf(stderr, "Could not publish to broker. Quitting\n");
-                            exit(-3);
-                        }
+                        // sprintf(dist_str_3, "Tag: %c Anchor: 3 Dist: %3.2f m\n", rx_poll_msg[num][8],
+                        //         distance[num]);
+                        // printf(dist_str_3);
+                        // if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_INIT, strlen(dist_str_3), dist_str_3,
+                        //                       0,
+                        //                       false)) {
+                        //     fprintf(stderr, "Could not publish to broker. Quitting\n");
+                        //     exit(-3);
+                        // }
+                        UWB_Curr_Distance[2] = distance[num];
+                    }
+                    if (memcmp(poll, "poll", 4) == 0){
+                        POLL_SAMPLES = 1;
                     }
                 } else {
                     //second fail
@@ -252,7 +274,6 @@ int init_dwm(){
     return 0;
 }
 
-
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn get_tx_timestamp_u64()
  *
@@ -263,8 +284,7 @@ int init_dwm(){
  *
  * @return  64-bit value of the read time-stamp.
  */
-static uint64 get_tx_timestamp_u64(void)
-{
+static uint64 get_tx_timestamp_u64(void){
     uint8 ts_tab[5];
     uint64 ts = 0;
     int i;
@@ -287,8 +307,7 @@ static uint64 get_tx_timestamp_u64(void)
  *
  * @return  64-bit value of the read time-stamp.
  */
-static uint64 get_rx_timestamp_u64(void)
-{
+static uint64 get_rx_timestamp_u64(void){
     uint8 ts_tab[5];
     uint64 ts = 0;
     int i;
@@ -312,8 +331,7 @@ static uint64 get_rx_timestamp_u64(void)
  *
  * @return none
  */
-static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts)
-{
+static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts){
     int i;
     *ts = 0;
     for (i = 0; i < FINAL_MSG_TS_LEN; i++)

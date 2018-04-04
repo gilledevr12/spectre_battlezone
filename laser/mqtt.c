@@ -10,6 +10,8 @@
 #include "mqtt.h"
 #include "dwm1000.h"
 
+char round_match[6] = {0};
+
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
     bool match = 0;
@@ -19,6 +21,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     char *token;
     char *tag;
     char *play;
+    char *poll;
 
     //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     /* get the first token */
@@ -29,6 +32,9 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if ( tag != NULL ) {
         play = strtok(NULL, s);
     }
+    if ( play != NULL ) {
+        poll = strtok(NULL, s);
+    }
 
     sprintf(round_match, "Tag%c", rx_poll_msg[0][8]);
 
@@ -37,7 +43,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            runRanging(token, num - 1, play);
+            runRanging(token, num - 1, play, poll);
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
     }

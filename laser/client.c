@@ -70,18 +70,18 @@ void close_client_socket(){
     close(SOCK);
 }
 
-int pull_DEVICE_MAC(){
-    FILE* fin;
-    fin = fopen("DEVICE_MAC", "r");
-    if(fin < 0){
-        perror("Run gen_mac_file.sh before launching this program. Quitting..\n");
-        return 1;
-    }
+// int pull_DEVICE_MAC(){
+//     FILE* fin;
+//     fin = fopen("DEVICE_MAC", "r");
+//     if(fin < 0){
+//         perror("Run gen_mac_file.sh before launching this program. Quitting..\n");
+//         return 1;
+//     }
 
-    fgets(DEVICE_MAC, 13, fin);
-    #ifdef DEBUG
-        printf("Pulled mac: %s\n", DEVICE_MAC);
-    #endif
-    fclose(fin);
-    return 0;
-}
+//     fgets(DEVICE_MAC, 13, fin);
+//     #ifdef DEBUG
+//         printf("Pulled mac: %s\n", DEVICE_MAC);
+//     #endif
+//     fclose(fin);
+//     return 0;
+// }

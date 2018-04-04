@@ -31,9 +31,8 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
-#include "dwm1000.h"
-#include "mqtt.h"
 
 #include "main.h"
 
@@ -54,8 +53,8 @@ struct IMU_samples_x3 ACC  = {0, 0, 0};
 struct IMU_samples_x3 GYRO = {0, 0, 0};
 struct IMU_samples_x3 MAG  = {0, 0, 0};
 struct UWB_samples_x3 UWB  = {0, 0, 0}; //from anchors A1, A2 and A3 respectively
-volatile static uint8_t SHOTS_FIRED;
-volatile static uint8_t POLL_SAMPLES = 0;
+volatile uint8_t SHOTS_FIRED;
+volatile uint8_t POLL_SAMPLES = 0;
 #define TRIGGER_PIN     29      //actual pin 40
 #define V_SOURCE_PIN    28      //actual pin 38
 #define GND_PIN         28.5    //actual pin 39
@@ -68,14 +67,15 @@ volatile static uint8_t POLL_SAMPLES = 0;
 #define ACC_DOWN 	    -16000
 
 //external variables
-extern static bool quitting = false;
-extern static struct mosquitto *mosq;
-extern static struct mosquitto *mosq_pub;
-extern static char MQTT_NAME[10];
-extern static char MQTT_NAME_PUB[15];
-extern static uint8 rx_poll_msg[3][12];
-extern static uint8 tx_resp_msg[3][15];
-extern static uint8 rx_final_msg[3][24];
+extern bool quitting;
+extern struct mosquitto *mosq;
+extern struct mosquitto *mosq_pub;
+// extern char MQTT_NAME[10];
+// extern char MQTT_NAME_PUB[15];
+extern uint8 rx_poll_msg[3][12];
+extern uint8 tx_resp_msg[3][15];
+extern uint8 rx_final_msg[3][24];
+extern float UWB_Curr_Distance[3];
 
 //handle compiling on not the PI
 #ifdef RPI
@@ -293,14 +293,15 @@ int main(){
     while(1) {
         while (!quitting) {
             #ifdef MQTT_ACTIVE
-                //do something to wait for a 'begin' signal
-                //basically, if MQTT signal is for me, set POLL_SAMPLES ISR
+                //connect to MQTT broker
                 int ret = mosquitto_loop(mosq, 250, 1);
                 if (ret) {
                     fprintf(stderr, "Connection error. Reconnecting...\n");
                     sleep(1);
                     mosquitto_reconnect(mosq);
                 }
+                //when begin signal comes, data will be stored in global UWB_Curr_Distance
+                //when all 3 samples have been taken, POLL_SAMPLES will be set to true
 
             #endif   //implied else -> POLL_SAMPLES flag set by AlarmISR
 
@@ -308,10 +309,9 @@ int main(){
                 POLL_SAMPLES = 0;
                 //get UWB data
                 #ifdef UWB_ACTIVE
-                    float *UWB_data = UWB_pull_samples();
-                    UWB.A1 = UWB_data[0];
-                    UWB.A2 = UWB_data[1];
-                    UWB.A3 = UWB_data[2];
+                    UWB.A1 = UWB_Curr_Distance[0];
+                    UWB.A2 = UWB_Curr_Distance[1];
+                    UWB.A3 = UWB_Curr_Distance[2];
                 #endif  //implied else - values initialized to 0
 
                 #ifdef MQTT_ACTIVE
