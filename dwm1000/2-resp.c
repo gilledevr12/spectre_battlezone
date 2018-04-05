@@ -151,7 +151,7 @@ static uint64 final_rx_ts[3];
 static double tof[3];
 static double distance[3];
 static struct mosquitto *mosq_pub; //this could possibly be a problem
-static int anchCnt = 0;
+static int anchCnt = 1;
 
 /* String used to display measured distance on LCD screen (16 characters maximum). */
 char dist_str_1[33] = {0};
@@ -160,6 +160,7 @@ char dist_str_3[33] = {0};
 char dist_str[100] = {0};
 char round_match[6] = {0};
 static bool quitting = false;
+static bool success = false;
 
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
@@ -332,7 +333,7 @@ bool runRanging(char *token, int num, char* play){
                          * As the sequence number field of the frame is not used in this example, it can be zeroed to ease the validation of the frame. */
                         rx_buffer[ALL_MSG_SN_IDX] = 0;
                         if (memcmp(rx_buffer, rx_final_msg[num], ALL_MSG_COMMON_LEN) == 0) {
-//                            correctAnchor = true;
+                            success = true;
                             uint32 poll_tx_ts, resp_rx_ts, final_tx_ts;
                             uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                             double Ra, Rb, Da, Db;
@@ -409,7 +410,7 @@ bool runRanging(char *token, int num, char* play){
                             /* Activate reception immediately. */
                             dwt_rxenable(DWT_START_RX_IMMEDIATE);
 
-                            return false;
+                            success = false;
                         }
                     } else {
                         /* Clear RX error/timeout events in the DW1000 status register. */
@@ -418,7 +419,7 @@ bool runRanging(char *token, int num, char* play){
                         /* Reset RX to properly reinitialise LDE operation. */
                         dwt_rxreset();
 
-                        return false;
+                        success = false;
                     }
 //                }
             } else {
@@ -445,8 +446,8 @@ bool runRanging(char *token, int num, char* play){
         //try tag responsible ranging
         char buf[16];
         int tag = rx_final_msg[num][8] - '0';
-        anchCnt++;
-        if (anchCnt == 3) {
+        if (success) anchCnt++;
+        if (anchCnt == 4) {
             anchCnt = 1;
             tag++;
             if (tag == 4) tag = 1;

@@ -269,6 +269,7 @@ bool runRanging(char* token, int num){
                     /* Increment frame sequence number after transmission of the final message (modulo 256). */
                     frame_seq_nb++;
                 } else {
+                    deca_sleep(70);
                     return false;
                 }
             } else {
