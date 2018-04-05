@@ -165,7 +165,7 @@ static bool quitting = false;
 static uint64 get_tx_timestamp_u64(void);
 static uint64 get_rx_timestamp_u64(void);
 static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts);
-void runRanging(char *token, int num, char* play);
+bool runRanging(char *token, int num, char* play);
 
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
@@ -194,13 +194,13 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            runRanging(token, num - 1, play);
+            while(!runRanging(token, num - 1, play));
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
     }
 }
 
-void runRanging(char *token, int num, char* play){
+bool runRanging(char *token, int num, char* play){
 
     double LIMIT;
     if (memcmp(play, "locate", 6) == 0) {
@@ -408,6 +408,8 @@ void runRanging(char *token, int num, char* play){
 
                             /* Activate reception immediately. */
                             dwt_rxenable(DWT_START_RX_IMMEDIATE);
+
+                            return false;
                         }
                     } else {
                         /* Clear RX error/timeout events in the DW1000 status register. */
@@ -415,8 +417,18 @@ void runRanging(char *token, int num, char* play){
 
                         /* Reset RX to properly reinitialise LDE operation. */
                         dwt_rxreset();
+
+                        return false;
                     }
 //                }
+            } else {
+                //first fail
+                dwt_setrxtimeout(0);
+
+                /* Activate reception immediately. */
+                dwt_rxenable(DWT_START_RX_IMMEDIATE);
+
+                return false;
             }
         } else {
             /* Clear RX error/timeout events in the DW1000 status register. */
@@ -424,6 +436,8 @@ void runRanging(char *token, int num, char* play){
 
             /* Reset RX to properly reinitialise LDE operation. */
             dwt_rxreset();
+
+            return false;
         }
 //    }
 
@@ -445,6 +459,8 @@ void runRanging(char *token, int num, char* play){
         if (tag != 1) anchCnt++;
         if (anchCnt == 3) anchCnt = 0;
     }
+
+    return true;
 
 }
 

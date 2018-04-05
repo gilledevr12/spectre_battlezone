@@ -144,7 +144,7 @@ static bool quitting = true;
 static uint64 get_tx_timestamp_u64(void);
 static uint64 get_rx_timestamp_u64(void);
 static void final_msg_set_ts(uint8 *ts_field, uint64 ts);
-void runRanging(char* token, int num);
+bool runRanging(char* token, int num);
 
 //callback
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
@@ -168,14 +168,14 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            runRanging(token, num - 1);
+            while (!runRanging(token, num - 1));
         }
     }
     printf("left\n");
 }
 
 
-void runRanging(char* token, int num){
+bool runRanging(char* token, int num){
     bool blink = false;
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     while(!blink) {
@@ -275,6 +275,8 @@ void runRanging(char* token, int num){
 
                 /* Activate reception immediately. */
                 dwt_rxenable(DWT_START_RX_IMMEDIATE);
+
+                return false;
             }
         } else {
             /* Clear RX error/timeout events in the DW1000 status register. */
@@ -282,8 +284,11 @@ void runRanging(char* token, int num){
 
             /* Reset RX to properly reinitialise LDE operation. */
             dwt_rxreset();
+
+            return false;
         }
     }
+    return true;
 }
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn main()
