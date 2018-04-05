@@ -277,24 +277,24 @@ bool runRanging(char *token, int num, char* play){
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
                 if (ret == DWT_ERROR) {
                     printf("error\n");
-                    if (memcmp(play, "play", 4) == 0){
-                        //try tag responsible ranging
-                        char buf[16];
-                        int tag = rx_final_msg[num][8] - '0';
-                        tag++;
-                        if (tag == 4) {
-                            anchCnt++;
-                            if (anchCnt == 3) anchCnt = 0;
-                            tag = 1;
-                        }
-                        sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
-                        if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
-                            fprintf(stderr, "Could not publish to broker. Quitting\n");
-                            exit(-3);
-                        }
-                        if (tag != 1) anchCnt++;
-                        if (anchCnt == 3) anchCnt = 0;
-                    }
+//                    if (memcmp(play, "play", 4) == 0){
+//                        //try tag responsible ranging
+//                        char buf[16];
+//                        int tag = rx_final_msg[num][8] - '0';
+//                        tag++;
+//                        if (tag == 4) {
+//                            anchCnt++;
+//                            if (anchCnt == 3) anchCnt = 0;
+//                            tag = 1;
+//                        }
+//                        sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+//                        if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+//                            fprintf(stderr, "Could not publish to broker. Quitting\n");
+//                            exit(-3);
+//                        }
+//                        if (tag != 1) anchCnt++;
+//                        if (anchCnt == 3) anchCnt = 0;
+//                    }
                     return false;
                 }
 
@@ -445,19 +445,30 @@ bool runRanging(char *token, int num, char* play){
         //try tag responsible ranging
         char buf[16];
         int tag = rx_final_msg[num][8] - '0';
-        tag++;
-        if (tag == 4) {
-            anchCnt++;
-            if (anchCnt == 3) anchCnt = 0;
-            tag = 1;
+        anchCnt++;
+        if (anchCnt == 3) {
+            anchCnt = 1;
+            tag++;
+            if (tag == 4) tag = 1;
         }
-        sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+        sprintf(buf, "Anchor%d Tag%d", anchCnt, tag);
         if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
         }
-        if (tag != 1) anchCnt++;
-        if (anchCnt == 3) anchCnt = 0;
+//        tag++;
+//        if (tag == 4) {
+//            anchCnt++;
+//            if (anchCnt == 3) anchCnt = 0;
+//            tag = 1;
+//        }
+//        sprintf(buf, "Anchor%d Tag%d", tagCnt[tag-1][anchCnt], tag);
+//        if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+//            fprintf(stderr, "Could not publish to broker. Quitting\n");
+//            exit(-3);
+//        }
+//        if (tag != 1) anchCnt++;
+//        if (anchCnt == 3) anchCnt = 0;
     }
 
     return true;
