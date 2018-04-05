@@ -451,7 +451,7 @@ bool runRanging(char *token, int num, char* play){
             tag++;
             if (tag == 4) tag = 1;
         }
-        sprintf(buf, "Anchor%d Tag%d", anchCnt, tag);
+        sprintf(buf, "Anchor%d Tag%d %s %s", anchCnt, tag, "play", "idle");
         if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
