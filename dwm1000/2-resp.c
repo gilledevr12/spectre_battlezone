@@ -295,7 +295,7 @@ bool runRanging(char *token, int num, char* play){
                         if (tag != 1) anchCnt++;
                         if (anchCnt == 3) anchCnt = 0;
                     }
-                    return;
+                    return false;
                 }
 
 //            printf("sent\n");

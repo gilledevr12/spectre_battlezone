@@ -268,13 +268,12 @@ bool runRanging(char* token, int num){
 
                     /* Increment frame sequence number after transmission of the final message (modulo 256). */
                     frame_seq_nb++;
+                } else {
+                    return false;
                 }
             } else {
                 /* Clear reception timeout to start next ranging process. */
                 dwt_setrxtimeout(0);
-
-                /* Activate reception immediately. */
-                dwt_rxenable(DWT_START_RX_IMMEDIATE);
 
                 return false;
             }
