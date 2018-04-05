@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "server.h"
 #include "setup.h"
+#include <pthread.h>
 #include "publish.h"
 #include <stdbool.h>
 #include "array.h"
@@ -14,6 +16,8 @@ map_array map_data;
 
 location_data current_location;
 FILE* map;
+
+pthread_t incoming_data_thread, mqtt_sync_thread;
 
 location_data get_location(){
     location_data current_location;
@@ -27,6 +31,10 @@ void init_location(){
     current_location.x = 1;
     current_location.y = 2;
     current_location.z = 0;
+}
+
+void* MQTT_sync_loop(){
+    publish("setup");
 }
 
 void create_map(){
@@ -43,8 +51,11 @@ void create_map(){
     printf("The file we'll be using is %s\n",map_name);
     map = fopen(map_name, "w");
     init_location();
-    publish();
+    pthread_create(&mqtt_sync_thread, NULL, MQTT_sync_loop, NULL);
+    pthread_create(&incoming_data_thread, NULL, server_loop, NULL);
+    pthread_join(mqtt_sync_thread, NULL);
     fclose(map);
+    pthread_cancel(incoming_data_thread);
     // build_array(map,&map_data);
     /*while(active){
         get_active_status();

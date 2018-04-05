@@ -11,7 +11,7 @@ extern struct location_data loc_dat;
 
 pthread_t server_thread, gameplay_display_thread;
 char* PLAYER_ID;
-float ACCEL[3], GYRO[3], MAG[3];
+uint16_t ACC[3], 
 
 #define PORT 8080
 #define MAX_BUFFER_LENGTH 1024
@@ -68,4 +68,8 @@ void* server_loop(){
 		// As of now, each packet: 
 		//		ID, ACCEL(x, y, z) GYRO (x, y, z) MAG(x, y, z), shots_fired (1/0) shot_weight(probably 4 bit char)
 	}
+}
+
+int main(){
+	
 }

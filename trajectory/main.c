@@ -69,13 +69,13 @@ int main(){
 
     print_map(p1, p2, p3);
 
-    uint8_t ret = is_in_trajectory(1, 3, p1, 75.0, p3);
+    uint8_t ret = is_in_trajectory(1, 3, p1, 55.0, p3);
     if(ret)
         printf("HIT!\n");
     else
         printf("MISS!\n");
 
-    ret = is_in_trajectory(1, 2, p1, 10.0, p2);
+    ret = is_in_trajectory(3, 1, p3, -200.0, p1);
     if(ret)
         printf("HIT!\n");
     else

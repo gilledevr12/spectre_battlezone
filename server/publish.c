@@ -89,7 +89,6 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 void message_callback_init(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message){
     bool match = 0;
     ind += 1;
-    // printf("hello\n");
     mosquitto_topic_matches_sub(MQTT_TOPIC_INIT, message->topic, &match);
     if (match) {
         double d1;
@@ -267,62 +266,65 @@ void ranging(struct mosquitto* mosq, struct mosquitto* mosq_sub, bool play){
     //     }
 }
 
-void publish(){
-    ind = 0;
-    mtx = false;
-    mosquitto_lib_init();
-    mosq = mosquitto_new(MQTT_NAME, true, NULL);
-    if(!mosq){
-        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
-        exit(-1);
+void publish(char* mode){
+    //setup or standard modes
+    if(mode == "setup"){
+        ind = 0;
+        mtx = false;
+        mosquitto_lib_init();
+        mosq = mosquitto_new(MQTT_NAME, true, NULL);
+        if(!mosq){
+            fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+            exit(-1);
+        }
+
+        struct mosquitto *mosq_sub = mosquitto_new(MQTT_NAME_SUB, true, NULL);
+        if(!mosq_sub){
+            fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
+            exit(-1);
+        }
+
+        if(mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)){
+            fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+            exit(-2);
+        }
+
+        if(mosquitto_connect(mosq_sub, MQTT_HOSTNAME, MQTT_PORT, 0)){
+            fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
+            exit(-2);
+        }
+
+        mosquitto_message_callback_set(mosq_sub, message_callback_init);
+        mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_INIT, 1);
+
+        double a1_x_dist = getDist(mosq, mosq_sub, 1, 'x');
+        a1_x = a1_x_dist * (-1) * 2;
+        double a1_y_dist = getDist(mosq, mosq_sub, 1, 'y');
+        a1_y = a1_y_dist * (-1) * 2;
+        a1_const = pow(a1_x_dist,2) + pow(a1_y_dist,2);
+
+        double a2_x_dist = getDist(mosq, mosq_sub, 2, 'x');
+        a2_x = a2_x_dist * (-1) * 2;
+        double a2_y_dist = getDist(mosq, mosq_sub, 2, 'y');
+        a2_y = a2_y_dist * (-1) * 2;
+        a2_const = pow(a2_x_dist,2) + pow(a2_y_dist,2);
+
+        double a3_x_dist = getDist(mosq, mosq_sub, 3, 'x');
+        a3_x = a3_x_dist * (-1) * 2;
+        double a3_y_dist = getDist(mosq, mosq_sub, 3, 'y');
+        a3_y = a3_y_dist * (-1) * 2;
+        a3_const = pow(a3_x_dist,2) + pow(a3_y_dist,2);
+
+        mosquitto_message_callback_set(mosq_sub, message_callback);
+        mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
+
+        wallType = 'B';
+        ranging(mosq, mosq_sub, false);
+        wallType = 'W';    
+        ranging(mosq, mosq_sub, false);
+
+        mosquitto_disconnect (mosq);
+        mosquitto_destroy (mosq);
+        mosquitto_lib_cleanup();
     }
-
-    struct mosquitto *mosq_sub = mosquitto_new(MQTT_NAME_SUB, true, NULL);
-    if(!mosq_sub){
-        fprintf(stderr, "Could not initialize mosquitto library. Quitting\n");
-        exit(-1);
-    }
-
-    if(mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0)){
-        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
-        exit(-2);
-    }
-
-    if(mosquitto_connect(mosq_sub, MQTT_HOSTNAME, MQTT_PORT, 0)){
-        fprintf(stderr, "Could not connect to mosquitto broker. Quitting\n");
-        exit(-2);
-    }
-
-    mosquitto_message_callback_set(mosq_sub, message_callback_init);
-    mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_INIT, 1);
-
-    double a1_x_dist = getDist(mosq, mosq_sub, 1, 'x');
-    a1_x = a1_x_dist * (-1) * 2;
-    double a1_y_dist = getDist(mosq, mosq_sub, 1, 'y');
-    a1_y = a1_y_dist * (-1) * 2;
-    a1_const = pow(a1_x_dist,2) + pow(a1_y_dist,2);
-
-    double a2_x_dist = getDist(mosq, mosq_sub, 2, 'x');
-    a2_x = a2_x_dist * (-1) * 2;
-    double a2_y_dist = getDist(mosq, mosq_sub, 2, 'y');
-    a2_y = a2_y_dist * (-1) * 2;
-    a2_const = pow(a2_x_dist,2) + pow(a2_y_dist,2);
-
-    double a3_x_dist = getDist(mosq, mosq_sub, 3, 'x');
-    a3_x = a3_x_dist * (-1) * 2;
-    double a3_y_dist = getDist(mosq, mosq_sub, 3, 'y');
-    a3_y = a3_y_dist * (-1) * 2;
-    a3_const = pow(a3_x_dist,2) + pow(a3_y_dist,2);
-
-    mosquitto_message_callback_set(mosq_sub, message_callback);
-    mosquitto_subscribe(mosq_sub, NULL, MQTT_TOPIC_TAG, 1);
-
-    wallType = 'B';
-    ranging(mosq, mosq_sub, false);
-    wallType = 'W';    
-    ranging(mosq, mosq_sub, false);
-
-    mosquitto_disconnect (mosq);
-    mosquitto_destroy (mosq);
-    mosquitto_lib_cleanup();
 }
