@@ -52,10 +52,9 @@ void create_map(){
     map = fopen(map_name, "w");
     init_location();
     pthread_create(&mqtt_sync_thread, NULL, MQTT_sync_loop, NULL);
-    pthread_create(&incoming_data_thread, NULL, server_loop, NULL);
+    server_loop();    
     pthread_join(mqtt_sync_thread, NULL);
     fclose(map);
-    pthread_cancel(incoming_data_thread);
     // build_array(map,&map_data);
     /*while(active){
         get_active_status();

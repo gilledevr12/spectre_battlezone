@@ -40,10 +40,10 @@
 //          Compilation Flags          //
 /////////////////////////////////////////
 #define DEBUG
-// #define MQTT_ACTIVE
- #define WIFI_ACTIVE
-// #define IMU_ACTIVE
-// #define UWB_ACTIVE
+#define MQTT_ACTIVE
+#define WIFI_ACTIVE
+//#define IMU_ACTIVE
+//#define UWB_ACTIVE
 #define RPI
 
 /////////////////////////////////////////
@@ -53,8 +53,11 @@ struct IMU_samples_x3 ACC  = {1, 2, 3};
 struct IMU_samples_x3 GYRO = {4, 5, 6};
 struct IMU_samples_x3 MAG  = {7, 8, 9};
 struct UWB_samples_x3 UWB  = {1.1, 2.2, 3.3}; //from anchors A1, A2 and A3 respectively
-volatile uint8_t SHOTS_FIRED;
+uint8_t SHOTS_FIRED;
 volatile uint8_t POLL_SAMPLES = 0;
+uint8_t MUTEX = 0;
+uint8_t ready;
+
 #define TRIGGER_PIN     29      //actual pin 40
 #define V_SOURCE_PIN    28      //actual pin 38
 #define GND_PIN         28.5    //actual pin 39
@@ -188,7 +191,10 @@ void print_response(){
 
 void alarmISR(int sig_num){
     if(sig_num == SIGALRM){
-        POLL_SAMPLES = 1;
+        while(MUTEX);
+        MUTEX = 1;
+            POLL_SAMPLES = 1;
+        MUTEX = 0;
     }
 }
 
@@ -295,6 +301,7 @@ int main(){
     #endif
     
     //initialize the laser to be doing no work until told to do so
+
     while(1) {
         #ifdef MQTT_ACTIVE
             //connect to MQTT broker
@@ -309,9 +316,16 @@ int main(){
 
         #endif   //implied else -> POLL_SAMPLES flag set by AlarmISR
 
-        if (POLL_SAMPLES) {
-            POLL_SAMPLES = 0;
-            //get UWB data
+        while(MUTEX);
+        MUTEX = 1;
+            ready = POLL_SAMPLES;
+        MUTEX = 0;
+
+        if (ready) {
+            while(MUTEX);
+                MUTEX = 1;
+                POLL_SAMPLES = 0;
+            MUTEX = 0;            //get UWB data
             #ifdef UWB_ACTIVE
                 UWB.A1 = UWB_Curr_Distance[0];
                 UWB.A2 = UWB_Curr_Distance[1];

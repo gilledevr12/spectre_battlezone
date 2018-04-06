@@ -24,12 +24,10 @@ char* get_map_name(){
 }
 
 int main(int argc, char *argv[]){
-    signal(SIGTSTP, interrupt);
-    signal(SIGINT, interruptExit);    
+    // signal(SIGTSTP, interrupt);
+    // signal(SIGINT, interruptExit);    
     int len;    // argument length
     int ch;     // character buffer
-    char *str;  // string buffer
-    str = malloc(4);
     char map_file[256];
     if(argc == 2 || argc == 3){
         for(int i=0; i<argc; i++){
@@ -52,10 +50,14 @@ int main(int argc, char *argv[]){
                                     play_loop(map_file);
                                 }
                                 else{
-                                    if(j+1 > len){ print_help; }
+                                    if(j+1 > len){ print_help(); }
                                     else{ strcpy(map_file, &argv[i][j+2]); }
                                     play_loop(map_file);
                                 }
+                            break;
+                            case 'w':
+                                //test wifi connection
+                                server_loop();
                             break;
                         }
                     }
