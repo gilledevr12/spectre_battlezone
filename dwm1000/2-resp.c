@@ -410,7 +410,7 @@ bool runRanging(char *token, int num, char* play){
                             dwt_setrxtimeout(0);
 
                             /* Activate reception immediately. */
-                            dwt_rxenable(DWT_START_RX_IMMEDIATE);
+//                            dwt_rxenable(DWT_START_RX_IMMEDIATE);
 
                             success = false;
                         }
@@ -429,7 +429,7 @@ bool runRanging(char *token, int num, char* play){
                 dwt_setrxtimeout(0);
 
                 /* Activate reception immediately. */
-                dwt_rxenable(DWT_START_RX_IMMEDIATE);
+//                dwt_rxenable(DWT_START_RX_IMMEDIATE);
 
                 return false;
             }

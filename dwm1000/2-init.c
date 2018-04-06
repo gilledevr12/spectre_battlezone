@@ -307,7 +307,7 @@ int main(void)
     getline(&bufNum, &buf_size, stdin);
 
     strcat(MQTT_NAME,bufNum);
-    for (int i = 0; i < 1; i++){
+    for (int i = 0; i < 3; i++){
         tx_poll_msg[i][6] = bufNum[0];
         rx_resp_msg[i][8] = bufNum[0];
         tx_final_msg[i][6] = bufNum[0];
