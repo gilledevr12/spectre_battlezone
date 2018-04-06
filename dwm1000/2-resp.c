@@ -232,6 +232,7 @@ bool runRanging(char *token, int num, char* play){
         printf("time %f", time_taken);
         if (time_taken > LIMIT){
             quitting = true;
+            printf("restarting\n");
         }
 
         if (status_reg & SYS_STATUS_RXFCG) {

@@ -140,6 +140,7 @@ static uint64 resp_rx_ts[3];
 static uint64 final_tx_ts[3];
 char round_match[8] = {0};
 static bool quitting = true;
+static bool success = false;
 
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
@@ -167,7 +168,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
-        if (matchTag){
+        if (matchTag && !success){
             int num = token[strlen(token) - 1] - '0';
             while (!runRanging(token, num - 1));
         }
@@ -178,6 +179,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 bool runRanging(char* token, int num){
     bool blink = false;
+    success = false;
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     while(!blink) {
         blink = true;
@@ -266,6 +268,7 @@ bool runRanging(char* token, int num){
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 12 below. */
                 if (ret == DWT_SUCCESS) {
                 printf("success\n");
+                    success = true;
                     /* Poll DW1000 until TX frame sent event set. See NOTE 9 below. */
                     t = clock();
                     double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
