@@ -203,6 +203,8 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 bool runRanging(char *token, int num, char* play){
 
+    success = false;
+
     double LIMIT;
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
@@ -296,7 +298,7 @@ bool runRanging(char *token, int num, char* play){
 //                        if (tag != 1) anchCnt++;
 //                        if (anchCnt == 3) anchCnt = 0;
 //                    }
-                    return false;
+                    success = false;
                 }
 
 //            printf("sent\n");
