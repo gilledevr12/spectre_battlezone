@@ -10,6 +10,8 @@
 #include "mqtt.h"
 #include "dwm1000.h"
 
+char MQTT_NAME[10] = "Tag_";
+char MQTT_NAME_PUB[15] = "Pub_Tag_";
 char round_match[6] = {0};
 
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
@@ -22,9 +24,8 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     char *tag;
     char *play;
     char *poll;
+    char *status;
 
-    //printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
-    /* get the first token */
     token = strtok((char*) message->payload, s);
     if ( token != NULL ) {
         tag = strtok(NULL, s);
@@ -35,6 +36,9 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     if ( play != NULL ) {
         poll = strtok(NULL, s);
     }
+    if ( tag != NULL ) {
+        status = strtok(NULL, s);
+    }
 
     sprintf(round_match, "Tag%c", rx_poll_msg[0][8]);
 
@@ -43,9 +47,9 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            runRanging(token, num - 1, play, poll);
+            nothingHappened = true;
+            while(!runRanging(token, num - 1, play) && !quitting);
         }
-        //printf("got message for %s topic\n", MQTT_TOPIC);
     }
 }
 
@@ -61,8 +65,6 @@ int init_mosquitto(){
         printf("Could not connect to mosquitto broker. Quitting\n");
         return 1;
     }
-
-    char buf[7];
 
     mosquitto_message_callback_set(mosq, message_callback);
     mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);

@@ -33,24 +33,24 @@ static dwt_txconfig_t txconfig = {
 #define TX_ANT_DLY 16436
 #define RX_ANT_DLY 16436
 
-static uint8 rx_poll_msg[3][12] = {
+uint8 rx_poll_msg[3][12] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x21, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x21, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x21, 0, 0}
 };
-static uint8 tx_resp_msg[3][15] = {
+uint8 tx_resp_msg[3][15] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '1', 0x10, 0x02, 0, 0, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '2', 0x10, 0x02, 0, 0, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '3', 0x10, 0x02, 0, 0, 0, 0}
 };
-static uint8 rx_final_msg[3][24] = {
+uint8 rx_final_msg[3][24] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
 /* Length of the common part of the message (up to and including the function code, see NOTE 2 below). */
-#define ALL_MSG_COMMON_LEN 9
+#define ALL_MSG_COMMON_LEN 10
 /* Index to access some of the fields in the frames involved in the process. */
 #define ALL_MSG_SN_IDX 2
 #define FINAL_MSG_POLL_TX_TS_IDX 10
@@ -99,12 +99,11 @@ static uint64 final_rx_ts[3];
 /* Hold copies of computed time of flight and distance here for reference so that it can be examined at a debug breakpoint. */
 static double tof[3];
 static double distance[3];
-static int anchCnt = 0;
 
 static void final_msg_get_ts(const uint8 *ts_field, uint32 *ts);
 static uint64 get_rx_timestamp_u64(void);
 static uint64 get_tx_timestamp_u64(void);
 int init_dwm();
-void runRanging(char *token, int num, char* play, char* poll);
+bool runRanging(char *token, int num, char* play, char* poll);
 
 #endif //DWM1000_H

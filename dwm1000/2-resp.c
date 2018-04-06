@@ -42,9 +42,8 @@
 #define MQTT_TOPIC_TAG "location_tag"
 #define MQTT_TOPIC_INIT "location_init"
 
-static char MQTT_NAME[10] = "Tag_";
-static char MQTT_NAME_PUB[15] = "Pub_Tag_";
-
+char MQTT_NAME[10] = "Tag_";
+char MQTT_NAME_PUB[15] = "Pub_Tag_";
 
 /* Example application name and version to display on LCD screen. */
 #define APP_NAME "DS TWR RESP v1.2"
@@ -246,7 +245,6 @@ bool runRanging(char *token, int num, char* play){
             uint32 frame_len;
             nothingHappened = false;
 
-        printf("got\n");
             /* Clear good RX frame event in the DW1000 status register. */
             dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
 
@@ -286,7 +284,7 @@ bool runRanging(char *token, int num, char* play){
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
                 if (ret == DWT_ERROR) {
                     printf("error\n");
-                    success = false;
+                    return false;
                     //does it ever get here?
                 } else {
 
@@ -428,7 +426,6 @@ bool runRanging(char *token, int num, char* play){
 
             return false;
         }
-//    }
 
     if (memcmp(play, "play", 4) == 0){
         //try tag responsible ranging
@@ -557,7 +554,7 @@ int main(void) {
         mosquitto_message_callback_set(mosq, message_callback);
         mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
 
-        if (!success && nothingHappened) {
+        if (!success && !nothingHappened) {
             char buff[30];
             int tag = rx_final_msg[0][8] - '0';
             sprintf(buff, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", "idle", "restart");
