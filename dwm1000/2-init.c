@@ -168,9 +168,11 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     mosquitto_topic_matches_sub(MQTT_TOPIC, message->topic, &match);
     if (match) {
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
-        if (matchTag && !success){
+        if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            while (!runRanging(token, num - 1));
+            while (!success && !runRanging(token, num - 1));
+        } else {
+            success = false;
         }
     }
     printf("left\n");
