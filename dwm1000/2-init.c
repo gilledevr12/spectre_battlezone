@@ -157,11 +157,23 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
     const char s[2] = " ";
     char *token;
     char *anchor;
+    char *mode;
+    char *poll;
+    char *status;
     printf("got message '%.*s' for topic '%s'\n", message->payloadlen, (char*) message->payload, message->topic);
     /* get the first token */
     anchor = strtok((char*) message->payload, s);
     if ( token != NULL ) {
         token = strtok(NULL, s);
+    }
+    if ( token != NULL ) {
+        mode = strtok(NULL, s);
+    }
+    if ( token != NULL ) {
+        poll = strtok(NULL, s);
+    }
+    if ( token != NULL ) {
+        status = strtok(NULL, s);
     }
     sprintf(round_match, "Anchor%c", tx_poll_msg[0][6]);
 
@@ -170,7 +182,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, anchor, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            while (!success && !runRanging(token, num - 1));
+            while ((!success || status[0] == 'r') && !runRanging(token, num - 1));
         } else {
             success = false;
         }
