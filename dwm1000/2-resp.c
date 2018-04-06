@@ -489,7 +489,7 @@ bool runRanging(char *token, int num, char* play){
  */
 int main(void) {
     printf("Which Tag am I? ");
-    char *bufNum;
+    char *bufNum = NULL;
     size_t buf_size = 3;
     getline(&bufNum, &buf_size, stdin);
 
@@ -566,10 +566,10 @@ int main(void) {
         mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
 
         if (!success) {
-            char buf[16];
+            char buff[16];
             int tag = rx_final_msg[0][8] - '0';
-            sprintf(buf, "Anchor%d Tag%d %s %s", anchCnt, tag, "play", "idle");
-            if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+            sprintf(buff, "Anchor%d Tag%d %s %s", anchCnt, tag, "play", "idle");
+            if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buff), buff, 0, false)){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
