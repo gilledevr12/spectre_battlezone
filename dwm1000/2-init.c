@@ -243,9 +243,9 @@ bool runRanging(char* token, int num){
                 final_tx_ts[num] = (((uint64) (final_tx_time & 0xFFFFFFFEUL)) << 8) + TX_ANT_DLY;
 
                 /* Write all timestamps in the final message. See NOTE 11 below. */
-                final_msg_set_ts(&tx_final_msg[FINAL_MSG_POLL_TX_TS_IDX], poll_tx_ts[num]);
-                final_msg_set_ts(&tx_final_msg[FINAL_MSG_RESP_RX_TS_IDX], resp_rx_ts[num]);
-                final_msg_set_ts(&tx_final_msg[FINAL_MSG_FINAL_TX_TS_IDX], final_tx_ts[num]);
+                final_msg_set_ts(&tx_final_msg[num][FINAL_MSG_POLL_TX_TS_IDX], poll_tx_ts[num]);
+                final_msg_set_ts(&tx_final_msg[num][FINAL_MSG_RESP_RX_TS_IDX], resp_rx_ts[num]);
+                final_msg_set_ts(&tx_final_msg[num][FINAL_MSG_FINAL_TX_TS_IDX], final_tx_ts[num]);
 
                 /* Write and send final message. See NOTE 8 below. */
                 tx_final_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
@@ -308,9 +308,9 @@ int main(void)
 
     strcat(MQTT_NAME,bufNum);
     for (int i = 0; i < 1; i++){
-        tx_poll_msg[6] = bufNum[0];
-        rx_resp_msg[8] = bufNum[0];
-        tx_final_msg[6] = bufNum[0];
+        tx_poll_msg[num][6] = bufNum[0];
+        rx_resp_msg[num][8] = bufNum[0];
+        tx_final_msg[num][6] = bufNum[0];
     }
 
     printf("\nI am %s\n", MQTT_NAME);
