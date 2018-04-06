@@ -24,19 +24,27 @@ void open_client_socket(){
     cli_addr.sin_port = htons(SERVER_PORT);
 
     /*Active open*/
-    if ((SOCK = socket(PF_INET, SOCK_STREAM, 0)) < 0)
-    {
-      perror("client: error creating socket\n");
-      close(SOCK);
-      exit(1);
+
+    SOCK = socket(PF_INET, SOCK_STREAM, 0);
+    unsigned char count = 0;
+    while(SOCK < 0){
+	    //if fail to bind to socket, reattempt until connection is made
+	    printf("Failed to connect to socket. Reattempting...%i\n", count++);
+	    sleep(1);
+	    SOCK = socket(PF_INET, SOCK_STREAM, 0);
+	    //perror("client: error creating socket\n");
+	    //close(SOCK);
+	    //exit(1);
     }
 
     /*Connect to server*/
-    if (connect(SOCK, (struct sockaddr*) &cli_addr, sizeof(cli_addr)) < 0)
-    {
-      perror("client: error establishing connection to server\n");
-      close(SOCK);
-      exit(1);
+    int ret = connect(SOCK, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+    while(ret < 0){
+      printf("Failed establishing connection to server. Reattempting connection...\n");
+      sleep(1);
+      ret = connect(SOCK, (struct sockaddr*) &cli_addr, sizeof(cli_addr));
+      //close(SOCK);
+      //exit(1);
     }
 }
 
@@ -44,7 +52,7 @@ void send_status(struct IMU_samples_x3 acc, /*struct IMU_samples_x3 gyro,*/ stru
     int packet_length;
     static char packet_buffer[200];
     sprintf(packet_buffer, "%s %i %i %i %i %i %i %3.2f %3.2f %3.2f %i", 
-        DEVICE_MAC, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, uwb.A1, uwb.A2, uwb.A3, shots_fired);
+        TAG, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, uwb.A1, uwb.A2, uwb.A3, shots_fired);
 
     #ifdef DEBUG
         printf("Sending client packet: %s\n", packet_buffer);

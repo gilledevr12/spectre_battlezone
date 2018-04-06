@@ -40,19 +40,19 @@
 //          Compilation Flags          //
 /////////////////////////////////////////
 #define DEBUG
-#define MQTT_ACTIVE
-#define WIFI_ACTIVE
-#define IMU_ACTIVE
-#define UWB_ACTIVE
-//#define RPI
+// #define MQTT_ACTIVE
+ #define WIFI_ACTIVE
+// #define IMU_ACTIVE
+// #define UWB_ACTIVE
+#define RPI
 
 /////////////////////////////////////////
 //     Constants / Global Variables    //
 /////////////////////////////////////////
-struct IMU_samples_x3 ACC  = {0, 0, 0};
-struct IMU_samples_x3 GYRO = {0, 0, 0};
-struct IMU_samples_x3 MAG  = {0, 0, 0};
-struct UWB_samples_x3 UWB  = {0, 0, 0}; //from anchors A1, A2 and A3 respectively
+struct IMU_samples_x3 ACC  = {1, 2, 3};
+struct IMU_samples_x3 GYRO = {4, 5, 6};
+struct IMU_samples_x3 MAG  = {7, 8, 9};
+struct UWB_samples_x3 UWB  = {1.1, 2.2, 3.3}; //from anchors A1, A2 and A3 respectively
 volatile uint8_t SHOTS_FIRED;
 volatile uint8_t POLL_SAMPLES = 0;
 #define TRIGGER_PIN     29      //actual pin 40
@@ -67,15 +67,18 @@ volatile uint8_t POLL_SAMPLES = 0;
 #define ACC_DOWN 	    -16000
 
 //external variables
-extern bool quitting;
-extern struct mosquitto *mosq;
-extern struct mosquitto *mosq_pub;
 // extern char MQTT_NAME[10];
 // extern char MQTT_NAME_PUB[15];
 extern uint8 rx_poll_msg[3][12];
 extern uint8 tx_resp_msg[3][15];
 extern uint8 rx_final_msg[3][24];
 extern float UWB_Curr_Distance[3];
+
+#ifdef MQTT_ACTIVE
+    extern bool quitting;
+    extern struct mosquitto *mosq;
+    extern struct mosquitto *mosq_pub;
+#endif
 
 //handle compiling on not the PI
 #ifdef RPI
@@ -167,7 +170,9 @@ unsigned char get_trigger(){
 //           Comms Functions           //
 /////////////////////////////////////////
 void send_response(){
+    open_client_socket();
     send_status(ACC, /*GYRO,*/ MAG, UWB, SHOTS_FIRED);
+    close_client_socket();
 }
 
 void print_response(){
@@ -291,71 +296,64 @@ int main(){
     
     //initialize the laser to be doing no work until told to do so
     while(1) {
-        while (!quitting) {
-            #ifdef MQTT_ACTIVE
-                //connect to MQTT broker
-                int ret = mosquitto_loop(mosq, 250, 1);
-                if (ret) {
-                    fprintf(stderr, "Connection error. Reconnecting...\n");
-                    sleep(1);
-                    mosquitto_reconnect(mosq);
-                }
-                //when begin signal comes, data will be stored in global UWB_Curr_Distance
-                //when all 3 samples have been taken, POLL_SAMPLES will be set to true
-
-            #endif   //implied else -> POLL_SAMPLES flag set by AlarmISR
-
-            if (POLL_SAMPLES) {
-                POLL_SAMPLES = 0;
-                //get UWB data
-                #ifdef UWB_ACTIVE
-                    UWB.A1 = UWB_Curr_Distance[0];
-                    UWB.A2 = UWB_Curr_Distance[1];
-                    UWB.A3 = UWB_Curr_Distance[2];
-                #endif  //implied else - values initialized to 0
-
-                #ifdef MQTT_ACTIVE
-                    //when finished with IMU, respond back to allow for next module to begin
-                    //do something amazing here
-                #endif
-
-                //get IMU data
-                #ifdef IMU_ACTIVE
-                    int16_t *IMU_data = IMU_pull_samples_int();
-                    ACC.x = IMU_data[0];
-                    ACC.y = IMU_data[1];
-                    ACC.z = IMU_data[2];
-                    // GYRO.x  =   IMU_data[3];
-                    // GYRO.y  =   IMU_data[4];
-                    // GYRO.z  =   IMU_data[5];
-                    MAG.x = IMU_data[3];
-                    MAG.y = IMU_data[4];
-                    MAG.z = IMU_data[5];
-                #endif //implied else - values initialized to 0
-
-                    //send out data
-                #ifdef WIFI_ACTIVE
-                    //send responde over wifi
-                    send_response();
-                #else
-                    //wifi is not enabled, print to screen
-                    print_response();
-                #endif
+        #ifdef MQTT_ACTIVE
+            //connect to MQTT broker
+            int ret = mosquitto_loop(mosq, 250, 1);
+            if (ret) {
+                fprintf(stderr, "Connection error. Reconnecting...\n");
+                sleep(1);
+                mosquitto_reconnect(mosq);
             }
+            //when begin signal comes, data will be stored in global UWB_Curr_Distance
+            //when all 3 samples have been taken, POLL_SAMPLES will be set to true
 
-            //read trigger whenever possible. if pressed, store until next raw packet is sent
-            #ifdef RPI
-                if(!SHOTS_FIRED)
-                    SHOTS_FIRED = get_trigger();
+        #endif   //implied else -> POLL_SAMPLES flag set by AlarmISR
+
+        if (POLL_SAMPLES) {
+            POLL_SAMPLES = 0;
+            //get UWB data
+            #ifdef UWB_ACTIVE
+                UWB.A1 = UWB_Curr_Distance[0];
+                UWB.A2 = UWB_Curr_Distance[1];
+                UWB.A3 = UWB_Curr_Distance[2];
+            #endif  //implied else - values initialized to 0
+
+            #ifdef MQTT_ACTIVE
+                //when finished with IMU, respond back to allow for next module to begin
+                //do something amazing here
+            #endif
+
+            //get IMU data
+            #ifdef IMU_ACTIVE
+                int16_t *IMU_data = IMU_pull_samples_int();
+                ACC.x = IMU_data[0];
+                ACC.y = IMU_data[1];
+                ACC.z = IMU_data[2];
+                // GYRO.x  =   IMU_data[3];
+                // GYRO.y  =   IMU_data[4];
+                // GYRO.z  =   IMU_data[5];
+                MAG.x = IMU_data[3];
+                MAG.y = IMU_data[4];
+                MAG.z = IMU_data[5];
+            #endif //implied else - values initialized to 0
+
+                //send out data
+            #ifdef WIFI_ACTIVE
+                //send responde over wifi
+                send_response();
             #else
-                SHOTS_FIRED = 0;
+                //wifi is not enabled, print to screen
+                print_response();
             #endif
         }
-        quitting = false;
-        mosquitto_destroy(mosq);
-        mosquitto_lib_cleanup();
-        init_dwm();
-        init_mosquitto();
+
+        //read trigger whenever possible. if pressed, store until next raw packet is sent
+        #ifdef RPI
+            if(!SHOTS_FIRED)
+                SHOTS_FIRED = get_trigger();
+        #else
+            SHOTS_FIRED = 0;
+        #endif
     }
 
     return 0;

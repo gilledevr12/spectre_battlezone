@@ -25,7 +25,7 @@ static uint8_t mode;
 static uint8_t bits = 8;
 static uint32_t speed = 500000;
 static uint32_t speed_high = 2000000;
-static uint16_t delay = 0;
+static uint16_t my_delay = 0;
 static int max_speed = 0;
 
 static void pabort(const char *s);

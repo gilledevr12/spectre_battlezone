@@ -77,7 +77,7 @@ static void transfer(int fd, uint8_t *tx, uint8_t *rx, int length)
             .tx_buf = (unsigned long)tx,
             .rx_buf = (unsigned long)rx,
             .len = length,
-            .delay_usecs = delay,
+            .delay_usecs = my_delay,
             .speed_hz = speed,
             .bits_per_word = bits,
     };
