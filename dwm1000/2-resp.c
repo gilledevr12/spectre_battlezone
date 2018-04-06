@@ -431,7 +431,7 @@ bool runRanging(char *token, int num, char* play){
         //try tag responsible ranging
         char buf[30];
         int tag = rx_final_msg[num][8] - '0';
-        char* mode = (char*)malloc(8);
+        char mode[8];
         if (success) {
             anchCnt++;
             mode = "normal";
@@ -448,7 +448,6 @@ bool runRanging(char *token, int num, char* play){
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
         }
-        free(mode);
 //        tag++;
 //        if (tag == 4) {
 //            anchCnt++;
