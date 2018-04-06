@@ -195,7 +195,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
-            while(!runRanging(token, num - 1, play));
+            while(!runRanging(token, num - 1, play) && !quitting);
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
     }
@@ -503,6 +503,8 @@ int main(void) {
 
     printf("\nI am %s\n", MQTT_NAME);
 
+    success = true;
+
     /* Start with board specific hardware init. */
 //    peripherals_init();
 
@@ -562,6 +564,16 @@ int main(void) {
 
         mosquitto_message_callback_set(mosq, message_callback);
         mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
+
+        if (!success) {
+            char buf[16];
+            int tag = rx_final_msg[0][8] - '0';
+            sprintf(buf, "Anchor%d Tag%d %s %s", anchCnt, tag, "play", "idle");
+            if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)){
+                fprintf(stderr, "Could not publish to broker. Quitting\n");
+                exit(-3);
+            }
+        }
 
         /* Loop forever initiating ranging exchanges. */
         while (!quitting) {
