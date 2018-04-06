@@ -161,6 +161,7 @@ char dist_str[100] = {0};
 char round_match[6] = {0};
 static bool quitting = false;
 static bool success = false;
+static bool nothingHappened = false;
 
 /* Declaration of static functions. */
 static uint64 get_tx_timestamp_u64(void);
@@ -203,6 +204,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         mosquitto_topic_matches_sub(round_match, tag, &matchTag);
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
+            nothingHappened = true;
             while(!runRanging(token, num - 1, play) && !quitting);
         }
         //printf("got message for %s topic\n", MQTT_TOPIC);
@@ -242,6 +244,7 @@ bool runRanging(char *token, int num, char* play){
 
         if (status_reg & SYS_STATUS_RXFCG) {
             uint32 frame_len;
+            nothingHappened = false;
 
         printf("got\n");
             /* Clear good RX frame event in the DW1000 status register. */
@@ -554,7 +557,7 @@ int main(void) {
         mosquitto_message_callback_set(mosq, message_callback);
         mosquitto_subscribe(mosq, NULL, MQTT_TOPIC, 0);
 
-        if (!success) {
+        if (!success && nothingHappened) {
             char buff[30];
             int tag = rx_final_msg[0][8] - '0';
             sprintf(buff, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", "idle", "restart");
