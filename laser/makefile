@@ -1,6 +1,6 @@
 # Define the compiler being used with the compiler flags
 CC = gcc
-CFLAGS  = -g  -l wiringPi
+CFLAGS  = -g  #-l wiringPi
 DECAFILES = decadriver/dwm_api/deca_device.c decadriver/dwm_api/deca_params_init.c decadriver/dwm_api/my_deca_spi.c
 
 #default: laser-brains

@@ -14,6 +14,10 @@ char MQTT_NAME[10] = "Tag_";
 char MQTT_NAME_PUB[15] = "Pub_Tag_";
 char round_match[6] = {0};
 
+extern bool nothingHappened;
+extern bool quitting;
+extern uint8 rx_poll_msg[3][12];
+
 void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
     bool match = 0;
@@ -48,7 +52,7 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
         if (matchTag){
             int num = token[strlen(token) - 1] - '0';
             nothingHappened = true;
-            while(!runRanging(token, num - 1, play) && !quitting);
+            while(!runRanging(token, num - 1, play, poll) && !quitting);
         }
     }
 }

@@ -6,6 +6,7 @@
 #include "decadriver/dwm_api/deca_regs.h"
 #include "main.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 static dwt_config_t config = {
         2,               /* Channel number. */
@@ -32,22 +33,6 @@ static dwt_txconfig_t txconfig = {
 
 #define TX_ANT_DLY 16436
 #define RX_ANT_DLY 16436
-
-uint8 rx_poll_msg[3][12] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x21, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x21, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x21, 0, 0}
-};
-uint8 tx_resp_msg[3][15] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '1', 0x10, 0x02, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '2', 0x10, 0x02, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '3', 0x10, 0x02, 0, 0, 0, 0}
-};
-uint8 rx_final_msg[3][24] = {
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '2', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-};
 
 /* Length of the common part of the message (up to and including the function code, see NOTE 2 below). */
 #define ALL_MSG_COMMON_LEN 10
@@ -85,6 +70,7 @@ static uint32 status_reg = 0;
 
 /* Timestamps of frames transmission/reception.
  * As they are 40-bit wide, we need to define a 64-bit int type to handle them. */
+typedef uint8 uint8_t;
 typedef signed long long int64;
 typedef unsigned long long uint64;
 static uint64 poll_rx_ts[3];
