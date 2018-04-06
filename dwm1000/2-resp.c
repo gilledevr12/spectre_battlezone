@@ -101,7 +101,7 @@ static uint8 rx_final_msg[3][24] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '3', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 /* Length of the common part of the message (up to and including the function code, see NOTE 2 below). */
-#define ALL_MSG_COMMON_LEN 9
+#define ALL_MSG_COMMON_LEN 10
 /* Index to access some of the fields in the frames involved in the process. */
 #define ALL_MSG_SN_IDX 2
 #define FINAL_MSG_POLL_TX_TS_IDX 10

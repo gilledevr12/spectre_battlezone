@@ -96,7 +96,7 @@ static uint8 tx_final_msg[3][24] = {
 };
 
 /* Length of the common part of the message (up to and including the function code, see NOTE 2 below). */
-#define ALL_MSG_COMMON_LEN 9
+#define ALL_MSG_COMMON_LEN 10
 /* Indexes to access some of the fields in the frames defined above. */
 #define ALL_MSG_SN_IDX 2
 #define FINAL_MSG_POLL_TX_TS_IDX 10
