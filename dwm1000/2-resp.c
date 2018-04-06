@@ -237,7 +237,7 @@ bool runRanging(char *token, int num, char* play){
         if (status_reg & SYS_STATUS_RXFCG) {
             uint32 frame_len;
 
-//        printf("got\n");
+        printf("got\n");
             /* Clear good RX frame event in the DW1000 status register. */
             dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
 
@@ -275,7 +275,7 @@ bool runRanging(char *token, int num, char* play){
                 dwt_writetxfctrl(sizeof(tx_resp_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
                 ret = dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 
-//            printf("read\n");
+            printf("read\n");
 
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
                 if (ret == DWT_ERROR) {
@@ -301,7 +301,7 @@ bool runRanging(char *token, int num, char* play){
                     success = false;
                 }
 
-//            printf("sent\n");
+            printf("sent\n");
 //                correctAnchor = false;
 
 //                while (!correctAnchor) {
@@ -322,7 +322,7 @@ bool runRanging(char *token, int num, char* play){
                         /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
                         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
 
-//                printf("recieved\n");
+                printf("recieved\n");
                         /* A frame has been received, read it into the local buffer. */
                         frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFLEN_MASK;
                         if (frame_len <= RX_BUF_LEN) {
@@ -340,7 +340,7 @@ bool runRanging(char *token, int num, char* play){
                             uint32 poll_rx_ts_32, resp_tx_ts_32, final_rx_ts_32;
                             double Ra, Rb, Da, Db;
                             int64 tof_dtu;
-//                    printf("correct\n");
+                    printf("correct\n");
 
                             /* Retrieve response transmission and final reception timestamps. */
                             resp_tx_ts[num] = get_tx_timestamp_u64();
