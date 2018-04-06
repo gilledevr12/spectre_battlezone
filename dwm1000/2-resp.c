@@ -434,9 +434,9 @@ bool runRanging(char *token, int num, char* play){
         char mode[8];
         if (success) {
             anchCnt++;
-            mode = "normal";
+            strcpy(mode,"normal");
         } else {
-            mode = "restart";
+            strcpy(mode,"restart");
         }
         if (anchCnt == 4) {
             anchCnt = 1;
