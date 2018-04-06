@@ -299,6 +299,7 @@ bool runRanging(char *token, int num, char* play){
 //                        if (anchCnt == 3) anchCnt = 0;
 //                    }
                     success = false;
+                    //does it ever get here?
                 }
 
             printf("sent\n");
@@ -412,7 +413,9 @@ bool runRanging(char *token, int num, char* play){
                             /* Activate reception immediately. */
 //                            dwt_rxenable(DWT_START_RX_IMMEDIATE);
 
-                            success = false;
+//                            success = false;
+                            return false;
+                            //this might just need to be restart, not resend
                         }
                     } else {
                         /* Clear RX error/timeout events in the DW1000 status register. */
