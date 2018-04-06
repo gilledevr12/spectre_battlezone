@@ -223,6 +223,16 @@ bool runRanging(char* token, int num){
 //            uint8 tag_num = rx_buffer[6];
 //            rx_resp_msg[num][6] = tag_num;
 
+//            for (int i = 0; i < 10; i++){
+//                printf("%x ", (unsigned char)rx_buffer[i]);
+//            }
+//            printf("\n");
+//
+//            for (int i = 0; i < 10; i++){
+//                printf("%x ", (unsigned char)rx_resp_msg[num][i]);
+//            }
+//            printf("\n");
+
             /* Check that the frame is the expected response from the companion "DS TWR responder" example.
              * As the sequence number field of the frame is not relevant, it is cleared to simplify the validation of the frame. */
             rx_buffer[ALL_MSG_SN_IDX] = 0;
