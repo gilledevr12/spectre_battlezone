@@ -308,9 +308,9 @@ int main(void)
 
     strcat(MQTT_NAME,bufNum);
     for (int i = 0; i < 1; i++){
-        tx_poll_msg[num][6] = bufNum[0];
-        rx_resp_msg[num][8] = bufNum[0];
-        tx_final_msg[num][6] = bufNum[0];
+        tx_poll_msg[i][6] = bufNum[0];
+        rx_resp_msg[i][8] = bufNum[0];
+        tx_final_msg[i][6] = bufNum[0];
     }
 
     printf("\nI am %s\n", MQTT_NAME);
