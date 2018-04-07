@@ -159,7 +159,7 @@ char dist_str_3[33] = {0};
 char dist_str[100] = {0};
 char round_match[6] = {0};
 static bool quitting = false;
-static bool success = false;
+static bool success = true;
 static bool nothingHappened = false;
 
 /* Declaration of static functions. */
@@ -562,6 +562,18 @@ int main(void) {
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
+        } else if (nothingHappened){
+            int tag = rx_final_msg[0][8] - '0';
+            char* token;
+            if (anchCnt == 1){
+                strcpy(token,"Anchor1");
+            } else if (anchCnt == 2) {
+                strcpy(token,"Anchor2");
+            } else{
+                strcpy(token,"Anchor3");
+            }
+            int num = token[strlen(token) - 1] - '0';
+            while(!runRanging(token, num - 1, "play") && !quitting);
         }
 
         /* Loop forever initiating ranging exchanges. */
