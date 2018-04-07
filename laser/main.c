@@ -292,6 +292,8 @@ int main(){
         if(init_mosquitto()) return 1;
         if(init_mosquitto_pub()) return 1;
 
+        set_tag();
+
     #else
         #ifdef DEBUG
         printf("MQTT not enabled. Timing will be defined by internal timer interrupts\n");
