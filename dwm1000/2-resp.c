@@ -564,7 +564,7 @@ int main(void) {
             }
         } else if (nothingHappened){
             int tag = rx_final_msg[0][8] - '0';
-            char* token;
+            char token[8];
             if (anchCnt == 1){
                 strcpy(token,"Anchor1");
             } else if (anchCnt == 2) {

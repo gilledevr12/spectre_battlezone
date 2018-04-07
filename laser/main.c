@@ -325,6 +325,18 @@ int main(){
                 fprintf(stderr, "Could not publish to broker. Quitting\n");
                 exit(-3);
             }
+        } else if (nothingHappened){
+            int tag = rx_final_msg[0][8] - '0';
+            char token[8];
+            if (anchCnt == 1){
+                strcpy(token,"Anchor1");
+            } else if (anchCnt == 2) {
+                strcpy(token,"Anchor2");
+            } else{
+                strcpy(token,"Anchor3");
+            }
+            int num = token[strlen(token) - 1] - '0';
+            while(!runRanging(token, num - 1, "play", "idle", "normal") && !quitting);
         }
         #endif
         while(!quitting) {
