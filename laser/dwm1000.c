@@ -11,7 +11,7 @@ char dist_str_3[33] = {0};
 char dist_str[100] = {0};
 int anchCnt = 1;
 bool quitting = false;
-bool success = false;
+bool success = true;
 bool nothingHappened = false;
 extern unsigned char POLL_SAMPLES;
 extern unsigned char MUTEX;
