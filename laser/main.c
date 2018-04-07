@@ -347,6 +347,7 @@ int main(){
             MUTEX = 0;
 
             if (ready) {
+                printf("Sending response now\n");
                 while(MUTEX);
                     MUTEX = 1;
                     POLL_SAMPLES = 0;
@@ -356,11 +357,6 @@ int main(){
                     UWB.A2 = UWB_Curr_Distance[1];
                     UWB.A3 = UWB_Curr_Distance[2];
                 #endif  //implied else - values initialized to 0
-
-                #ifdef MQTT_ACTIVE
-                    //when finished with IMU, respond back to allow for next module to begin
-                    //do something amazing here
-                #endif
 
                 //get IMU data
                 #ifdef IMU_ACTIVE
