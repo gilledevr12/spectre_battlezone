@@ -289,10 +289,10 @@ int main(){
         printf("MQTT enabled. Timing will be initiated by incoming MQTT prompts\n");
         #endif
 
+        set_tag();
+
         if(init_mosquitto()) return 1;
         if(init_mosquitto_pub()) return 1;
-
-        set_tag();
 
     #else
         #ifdef DEBUG
