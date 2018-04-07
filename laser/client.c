@@ -8,7 +8,7 @@
 #include "client.h"
 
 #define SERVER_PORT (int) 8080
-#define SERVER_IP "192.168.0.5"
+#define SERVER_IP "129.135.5.197"
 
 #define MAX_BUFFER_LENGTH 1024
 
