@@ -214,6 +214,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
         char buf[30];
         int tag = rx_final_msg[num][8] - '0';
         char mode[8];
+        char will_poll[8];
         if (success) {
             anchCnt++;
             strcpy(mode, "normal");
@@ -221,11 +222,14 @@ bool runRanging(char *token, int num, char* play, char* poll){
             strcpy(mode, "restart");
         }
         if (anchCnt == 4) {
+            strcpy(will_poll, "poll");
             anchCnt = 1;
             tag++;
             if (tag == 4) tag = 1;
+        } else {
+            strcpy(will_poll, "idle");
         }
-        sprintf(buf, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", "idle", mode);
+        sprintf(buf, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", will_poll, mode);
         if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)) {
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);
