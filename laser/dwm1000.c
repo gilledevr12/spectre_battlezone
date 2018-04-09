@@ -226,6 +226,9 @@ bool runRanging(char *token, int num, char* play, char* poll){
             anchCnt = 1;
             tag++;
             if (tag == 4) tag = 1;
+        }
+        if (anchCnt == 3) {
+            strcpy(will_poll, "poll");
         } else {
             strcpy(will_poll, "idle");
         }
