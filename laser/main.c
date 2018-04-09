@@ -42,7 +42,7 @@
 /////////////////////////////////////////
 #define DEBUG
 #define MQTT_ACTIVE //UWB must also be enabled!
-#define WIFI_ACTIVE
+//#define WIFI_ACTIVE
 //#define IMU_ACTIVE
 #define UWB_ACTIVE  // MQTT must also be enabled!
 //#define RPI
@@ -389,6 +389,14 @@ int main(){
                     //send responde over wifi
                     send_response();
                 #else
+                static char packet_buffer[200];
+                sprintf(packet_buffer, "%s %i %i %i %i %i %i %3.2f %3.2f %3.2f %i",
+                    MQTT_NAME, ACC.x, ACC.y, ACC.z, MAG.x, MAG.y, MAG.z, UWB.A1, UWB.A2, UWB.A3, SHOTS_FIRED);
+                    if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(packet_buffer), packet_buffer, 0,
+                                          false)) {
+                        fprintf(stderr, "Could not publish to broker. Quitting\n");
+                        exit(-3);
+                    }
                     //wifi is not enabled, print to screen
                     print_response();
                 #endif
