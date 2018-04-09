@@ -42,7 +42,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
     } else {
-        LIMIT = .11;
+        LIMIT = .15;
     }
 
     /* Clear reception timeout to start next ranging process. */
@@ -61,6 +61,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
     };
 
     if (time_taken > LIMIT){
+        printf("restarting\n");
         quitting = true;
     }
 
@@ -105,6 +106,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
 
             /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
             if (ret == DWT_ERROR) {
+                printf("error\n");
                 return false;
             } else {
 
@@ -224,7 +226,6 @@ bool runRanging(char *token, int num, char* play, char* poll){
             strcpy(mode, "restart");
         }
         if (anchCnt == 4) {
-            strcpy(will_poll, "poll");
             anchCnt = 1;
             tag++;
             if (tag == 4) tag = 1;
