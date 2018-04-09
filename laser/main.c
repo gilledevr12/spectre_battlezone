@@ -336,7 +336,7 @@ int main(){
                 strcpy(token,"Anchor3");
             }
             int num = token[strlen(token) - 1] - '0';
-            while(!runRanging(token, num - 1, "play", "idle", "normal") && !quitting);
+            while(!runRanging(token, num - 1, "play", "idle") && !quitting);
         }
         #endif
         while(!quitting) {
