@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #include "lsm9ds1.h"
 #include "LSM9DS1_Registers.h"
