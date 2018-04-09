@@ -191,6 +191,8 @@ bool runRanging(char *token, int num, char* play, char* poll){
 
                     /* Reset RX to properly reinitialise LDE operation. */
                     dwt_rxreset();
+
+                    return false;
                 }
             }
         } else {
