@@ -415,10 +415,12 @@ int main(){
         quitting = false;
         //shutdown and kill mosquitto
         mosquitto_destroy(mosq);
+        mosquitto_destroy(mosq_pub);
         mosquitto_lib_cleanup();
         //restart
         init_dwm();
         init_mosquitto();
+        init_mosquitto_pub();
     #endif
     }
 
