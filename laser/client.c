@@ -14,6 +14,7 @@
 
 #define MAX_BUFFER_LENGTH 1024
 
+extern char MQTT_NAME[10];
 char DEVICE_MAC[13];
 int SOCK;
 struct sockaddr sock_addr;
