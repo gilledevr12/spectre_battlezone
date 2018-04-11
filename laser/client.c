@@ -52,8 +52,8 @@ void open_client_socket(){
 void send_status(struct IMU_samples_x3 acc, /*struct IMU_samples_x3 gyro,*/ struct IMU_samples_x3 mag, struct UWB_samples_x3 uwb, uint8_t shots_fired){
     int packet_length;
     static char packet_buffer[200];
-    sprintf(packet_buffer, "%s %i %i %i %i %i %i %3.2f %3.2f %3.2f %i", 
-        TAG, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, uwb.A1, uwb.A2, uwb.A3, shots_fired);
+    sprintf(packet_buffer, "%s %i %i %i %i %i %i %3.2f %3.2f %3.2f %i",
+            MQTT_NAME, acc.x, acc.y, acc.z, mag.x, mag.y, mag.z, uwb.A1, uwb.A2, uwb.A3, shots_fired);
 
     #ifdef DEBUG
         printf("Sending client packet: %s\n", packet_buffer);
