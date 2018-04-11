@@ -41,10 +41,10 @@
 //          Compilation Flags          //
 /////////////////////////////////////////
 #define DEBUG
-#define MQTT_ACTIVE //UWB must also be enabled!
-//#define WIFI_ACTIVE
+//#define MQTT_ACTIVE //UWB must also be enabled!
+#define WIFI_ACTIVE
 //#define IMU_ACTIVE
-#define UWB_ACTIVE  // MQTT must also be enabled!
+//#define UWB_ACTIVE  // MQTT must also be enabled!
 //#define RPI
 
 /////////////////////////////////////////
@@ -87,7 +87,7 @@ extern float UWB_Curr_Distance[3];
     extern uint8 tx_resp_msg[3][15];
     extern uint8 rx_final_msg[3][24];
 #else 
-    bool quitting = 0;
+    static bool quitting = 0;
 #endif
 
 //handle compiling on not the PI
@@ -180,9 +180,13 @@ unsigned char get_trigger(){
 //           Comms Functions           //
 /////////////////////////////////////////
 void send_response(){
-    open_client_socket();
-    send_status(ACC, /*GYRO,*/ MAG, UWB, SHOTS_FIRED);
-    close_client_socket();
+    	//printf("opening socket...");
+	open_client_socket();
+	//printf("done.\nsending packet...");
+	send_status(ACC, /*GYRO,*/ MAG, UWB, SHOTS_FIRED);
+	//printf("done.\nclosing socket...");
+	close_client_socket();
+	//printf("done\n");
 }
 
 void print_response(){
@@ -197,11 +201,10 @@ void print_response(){
 }
 
 void alarmISR(int sig_num){
-    if(sig_num == SIGALRM){
-        while(MUTEX);
-        MUTEX = 1;
-            POLL_SAMPLES = 1;
-        MUTEX = 0;
+	if(sig_num == SIGALRM){
+		POLL_SAMPLES = 1;
+	//printf("restting alarm\n");
+	alarm(1);
     }
 }
 
@@ -210,7 +213,7 @@ void alarmISR(int sig_num){
 /////////////////////////////////////////
 
 void set_tag(){
-
+#ifdef MQTT_ACTIVE
     printf("Which Tag am I? ");
     char *bufNum;
     size_t buf_size = 3;
@@ -225,6 +228,7 @@ void set_tag(){
     }
 
     printf("\nI am %s\n", MQTT_NAME);
+#endif
 }
 
 /////////////////////////////////////////
@@ -300,7 +304,8 @@ int main(){
         #endif
         //define the ISR called for the SIGALRM signal
         signal(SIGALRM, alarmISR);  // jumps to alarmISR as the ISR
-        ualarm(500000, 500000);     // trigger a SIGALRM signal 1/2 second
+        //ualarm(500000, 500000);     // trigger a SIGALRM signal 1/2 second
+	alarm(1);	//set alarm to fire every 1 second
     #endif  //MQTT_ACTIVE
 
     #ifdef WIFI_ACTIVE
@@ -353,17 +358,8 @@ int main(){
 
             #endif   //implied else -> POLL_SAMPLES flag set by AlarmISR
 
-            while(MUTEX);
-            MUTEX = 1;
-                ready = POLL_SAMPLES;
-            MUTEX = 0;
-
-            if (ready) {
-                printf("Sending response now\n");
-                while(MUTEX);
-                    MUTEX = 1;
-                    POLL_SAMPLES = 0;
-                MUTEX = 0;            //get UWB data
+            if (POLL_SAMPLES) {
+                POLL_SAMPLES = 0;
                 #ifdef UWB_ACTIVE
                     UWB.A1 = UWB_Curr_Distance[0];
                     UWB.A2 = UWB_Curr_Distance[1];

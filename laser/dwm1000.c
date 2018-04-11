@@ -64,7 +64,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
         printf("restarting\n");
         quitting = true;
     }
-    print("hmm...\n");
+    printf("hmm...\n");
 
     if (status_reg & SYS_STATUS_RXFCG) {
         uint32 frame_len;
