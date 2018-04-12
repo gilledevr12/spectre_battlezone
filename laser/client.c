@@ -75,7 +75,8 @@ char* receive_status(){
 }
 
 void close_client_socket(){
-    close(SOCK);
+//    close(SOCK);
+    shutdown(SOCK);
 }
 
 // int pull_DEVICE_MAC(){
