@@ -41,10 +41,10 @@
 //          Compilation Flags          //
 /////////////////////////////////////////
 #define DEBUG
-//#define MQTT_ACTIVE //UWB must also be enabled!
+#define MQTT_ACTIVE //UWB must also be enabled!
 #define WIFI_ACTIVE
 //#define IMU_ACTIVE
-//#define UWB_ACTIVE  // MQTT must also be enabled!
+#define UWB_ACTIVE  // MQTT must also be enabled!
 //#define RPI
 
 /////////////////////////////////////////
@@ -215,7 +215,7 @@ void alarmISR(int sig_num){
 void set_tag(){
 #ifdef MQTT_ACTIVE
     printf("Which Tag am I? ");
-    char *bufNum;
+    char *bufNum = NULL;
     size_t buf_size = 3;
     getline(&bufNum, &buf_size, stdin);
 
