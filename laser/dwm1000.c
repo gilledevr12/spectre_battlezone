@@ -42,7 +42,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
     } else {
-        LIMIT = .11;
+        LIMIT = .15;
     }
 
     /* Clear reception timeout to start next ranging process. */
@@ -61,6 +61,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
     };
 
     if (time_taken > LIMIT){
+        printf("restarting\n");
         quitting = true;
     }
 
@@ -105,6 +106,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
 
             /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 11 below. */
             if (ret == DWT_ERROR) {
+                printf("error\n");
                 return false;
             } else {
 
@@ -191,6 +193,8 @@ bool runRanging(char *token, int num, char* play, char* poll){
 
                     /* Reset RX to properly reinitialise LDE operation. */
                     dwt_rxreset();
+
+                    return false;
                 }
             }
         } else {
@@ -214,6 +218,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
         char buf[30];
         int tag = rx_final_msg[num][8] - '0';
         char mode[8];
+        char will_poll[8];
         if (success) {
             anchCnt++;
             strcpy(mode, "normal");
@@ -225,7 +230,12 @@ bool runRanging(char *token, int num, char* play, char* poll){
             tag++;
             if (tag == 4) tag = 1;
         }
-        sprintf(buf, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", "idle", mode);
+        if (anchCnt == 3) {
+            strcpy(will_poll, "poll");
+        } else {
+            strcpy(will_poll, "idle");
+        }
+        sprintf(buf, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", will_poll, mode);
         if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buf), buf, 0, false)) {
             fprintf(stderr, "Could not publish to broker. Quitting\n");
             exit(-3);

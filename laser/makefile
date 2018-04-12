@@ -1,6 +1,6 @@
 # Define the compiler being used with the compiler flags
-CC = gcc
-CFLAGS  = -g  -std=c11 -l wiringPi
+CC = gcc -std=c11
+CFLAGS  = -g -l wiringPi -D _DEFAULT_SOURCE
 DECAFILES = decadriver/dwm_api/deca_device.c decadriver/dwm_api/deca_params_init.c decadriver/dwm_api/my_deca_spi.c
 
 #default: laser-brains
@@ -14,15 +14,15 @@ test-imu: test_imu.o lsm9ds1.o
 	$(CC) $(CFLAGS) test_imu.o lsm9ds1.o -o test-imu 
 
 # Generate the unique device idenitfiier based on the mac address
-gen_mac: gen_mac.o
-	$(CC) $(CFLAGS) -o gen_mac gen_mac.o
+gen_mac: gen_mac.s
+	$(CC) $(CFLAGS) -o gen_mac
 
 # For each subsequent object file, define source files
 client.o: client.c client.h
 	$(CC) $(CFLAGS) -c client.c
 
 dwm1000.o: dwm1000.c dwm1000.h
-		$(CC) $(CFLAGS) -lmosquitto -c dwm1000.c $(DECAFILES)
+	$(CC) $(CFLAGS) -lmosquitto -c dwm1000.c $(DECAFILES)
 
 gen_mac.o: gen_mac.c
 	$(CC) $(CFLAGS) -c gen_mac.c
