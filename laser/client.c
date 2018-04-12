@@ -9,14 +9,14 @@
 
 #include "client.h"
 
-#define SERVER_PORT (int) 5600
+#define SERVER_PORT (int) 8080
 #define SERVER_IP "129.123.5.197"
 
 #define MAX_BUFFER_LENGTH 1024
 
 extern char MQTT_NAME[10];
 char DEVICE_MAC[13];
-int SOCK;
+int SOCK, TRUE = 1;
 struct sockaddr sock_addr;
 struct sockaddr_in *sock_addr_in = (struct sockaddr_in*) &sock_addr; 
 
@@ -33,6 +33,11 @@ void open_client_socket(){
         //exit(1);
     }
 
+    int ret = setsockopt(SOCK ,SOL_SOCKET, SO_REUSEADDR, &TRUE, sizeof(int));
+    if(ret < 0){
+	    perror("setsockopt failed");
+	    exit(1);
+    }
     /*Build address data structure*/
     memset(&sock_addr, 0, sizeof(sock_addr));   //new change 
     sock_addr_in->sin_family = PF_INET;
@@ -40,7 +45,7 @@ void open_client_socket(){
     inet_pton(PF_INET, SERVER_IP, &(sock_addr_in->sin_addr));
 
     /*Connect to server*/
-    int ret = connect(SOCK, (struct sockaddr*) &sock_addr, sizeof(sock_addr));
+    ret = connect(SOCK, (struct sockaddr*) &sock_addr, sizeof(sock_addr));
     while(ret < 0){
         printf("Connect errno: %s. Reattempting connection.\n", strerror(errno));
         sleep(1);
@@ -77,8 +82,8 @@ char* receive_status(){
 }
 
 void close_client_socket(){
-//    close(SOCK);
-    shutdown(SOCK);
+    shutdown(SOCK, SHUT_RDWR);
+    close(SOCK);
 }
 
 // int pull_DEVICE_MAC(){
