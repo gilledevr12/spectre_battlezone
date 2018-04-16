@@ -31,9 +31,8 @@ function processInput(elapsedTime) {
         //get the client
         console.log(args[0]);
         let client = activeUsers[args[0]];
-parse the message
         //TODO update player info here
-        client.player.someFunction();
+        // client.player.someFunction();
     }
 
 }
@@ -77,7 +76,7 @@ function initIo(http) {
 
     var net = require('net');
 
-    var HOST = '192.168.1.67'; //144.39.206.251
+    var HOST = '144.39.206.247'; //192.168.1.67
     var PORT = 3000;
 
     net.createServer(function(sock) {
