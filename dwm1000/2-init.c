@@ -128,7 +128,7 @@ static uint32 status_reg = 0;
  * frame length of approximately 2.66 ms with above configuration. */
 #define RESP_RX_TO_FINAL_TX_DLY_UUS 9000//3100
 /* Receive response timeout. See NOTE 5 below. */
-#define RESP_RX_TIMEOUT_UUS 55000//2700
+#define RESP_RX_TIMEOUT_UUS 64000//2700
 /* Preamble timeout, in multiple of PAC size. See NOTE 6 below. */
 //#define PRE_TIMEOUT 8
 
