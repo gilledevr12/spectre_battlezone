@@ -212,21 +212,29 @@ void alarmISR(int sig_num){
 //          DWM1000 Functions          //
 /////////////////////////////////////////
 
-void set_tag(){
+void set_tag(int8_t id){
 #ifdef MQTT_ACTIVE
-    printf("Which Tag am I? ");
-    char *bufNum = NULL;
-    size_t buf_size = 3;
-    getline(&bufNum, &buf_size, stdin);
+    //printf("Which Tag am I? ");
+    //char *bufNum = NULL;
+    //size_t buf_size = 3;
+    //getline(&bufNum, &buf_size, stdin);
 
-    strcat(MQTT_NAME, bufNum);
-    strcat(MQTT_NAME_PUB, bufNum);
-    for (int i = 0; i < 3; i++) {
-        rx_poll_msg[i][8] = bufNum[0];
-        tx_resp_msg[i][6] = bufNum[0];
-        rx_final_msg[i][8] = bufNum[0];
+    //strcat(MQTT_NAME, bufNum);
+    //strcat(MQTT_NAME_PUB, bufNum);
+    //for (int i = 0; i < 3; i++) {
+    //    rx_poll_msg[i][8] = bufNum[0];
+    //    tx_resp_msg[i][6] = bufNum[0];
+    //    rx_final_msg[i][8] = bufNum[0];
+    //}
+    sprintf(MQTT_NAME, "%s%i", MQTT_NAME, id);
+    sprintf(MQTT_NAME_PUB, "%s%i", MQTT_NAME_PUB, id);
+    printf("%s\n%s\n", MQTT_NAME, MQTT_NAME_PUB);
+    for(int i=0; i<3; i++){
+	rx_poll_msg[i][8] = id + 30;
+        tx_resp_msg[i][6] = id + 30;
+        rx_final_msg[i][8] = id + 30;
+        printf("%i\n%s\n%s\n%s\n\n", i, rx_poll_msg[i], tx_resp_msg[i], rx_final_msg[i]);
     }
-
     printf("\nI am %s\n", MQTT_NAME);
 #endif
 }
@@ -234,7 +242,7 @@ void set_tag(){
 /////////////////////////////////////////
 //                MAIN                 //
 /////////////////////////////////////////
-int main(){
+int main(int argc, char* argv[]){
     #ifdef RPI
         #ifdef DEBUG
         printf("Using RPI setup\n");
@@ -293,9 +301,17 @@ int main(){
         printf("MQTT enabled. Timing will be initiated by incoming MQTT prompts\n");
         #endif
 
-        set_tag();
-
-        if(init_mosquitto()) return 1;
+	if(argc < 2){
+		printf("Usage: ./laser-brains <tag-id>\n");
+		printf("Quitting...\n");
+		exit(1);
+	}
+	
+	int8_t ID = atoi(argv[1]);
+	if(ID != (1 || 2 || 3)) ID = 1;
+        set_tag(ID);
+        
+	if(init_mosquitto()) return 1;
         if(init_mosquitto_pub()) return 1;
 
     #else
