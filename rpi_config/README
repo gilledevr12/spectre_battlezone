@@ -1,0 +1,22 @@
+The contents of this folder are to ensure a correct configure of the 
+RPI controller running within each laser rifle and anchor. Two scripts 
+are included: 
+
+	tag_config.sh
+	anchor_config.sh
+
+These scripts should be ran to copy the contents of this folder into 
+the necessary locations on the host device. These changes will affect
+specifically how the device boots.
+
+On the 'tag' host, the device should boot into the correct web-page 
+with valid window size, resolution, and screen refresh settings. The 
+main controller program should also be launched with the correct tag 
+info being passed in. Upon running the tag_config.sh script, the user 
+will be prompted with the tag ID number of the host device. This will
+then set the correct ID in the necessary locations for valid operation.
+
+On the 'anchor' host, the device should boot to console only with the 
+main controller program running in the background. Similar to the 
+script ran for the 'tag' host, the user will be prompted for the ID of
+the anchor upon running the anchor_config.sh script. 
