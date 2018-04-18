@@ -233,7 +233,7 @@ void set_tag(int8_t id){
 	    rx_poll_msg[i][8] = id + 30;
         tx_resp_msg[i][6] = id + 30;
         rx_final_msg[i][8] = id + 30;
-        printf("%i\n%c\n%c\n%c\n\n", i, rx_poll_msg[i][8], tx_resp_msg[i][6], rx_final_msg[i][8]);
+        //printf("%i\n%c\n%c\n%c\n\n", i, rx_poll_msg[i][8], tx_resp_msg[i][6], rx_final_msg[i][8]);
     }
     printf("\nI am %s\n", MQTT_NAME);
 #endif
