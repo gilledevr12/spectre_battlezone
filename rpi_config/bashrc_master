@@ -3,7 +3,7 @@
 # for examples
 
 #This is mostly a very congested file. This is the only line that matters.
-/./home/pi/launch_spectre.sh
+#/./home/pi/launch_spectre.sh
 
 # If not running interactively, don't do anything
 case $- in

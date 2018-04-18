@@ -230,10 +230,10 @@ void set_tag(int8_t id){
     sprintf(MQTT_NAME_PUB, "%s%i", MQTT_NAME_PUB, id);
     printf("%s\n%s\n", MQTT_NAME, MQTT_NAME_PUB);
     for(int i=0; i<3; i++){
-	rx_poll_msg[i][8] = id + 30;
+	    rx_poll_msg[i][8] = id + 30;
         tx_resp_msg[i][6] = id + 30;
         rx_final_msg[i][8] = id + 30;
-        printf("%i\n%s\n%s\n%s\n\n", i, rx_poll_msg[i], tx_resp_msg[i], rx_final_msg[i]);
+        printf("%i\n%c\n%c\n%c\n\n", i, rx_poll_msg[i][8], tx_resp_msg[i][6], rx_final_msg[i][8]);
     }
     printf("\nI am %s\n", MQTT_NAME);
 #endif

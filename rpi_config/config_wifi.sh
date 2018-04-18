@@ -11,11 +11,10 @@ echo "2: spectre network"
 read NETWORK
 if [ $NETWORK -eq 1 ]
 then
-	sed -i 's/wpa-ssid .*/wpa-ssid "BLUEZONE"/' /etc/network/interfaces
+	sed -i 's/ssid=.*/ssid="BLUEZONE"/' /etc/wpa_supplicant/wpa_supplicant.conf
 else
-	sed -i 's/wpa-ssid .*/wpa-ssid "spectre"/' /etc/network/interfaces
+	sed -i 's/ssid=.*/ssid="spectre"/' /etc/wpa_supplicant/wpa_supplicant.conf
 fi
 
 #reboot to change networks 
 sudo reboot
-
