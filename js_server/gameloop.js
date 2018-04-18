@@ -76,7 +76,7 @@ function initIo(http) {
 
     var net = require('net');
 
-    var HOST = '144.39.206.247'; //192.168.1.67
+    var HOST = '192.168.0.5';
     var PORT = 3000;
 
     net.createServer(function(sock) {
