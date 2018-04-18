@@ -14,4 +14,4 @@ fi
 /.$LASER_PROGRAM &
 
 # Launch the GUI program
-startx
+# startx
