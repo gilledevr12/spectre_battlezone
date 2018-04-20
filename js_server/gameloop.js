@@ -11,12 +11,66 @@ let connections = 0;
 let TARGET_USERS_NUM = 5;
 let game_started = false;
 let activeUsers = [];
+let shots = [];
+let updates_messages = [];
 let Queue = require('./queue');
 let inputQueue = Queue.createQueue();
 let present = require('present');
 let quit = false;
 const SIMULATION_UPDATE_RATE_MS = 100; // 1/10 of a second update
 let io = null;
+let anchors = {};
+
+function initAnchors() {
+    //TODO put values here
+    let a1_x_dist = 0,
+        a1_y_dist = 0,
+        a2_x_dist = 0,
+        a2_y_dist = 0,
+        a3_x_dist = 0,
+        a3_y_dist = 0;
+    anchors.a1 = {
+        x: a1_x_dist * (-1) * 2,
+        y: a1_y_dist * (-1) * 2,
+        c: Math.pow(a1_x_dist,2) + Math.pow(a1_y_dist,2)
+    };
+    anchors.a2 = {
+        x: a2_x_dist * (-1) * 2,
+        y: a2_y_dist * (-1) * 2,
+        c: Math.pow(a2_x_dist,2) + Math.pow(a2_y_dist,2)
+    };
+    anchors.a3 = {
+        x: a3_x_dist * (-1) * 2,
+        y: a3_y_dist * (-1) * 2,
+        c: Math.pow(a3_x_dist,2) + Math.pow(a3_y_dist,2)
+    };
+}
+
+function calculatePosition(player, dists) {
+    let equations = {
+        one: {
+            x: anchors.a1.x - anchors.a2.x,
+            y: anchors.a1.y - anchors.a2.y,
+            c: anchors.a1.c - anchors.a2.c
+        },
+        two: {
+            x: anchors.a1.x - anchors.a3.x,
+            y: anchors.a1.y - anchors.a3.y,
+            c: anchors.a1.c - anchors.a3.c
+        }
+    };
+    equations.one.f = dists.D1 - dists.D2 - equations.one.c;
+    equations.two.f = dists.D1 - dists.D3 - equations.two.c;
+    let x = (equations.two.f - ((equations.two.y*equations.one.f)/equations.one.y)) /
+        (equations.two.x - ((equations.two.y*equations.one.x)/equations.one.y));
+    let y = (equations.one.f - (equations.one.x * x))/(equations.one.y);
+    let position = {
+        x: x,
+        y: y
+    };
+    set_position(player, position);
+
+}
 
 function processInput(elapsedTime) {
     //
@@ -32,31 +86,51 @@ function processInput(elapsedTime) {
         console.log(args[0]);
         let client = activeUsers[args[0]];
         //TODO update player info here
-        // client.player.someFunction();
+        //first 3 are acceleration, next mag, uwb, then shots
+        if (args[10]) shots.push(client.player);
+        findHeading(client.player, args[4], args[5]);
+        let dists = {
+            D1: args[7],
+            D2: args[8],
+            D3: args[9]
+        };
+        calculatePosition(client.player, dists);
     }
 
 }
 
-function createPlayerInfo(user_id) {
-    //TODO make a player here
-    let that = {};
-
-    that.someFunction = function () {
-        console.log('processing')
-    };
-
-    that.health = 100;
-
-    return that;
+function findHeading(player, x, y) {
+    let heading = Math.atan2(y, x);  // assume pitch, roll are 0
+    heading *= (180 / Math.PI);
+    set_direction(player, heading + 180 - 11.32); //declination in logan
 }
 
 function update(elapsedTime) {
     //TODO game logic here
-    //EX: if(hit) player.health--;  *that type of stuff ya know?
+    for (let shot in shots){
+        for (let others in shots){
+            if (isInTrajectory(shots[shot].stats.id, shots[others].stats.id, shots[shot].position,
+                    shots[shot].direction, shots[others].position)) {
+                console.log("A stupendous shot!!!");
+                //here for now, in the send messages later
+                shots[shot].socket.emit("You hit someone!")
+                shots[others].socket.emit("You were hit")
+                //TODO log a hit and health and stuff
+            } else {
+                console.log("Missed teribbly");
+            }
+        }
+    }
+    shots.length = 0;
 }
 
 function updatePlayers(elapsedTime) {
     //TODO send out the player update
+    for (let index in updates_messages){
+        //this type of thing here
+        //shots[shot].socket.emit("You hit someone!")
+        //shots[others].socket.emit("You were hit")
+    }
 }
 
 function gameLoop(currentTime, elapsedTime) {
@@ -121,7 +195,7 @@ function initIo(http) {
                 var name_id = "Tag_" + (connections+1);
 
                 //used to send specific messages
-                let player = createPlayerInfo(name_id);
+                let player = makePlayer(name_id);
                 activeUsers[name_id] = {
                     id: socket.id,
                     socket: socket,
@@ -149,6 +223,7 @@ function initIo(http) {
 }
 
 function init(http) {
+    initAnchors();
     initIo(http);
     testTrajectory();
     gameLoop(present(),0);
@@ -160,15 +235,26 @@ function makePlayer(spec){
     let that = {};
 
     Object.defineProperty(that, 'position', {
-        get: () => spec.position
-    })
+        get: () => position,
+        set: value => { position = value; }
+    });
+
+    Object.defineProperty(that, 'direction', {
+        get: () => direction,
+        set: value => { direction = value; }
+    });
+
+    Object.defineProperty(that, 'stats', {
+        get: () => stats,
+        set: value => { stats = value; }
+    });
 
     let stats = {
         id: spec.id,
         alive: true,
         health: 100,
         armor: 0,
-    }
+    };
 
     let weapons = [];
     weapons.push("pea_shooter");
@@ -176,7 +262,7 @@ function makePlayer(spec){
     let position = {
         x: spec.position.x,
         y: spec.position.y
-    }
+    };
     
     let direction = spec.direction;
 
@@ -187,17 +273,17 @@ function add_weapon(player, weapon){
     player.weapons.push(weapon);
 }
 
-function set_direction(player, spec){
-    player.direction = spec.direction;
+function set_direction(player, direction){
+    player.direction = direction;
 }
 
 function get_direction(player){
     return player.direction;
 }
 
-function set_position(player, spec){
-    player.position.x = spec.position.x;
-    player.position.y = spec.position.y;
+function set_position(player, position){
+    player.position.x = position.x;
+    player.position.y = position.y;
 }
 
 function get_postion(player){
