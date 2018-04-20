@@ -150,6 +150,7 @@ function initIo(http) {
 
 function init(http) {
     initIo(http);
+    testTrajectory();
     gameLoop(present(),0);
 }
 
@@ -157,6 +158,10 @@ module.exports.init = init;
 
 function makePlayer(spec){
     let that = {};
+
+    Object.defineProperty(that, 'position', {
+        get: () => spec.position
+    })
 
     let stats = {
         id: spec.id,
@@ -222,13 +227,13 @@ function player_hit(distance, weapon){
 }
 
 function isInTrajectory(id1, id2, me, myTheta, you){
-    console.log(id1 + ": " + me.x + "," me.y + " firing at " + id2 + ": " + you.x + "," + you.y + " with trajectory: " + myTheta);
-    tempTheta = Math.atan2(you.y - me.y, you.x - me.x) * 180 / Math.PI;
-    console.log("calcd theta: " + tempTheta);
-    tempDistance = Math.sqrt((you.y - me.y)*(you.y - me.y) + (you.x - me.x)*(you.x - me.x));
-    thetaTolerance = tempDistance * 0.25;
-    console.log("distance: " + tempDistance + " tolerance " + thetaTolerance);
-    if((tempTheta < myTheta + thetaTolerance) && (temp_theta > my_theta - theta_tolerance))
+    console.log(id1 + ": " + me.position.x + "," + me.position.y + " firing at " + id2 + ": " + you.position.x + "," + you.position.y + " with trajectory: " + myTheta);
+    let temp_theta = Math.atan2(you.position.y - me.position.y, you.position.x - me.position.x) * 180 / Math.PI;
+    console.log("calcd theta: " + temp_theta);
+    let temp_distance = Math.sqrt((you.position.y - me.position.y)*(you.position.y - me.position.y) + (you.position.x - me.position.x)*(you.position.x - me.position.x));
+    let theta_tolerance = temp_distance * 0.25;
+    console.log("distance: " + temp_distance + " tolerance " + theta_tolerance);
+    if((temp_theta < myTheta + theta_tolerance) && (temp_theta > myTheta - theta_tolerance))
         return 1;
     else
         return 0;
@@ -237,7 +242,7 @@ function isInTrajectory(id1, id2, me, myTheta, you){
 function testTrajectory(){
     let spec1 = { position: { x: 2,  y: 2 }, direction:   55 }
     let spec2 = { position: { x: 17, y: 4 }, direction: -200 }
-    let spec3 = { position: { x: 2,  y: 2 }, direction:   55 }
+    let spec3 = { position: { x: 13,  y: 18 }, direction: -200 }
     let p1 = makePlayer(spec1);
     let p2 = makePlayer(spec2);
     let p3 = makePlayer(spec3);
@@ -248,7 +253,7 @@ function testTrajectory(){
     else
         console.log("MISS!");
 
-    let ret = isInTrajectory(1, 3, p3, -200.0, p1);
+    ret = isInTrajectory(3, 1, p3, -200.0, p1);
     if(ret)
         console.log("HIT!");
     else
