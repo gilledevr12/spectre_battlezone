@@ -24,11 +24,11 @@ let anchors = {};
 function initAnchors() {
     //TODO put values here
     let a1_x_dist = 0,
-        a1_y_dist = 0,
-        a2_x_dist = 0,
+        a1_y_dist = 8.39,
+        a2_x_dist = 7.77,
         a2_y_dist = 0,
-        a3_x_dist = 0,
-        a3_y_dist = 0;
+        a3_x_dist = 15.24,
+        a3_y_dist = 8.79;
     anchors.a1 = {
         x: a1_x_dist * (-1) * 2,
         y: a1_y_dist * (-1) * 2,
@@ -61,6 +61,10 @@ function calculatePosition(player, dists) {
     };
     equations.one.f = dists.D1 - dists.D2 - equations.one.c;
     equations.two.f = dists.D1 - dists.D3 - equations.two.c;
+    console.log(equations.one.x);
+    console.log(equations.one.y);
+    console.log(equations.one.c);
+    console.log(equations.one.f);
     let x = (equations.two.f - ((equations.two.y*equations.one.f)/equations.one.y)) /
         (equations.two.x - ((equations.two.y*equations.one.x)/equations.one.y));
     let y = (equations.one.f - (equations.one.x * x))/(equations.one.y);
@@ -68,6 +72,7 @@ function calculatePosition(player, dists) {
         x: x,
         y: y
     };
+    console.log('x: ' + position.x + " y: " + position.y);
     set_position(player, position);
 
 }
@@ -83,11 +88,16 @@ function processInput(elapsedTime) {
         let input = processMe.dequeue();
         let args = input.message.toString().split(" ");
         //get the client
-        console.log(args[0]);
+        for (let index in args){
+            console.log(args[index]);
+        }
         let client = activeUsers[args[0]];
         //TODO update player info here
         //first 3 are acceleration, next mag, uwb, then shots
-        if (args[10]) shots.push(client.player);
+        if (args[10] === 0) {
+            console.log('got hit?')
+            shots.push(client.player);
+        } 
         findHeading(client.player, args[4], args[5]);
         let dists = {
             D1: args[7],
@@ -150,7 +160,7 @@ function initIo(http) {
 
     var net = require('net');
 
-    var HOST = '192.168.0.5';
+    var HOST = '129.123.5.197';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -231,7 +241,7 @@ function init(http) {
 
 module.exports.init = init;
 
-function makePlayer(spec){
+function makePlayer(id){
     let that = {};
 
     Object.defineProperty(that, 'position', {
@@ -250,7 +260,7 @@ function makePlayer(spec){
     });
 
     let stats = {
-        id: spec.id,
+        id: id,
         alive: true,
         health: 100,
         armor: 0,
@@ -260,11 +270,11 @@ function makePlayer(spec){
     weapons.push("pea_shooter");
 
     let position = {
-        x: spec.position.x,
-        y: spec.position.y
+        x: 0, //spec.position.x,
+        y: 0 //spec.position.y
     };
     
-    let direction = spec.direction;
+    let direction = 0;//spec.direction;
 
     return that;
 }
@@ -313,10 +323,10 @@ function player_hit(distance, weapon){
 }
 
 function isInTrajectory(id1, id2, me, myTheta, you){
-    console.log(id1 + ": " + me.position.x + "," + me.position.y + " firing at " + id2 + ": " + you.position.x + "," + you.position.y + " with trajectory: " + myTheta);
-    let temp_theta = Math.atan2(you.position.y - me.position.y, you.position.x - me.position.x) * 180 / Math.PI;
+    console.log(id1 + ": " + me.x + "," + me.y + " firing at " + id2 + ": " + you.x + "," + you.y + " with trajectory: " + myTheta);
+    let temp_theta = Math.atan2(you.y - me.y, you.x - me.x) * 180 / Math.PI;
     console.log("calcd theta: " + temp_theta);
-    let temp_distance = Math.sqrt((you.position.y - me.position.y)*(you.position.y - me.position.y) + (you.position.x - me.position.x)*(you.position.x - me.position.x));
+    let temp_distance = Math.sqrt((you.y - me.y)*(you.y - me.y) + (you.x - me.x)*(you.x - me.x));
     let theta_tolerance = temp_distance * 0.25;
     console.log("distance: " + temp_distance + " tolerance " + theta_tolerance);
     if((temp_theta < myTheta + theta_tolerance) && (temp_theta > myTheta - theta_tolerance))
@@ -333,13 +343,13 @@ function testTrajectory(){
     let p2 = makePlayer(spec2);
     let p3 = makePlayer(spec3);
 
-    let ret = isInTrajectory(1, 3, p1, 55.0, p3);
+    let ret = isInTrajectory(1, 3, p1.position, 55.0, p3.position);
     if(ret)
         console.log("HIT!");
     else
         console.log("MISS!");
 
-    ret = isInTrajectory(3, 1, p3, -200.0, p1);
+    ret = isInTrajectory(3, 1, p3.position, -200.0, p1.position);
     if(ret)
         console.log("HIT!");
     else
