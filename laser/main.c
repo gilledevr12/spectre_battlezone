@@ -308,7 +308,7 @@ int main(int argc, char* argv[]){
 	}
 
 	int8_t ID = atoi(argv[1]);
-	if((ID != 1) || (ID != 2) || (ID != 3)) ID = 1;
+	if((ID != 1) && (ID != 2) && (ID != 3)) ID = 1;
         set_tag(ID);
 
 	if(init_mosquitto()) return 1;
