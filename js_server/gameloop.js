@@ -97,7 +97,7 @@ function processInput(elapsedTime) {
         if (args[10] === 0) {
             console.log('got hit?')
             shots.push(client.player);
-        } 
+        }
         findHeading(client.player, args[4], args[5]);
         let dists = {
             D1: args[7],
@@ -106,7 +106,6 @@ function processInput(elapsedTime) {
         };
         calculatePosition(client.player, dists);
     }
-
 }
 
 function findHeading(player, x, y) {
@@ -160,7 +159,7 @@ function initIo(http) {
 
     var net = require('net');
 
-    var HOST = '129.123.5.197';
+    var HOST = '144.39.163.217';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -273,7 +272,7 @@ function makePlayer(id){
         x: 0, //spec.position.x,
         y: 0 //spec.position.y
     };
-    
+
     let direction = 0;//spec.direction;
 
     return that;
@@ -310,7 +309,7 @@ function player_hit(distance, weapon){
         let remainder = 0;
         if(player.armor - power < 0){
             player.armor = 0;
-            remainder = -1 * (player.armor - power); 
+            remainder = -1 * (player.armor - power);
             player.health -= remainder;
         }
     }
@@ -396,4 +395,3 @@ typedef struct {
     char MAX_AMMO;
 } INVENTORY_ITEM;
 */
-

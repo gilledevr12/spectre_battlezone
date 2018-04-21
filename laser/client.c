@@ -10,7 +10,7 @@
 #include "client.h"
 
 #define SERVER_PORT (int) 3000
-#define SERVER_IP "144.39.204.109"
+#define SERVER_IP "144.39.163.217"
 
 #define MAX_BUFFER_LENGTH 1024
 
@@ -18,7 +18,7 @@ extern char MQTT_NAME[10];
 char DEVICE_MAC[13];
 int SOCK, TRUE = 1;
 struct sockaddr sock_addr;
-struct sockaddr_in *sock_addr_in = (struct sockaddr_in*) &sock_addr; 
+struct sockaddr_in *sock_addr_in = (struct sockaddr_in*) &sock_addr;
 
 void open_client_socket(){
     /*Open socket: set type to active open*/
@@ -39,7 +39,7 @@ void open_client_socket(){
 	    exit(1);
     }
     /*Build address data structure*/
-    memset(&sock_addr, 0, sizeof(sock_addr));   //new change 
+    memset(&sock_addr, 0, sizeof(sock_addr));   //new change
     sock_addr_in->sin_family = PF_INET;
     sock_addr_in->sin_port = htons(SERVER_PORT);    //switched the ordering of this line with the one below
     inet_pton(PF_INET, SERVER_IP, &(sock_addr_in->sin_addr));
