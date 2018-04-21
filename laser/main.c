@@ -3,28 +3,28 @@
  * This file will compile into the main laser-brains method.
  * The underlying flow of the laser-brains is broken into several sequential
  * steps, as follows:
- * 
+ *
  *  1) Receive 'begin' signal from gameserver
  *      This signal is used to guarantee syncronization between the other players
  *      in order to prevent collisions. A collision would occur in the UWB modules
- *      due to only one message being able to be sent at one time across the entire 
+ *      due to only one message being able to be sent at one time across the entire
  *      UWB network.The 'begin' signal will contain the tag-name of the player rifle
  *      and will be sent using MQTT
- * 
+ *
  *  2) Poll UWB location data
- *      Upon receiving the begin signal the player rifle will begin requesting and 
- *      receiving data from each of the 3 location anchors, sequentially. This 
+ *      Upon receiving the begin signal the player rifle will begin requesting and
+ *      receiving data from each of the 3 location anchors, sequentially. This
  *      communication happens across the UWB network.
- * 
+ *
  *  3) Respond with 'finished' signal to gameserver
- *      This allows for the UWB network to not be delayed unnecessarily. 
- * 
+ *      This allows for the UWB network to not be delayed unnecessarily.
+ *
  *  4) Poll IMU sensor for data
  *      This action is relatively short and can be treated as instantanous retrieval
- * 
+ *
  *  5) Push current raw-data to gameserver
  *      Using wifi, data should be pushed to the gameserver for processing.
- * 
+ *
  */
 
 #include <stdbool.h>
@@ -43,9 +43,9 @@
 #define DEBUG
 #define MQTT_ACTIVE //UWB must also be enabled!
 #define WIFI_ACTIVE
-//#define IMU_ACTIVE
+#define IMU_ACTIVE
 #define UWB_ACTIVE  // MQTT must also be enabled!
-//#define RPI
+#define RPI
 
 /////////////////////////////////////////
 //     Constants / Global Variables    //
@@ -86,7 +86,7 @@ extern float UWB_Curr_Distance[3];
     extern uint8 rx_poll_msg[3][12];
     extern uint8 tx_resp_msg[3][15];
     extern uint8 rx_final_msg[3][24];
-#else 
+#else
     static bool quitting = 0;
 #endif
 
@@ -100,7 +100,7 @@ extern float UWB_Curr_Distance[3];
 /////////////////////////////////////////
 void print_ACCEL(){
 	//each axis will return a value [-16500, +16500]
-	if((ACC.x < ACC_FLAT) && (ACC.x > -ACC_FLAT) && (ACC.y < ACC_FLAT) && (ACC.y > -ACC_FLAT)) 
+	if((ACC.x < ACC_FLAT) && (ACC.x > -ACC_FLAT) && (ACC.y < ACC_FLAT) && (ACC.y > -ACC_FLAT))
 		printf("Flat enough to shoot!\n");
 	else if(ACC.x < ACC_DOWN)
 		printf("Straight down\n");
@@ -112,7 +112,7 @@ void print_ACCEL(){
 
 	float pitch = asin( -ACC.x * ACC_LSB);
 	float roll = asin(ACC.y * ACC_LSB / cos(pitch));
-      
+
 	float xh = MAG.x * cos(pitch) + MAG.z * sin(pitch);
 	float yh = MAG.x * sin(roll) * sin(pitch) + MAG.y * cos(roll) -MAG.z * sin(roll) * cos(pitch);
     //float zh = -MAG.x * cos(roll) * sin(pitch) + MAG.y * sin(roll) + MAG.z * cos(roll) * cos(pitch);
@@ -129,7 +129,7 @@ void print_MAG(){
 	float heading = atan2(MAG.y, MAG.x);  // assume pitch, roll are 0
 	heading *= 180 / PI;
 	heading = heading + 180 - DECLINATION;
-		
+
 	printf("Heading: %3.4f ", heading);
 	if(heading < 22.5)
 		printf("EAST\n");
@@ -230,9 +230,9 @@ void set_tag(int8_t id){
     sprintf(MQTT_NAME_PUB, "%s%i", MQTT_NAME_PUB, id);
     printf("%s\n%s\n", MQTT_NAME, MQTT_NAME_PUB);
     for(int i=0; i<3; i++){
-	    rx_poll_msg[i][8] = id + 30;
-        tx_resp_msg[i][6] = id + 30;
-        rx_final_msg[i][8] = id + 30;
+	    rx_poll_msg[i][8] = MQTT_NAME[4];
+        tx_resp_msg[i][6] = MQTT_NAME[4];
+        rx_final_msg[i][8] = MQTT_NAME[4];
         //printf("%i\n%c\n%c\n%c\n\n", i, rx_poll_msg[i][8], tx_resp_msg[i][6], rx_final_msg[i][8]);
     }
     printf("\nI am %s\n", MQTT_NAME);
@@ -306,11 +306,11 @@ int main(int argc, char* argv[]){
 		printf("Quitting...\n");
 		exit(1);
 	}
-	
+
 	int8_t ID = atoi(argv[1]);
-	if(ID != (1 || 2 || 3)) ID = 1;
+	if((ID != 1) || (ID != 2) || (ID != 3)) ID = 1;
         set_tag(ID);
-        
+
 	if(init_mosquitto()) return 1;
         if(init_mosquitto_pub()) return 1;
 
@@ -334,7 +334,7 @@ int main(int argc, char* argv[]){
         printf("Wifi not enabled, sending output to stdout\n");
         #endif
     #endif
-    
+
     //initialize the laser to be doing no work until told to do so
     while(1){
         #ifdef MQTT_ACTIVE
