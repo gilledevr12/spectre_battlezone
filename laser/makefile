@@ -11,7 +11,7 @@ laser-brains:   client.o dwm1000.o lsm9ds1.o mqtt.o main.o
 	$(CC) $(CFLAGS) -lm -lmosquitto main.o client.o dwm1000.o lsm9ds1.o mqtt.o $(DECAFILES) -o laser-brains
 
 test-imu: test_imu.o lsm9ds1.o 
-	$(CC) $(CFLAGS) test_imu.o lsm9ds1.o -o test-imu 
+	$(CC) $(CFLAGS) -lm test_imu.o lsm9ds1.o -o test-imu 
 
 # Generate the unique device idenitfiier based on the mac address
 gen_mac: gen_mac.s

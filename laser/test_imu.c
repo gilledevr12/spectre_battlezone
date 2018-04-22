@@ -29,6 +29,7 @@ const unsigned char RECAL_MAX_COUNT = 31;
 #define ACC_FLAT	1500
 #define ACC_UP		15500
 #define ACC_DOWN 	-16000
+#define MAG_NORTH	130.0
 
 void print_ACCEL(){
 	//each axis will return a value [-16500, +16500]
@@ -58,30 +59,17 @@ void print_ACCEL(){
 
 #define DECLINATION 11.32 //magnetic declination for Logan UT in degrees
 void print_MAG(){
-	printf("Mag: %i %i %i\t", MAG.x, MAG.y, MAG.z);
+	printf("Main Mag: %i %i %i\t", MAG.x, MAG.y, MAG.z);
 	float heading = atan2(MAG.y, MAG.x);  // assume pitch, roll are 0
 	heading *= 180 / PI;
-	heading = heading + 180 - DECLINATION;
-		
-	printf("Heading: %3.4f ", heading);
-	if(heading < 22.5)
-		printf("EAST\n");
-	else if(heading < 67.5)
-		printf("NORTH-EAST\n");
-	else if(heading < 112.5)
-		printf("NORTH\n");
-	else if(heading < 157.5)
-		printf("NORTH-WEST\n");
-	else if(heading < 202.5)
-		printf("WEST\n");
-	else if(heading < 247.5)
-		printf("SOUTH-WEST\n");
-	else if(heading < 292.5)
-		printf("SOUTH\n");
-	else if(heading < 337.5)
-		printf("SOUTH-EAST\n");
+	//if -180 < theta < -115, theta += 360
+	if(heading < -MAG_NORTH)
+		heading += 360.0 + MAG_NORTH;
 	else
-		printf("EAST\n");
+		heading += MAG_NORTH;
+	//heading = heading + 180 - DECLINATION;
+		
+	printf("Heading: %3.4f\n", heading);
 }
 
 void alarmISR(int sig_num){
@@ -91,12 +79,12 @@ void alarmISR(int sig_num){
         ACC.x = curr_samples[0];
         ACC.y = curr_samples[1];
         ACC.z = curr_samples[2];
-        GYR.x = curr_samples[3];
-        GYR.y = curr_samples[4];
-        GYR.z = curr_samples[5];        
-        MAG.x = curr_samples[6];
-        MAG.y = curr_samples[7];
-        MAG.z = curr_samples[8];
+        //GYR.x = curr_samples[3];
+        //GYR.y = curr_samples[4];
+        //GYR.z = curr_samples[5];        
+        MAG.x = curr_samples[3];
+        MAG.y = curr_samples[4];
+        MAG.z = curr_samples[5];
         
 	new_samples = 1;
 	CALIBRATION_COUNTER++;
@@ -125,14 +113,14 @@ int main(){
 	    if(new_samples){
 		    new_samples = 0;
 //		    printf("%i %i %i\n", ACC.x, ACC.y, ACC.z);
-        	    print_ACCEL();
-//	            print_MAG();
+//        	    print_ACCEL();
+	            print_MAG();
 //		    printf("%i %i %i\n", MAG.x, MAG.y, MAG.z);
 	    }
 
 	    if(CALIBRATION_COUNTER >= RECAL_MAX_COUNT){
 		    //printf("Recalibrating...");
-		    calibrate_IMU();
+		    //calibrate_IMU();
 		    //printf("done\n");
 		    CALIBRATION_COUNTER = 1;
 	    }

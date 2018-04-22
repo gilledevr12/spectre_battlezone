@@ -43,9 +43,9 @@
 #define DEBUG
 #define MQTT_ACTIVE //UWB must also be enabled!
 #define WIFI_ACTIVE
-#define IMU_ACTIVE
+//#define IMU_ACTIVE
 #define UWB_ACTIVE  // MQTT must also be enabled!
-#define RPI
+//#define RPI
 
 /////////////////////////////////////////
 //     Constants / Global Variables    //
