@@ -10,7 +10,7 @@
 #include "client.h"
 
 #define SERVER_PORT (int) 3000
-#define SERVER_IP "144.39.163.217"
+#define SERVER_IP "192.168.1.5"
 
 #define MAX_BUFFER_LENGTH 1024
 

@@ -36,7 +36,7 @@
 //#include "port.h"
 
 // Server connection parameters
-#define MQTT_HOSTNAME "144.39.163.217" //change to the host name of the server
+#define MQTT_HOSTNAME "192.168.1.5" //change to the host name of the server
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 
