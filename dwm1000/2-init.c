@@ -51,16 +51,16 @@ static char MQTT_NAME[10] = "Anchor_";
 
 /* Default communication configuration. We use here EVK1000's default mode (mode 3). */
 static dwt_config_t config = {
-    2,               /* Channel number. */
-    DWT_PRF_64M,     /* Pulse repetition frequency. */
-    DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
-    DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
-    9,               /* TX preamble code. Used in TX only. */
-    9,               /* RX preamble code. Used in RX only. */
-    1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
-    DWT_BR_110K,     /* Data rate. */
-    DWT_PHRMODE_STD, /* PHY header mode. */
-    (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
+        2,               /* Channel number. */
+        DWT_PRF_64M,     /* Pulse repetition frequency. */
+        DWT_PLEN_1024,   /* Preamble length. Used in TX only. */
+        DWT_PAC32,       /* Preamble acquisition chunk size. Used in RX only. */
+        9,               /* TX preamble code. Used in TX only. */
+        9,               /* RX preamble code. Used in RX only. */
+        1,               /* 0 to use standard SFD, 1 to use non-standard SFD. */
+        DWT_BR_110K,     /* Data rate. */
+        DWT_PHRMODE_STD, /* PHY header mode. */
+        (1025 + 64 - 32) /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
 };
 
 // TX CONFIG SETTINGS
@@ -83,12 +83,12 @@ static uint8 tx_poll_msg[3][12] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x21, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '2', 0x21, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '3', 0x21, 0, 0}
-                                };
+};
 static uint8 rx_resp_msg[3][15] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '1', 'A', '1', 0x10, 0x02, 0, 0, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '2', 'A', '1', 0x10, 0x02, 0, 0, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'T', '3', 'A', '1', 0x10, 0x02, 0, 0, 0, 0}
-                                };
+};
 static uint8 tx_final_msg[3][24] = {
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '1', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         {0x41, 0x88, 0, 0xCA, 0xDE, 'A', '1', 'T', '2', 0x23, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -126,9 +126,9 @@ static uint32 status_reg = 0;
 #define POLL_TX_TO_RESP_RX_DLY_UUS 140//150
 /* This is the delay from Frame RX timestamp to TX reply timestamp used for calculating/setting the DW1000's delayed TX function. This includes the
  * frame length of approximately 2.66 ms with above configuration. */
-#define RESP_RX_TO_FINAL_TX_DLY_UUS 9000//3100
+#define RESP_RX_TO_FINAL_TX_DLY_UUS 11000//3100
 /* Receive response timeout. See NOTE 5 below. */
-#define RESP_RX_TIMEOUT_UUS 64000//2700
+#define RESP_RX_TIMEOUT_UUS 128000//2700
 /* Preamble timeout, in multiple of PAC size. See NOTE 6 below. */
 //#define PRE_TIMEOUT 8
 
@@ -197,14 +197,14 @@ bool runRanging(char* token, int num){
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
     while(!blink) {
         blink = true;
-    tx_poll_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
+        tx_poll_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
 //    tx_poll_msg[num][8] = token[(strlen(token) - 1)];
-    dwt_writetxdata(sizeof(tx_poll_msg[num]), tx_poll_msg[num], 0); /* Zero offset in TX buffer. */
-    dwt_writetxfctrl(sizeof(tx_poll_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
+        dwt_writetxdata(sizeof(tx_poll_msg[num]), tx_poll_msg[num], 0); /* Zero offset in TX buffer. */
+        dwt_writetxfctrl(sizeof(tx_poll_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
 
-    /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
-     * set by dwt_setrxaftertxdelay() has elapsed. */
-    dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
+        /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
+         * set by dwt_setrxaftertxdelay() has elapsed. */
+        dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
 
         /* Increment frame sequence number after transmission of the poll message (modulo 256). */
 
@@ -213,17 +213,17 @@ bool runRanging(char* token, int num){
         double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < .07) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < .135) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
         printf("time %f", time_taken);
-        if (time_taken > .07) quitting = true;
+        if (time_taken > .135) quitting = true;
 
         frame_seq_nb++;
 
         if (status_reg & SYS_STATUS_RXFCG) {
             uint32 frame_len;
-        printf("got\n");
+            printf("got\n");
 
             /* Clear good RX frame event and TX frame sent in the DW1000 status register. */
             dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
@@ -254,7 +254,7 @@ bool runRanging(char* token, int num){
             rx_buffer[ALL_MSG_SN_IDX] = 0;
             if (memcmp(rx_buffer, rx_resp_msg[num], ALL_MSG_COMMON_LEN) == 0) {
                 uint32 final_tx_time;
-            printf("mine\n");
+                printf("mine\n");
                 blink = true;
 
                 /* Retrieve poll transmission and response reception timestamp. */
@@ -281,12 +281,12 @@ bool runRanging(char* token, int num){
 
                 /* If dwt_starttx() returns an error, abandon this ranging exchange and proceed to the next one. See NOTE 12 below. */
                 if (ret == DWT_SUCCESS) {
-                printf("success\n");
+                    printf("success\n");
                     success = true;
                     /* Poll DW1000 until TX frame sent event set. See NOTE 9 below. */
                     t = clock();
                     double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
-                    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS) && time_taken < .06) {
+                    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS) && time_taken < .12) {
                         time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
                     };
 
@@ -296,8 +296,8 @@ bool runRanging(char* token, int num){
                     /* Increment frame sequence number after transmission of the final message (modulo 256). */
                     frame_seq_nb++;
                 } else {
-                    printf("error, sleep 70 ms\n");
-                    deca_sleep(70);
+                    printf("error, sleep 130 ms\n");
+                    deca_sleep(130);
                     return false;
                 }
             } else {

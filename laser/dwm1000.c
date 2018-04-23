@@ -42,7 +42,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
     } else {
-        LIMIT = .15;
+        LIMIT = .2;
     }
 
     /* Clear reception timeout to start next ranging process. */
