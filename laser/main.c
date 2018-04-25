@@ -54,7 +54,7 @@ struct IMU_samples_x3 ACC  = {1, 2, 3};
 struct IMU_samples_x3 GYRO = {4, 5, 6};
 struct IMU_samples_x3 MAG  = {7, 8, 9};
 struct UWB_samples_x3 UWB  = {1.1, 2.2, 3.3}; //from anchors A1, A2 and A3 respectively
-uint8_t SHOTS_FIRED;
+volatile uint8_t SHOTS_FIRED;
 volatile uint8_t POLL_SAMPLES = 0;
 uint8_t MUTEX = 0;
 uint8_t ready;
@@ -187,6 +187,7 @@ void send_response(){
 	//printf("done.\nclosing socket...");
 	close_client_socket();
 	//printf("done\n");
+    SHOTS_FIRED = 0;
 }
 
 void print_response(){
@@ -301,18 +302,18 @@ int main(int argc, char* argv[]){
         printf("MQTT enabled. Timing will be initiated by incoming MQTT prompts\n");
         #endif
 
-	if(argc < 2){
-		printf("Usage: ./laser-brains <tag-id>\n");
-		printf("Quitting...\n");
-		exit(1);
-	}
+        if(argc < 2){
+            printf("Usage: ./laser-brains <tag-id>\n");
+            printf("Quitting...\n");
+            exit(1);
+        }
 
-	int8_t ID = atoi(argv[1]);
-	if((ID != 1) && (ID != 2) && (ID != 3)) ID = 1;
-        set_tag(ID);
+        int8_t ID = atoi(argv[1]);
+        if((ID != 1) && (ID != 2) && (ID != 3)) ID = 1;
+            set_tag(ID);
 
-	if(init_mosquitto()) return 1;
-        if(init_mosquitto_pub()) return 1;
+        if(init_mosquitto()) return 1;
+            if(init_mosquitto_pub()) return 1;
 
     #else
         #ifdef DEBUG
@@ -338,27 +339,27 @@ int main(int argc, char* argv[]){
     //initialize the laser to be doing no work until told to do so
     while(1){
         #ifdef MQTT_ACTIVE
-        if (!success && !nothingHappened) {
-            char buff[30];
-            int tag = rx_final_msg[0][8] - '0';
-            sprintf(buff, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", "idle", "restart");
-            if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buff), buff, 0, false)){
-                fprintf(stderr, "Could not publish to broker. Quitting\n");
-                exit(-3);
+            if (!success && !nothingHappened) {
+                char buff[30];
+                int tag = rx_final_msg[0][8] - '0';
+                sprintf(buff, "Anchor%d Tag%d %s %s %s", anchCnt, tag, "play", "idle", "restart");
+                if(mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC, strlen(buff), buff, 0, false)){
+                    fprintf(stderr, "Could not publish to broker. Quitting\n");
+                    exit(-3);
+                }
+            } else if (nothingHappened){
+                int tag = rx_final_msg[0][8] - '0';
+                char token[8];
+                if (anchCnt == 1){
+                    strcpy(token,"Anchor1");
+                } else if (anchCnt == 2) {
+                    strcpy(token,"Anchor2");
+                } else{
+                    strcpy(token,"Anchor3");
+                }
+                int num = token[strlen(token) - 1] - '0';
+                while(!runRanging(token, num - 1, "play", "idle") && !quitting);
             }
-        } else if (nothingHappened){
-            int tag = rx_final_msg[0][8] - '0';
-            char token[8];
-            if (anchCnt == 1){
-                strcpy(token,"Anchor1");
-            } else if (anchCnt == 2) {
-                strcpy(token,"Anchor2");
-            } else{
-                strcpy(token,"Anchor3");
-            }
-            int num = token[strlen(token) - 1] - '0';
-            while(!runRanging(token, num - 1, "play", "idle") && !quitting);
-        }
         #endif
         while(!quitting) {
             #ifdef MQTT_ACTIVE
@@ -404,11 +405,11 @@ int main(int argc, char* argv[]){
                 static char packet_buffer[200];
                 sprintf(packet_buffer, "%s %i %i %i %i %i %i %3.2f %3.2f %3.2f %i",
                     MQTT_NAME, ACC.x, ACC.y, ACC.z, MAG.x, MAG.y, MAG.z, UWB.A1, UWB.A2, UWB.A3, SHOTS_FIRED);
-//                    if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(packet_buffer), packet_buffer, 0,
-//                                          false)) {
-//                        fprintf(stderr, "Could not publish to broker. Quitting\n");
-//                        exit(-3);
-//                    }
+                    //if (mosquitto_publish(mosq_pub, NULL, MQTT_TOPIC_TAG, strlen(packet_buffer), packet_buffer, 0,
+                    //                     false)) {
+                    //   fprintf(stderr, "Could not publish to broker. Quitting\n");
+                    //   exit(-3);
+                    //}
                     //wifi is not enabled, print to screen
                     print_response();
                 #endif
