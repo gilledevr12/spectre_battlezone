@@ -204,7 +204,7 @@ bool runRanging(char* token, int num){
 
         /* Start transmission, indicating that a response is expected so that reception is enabled automatically after the frame is sent and the delay
          * set by dwt_setrxaftertxdelay() has elapsed. */
-        dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EX);
+        dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
 
         /* Increment frame sequence number after transmission of the poll message (modulo 256). */
 
