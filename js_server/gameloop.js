@@ -228,7 +228,6 @@ function initIo(http) {
             });
         });
     });
-
 }
 
 function init(http) {
@@ -319,6 +318,52 @@ function player_hit(distance, weapon){
     if(player.health <= 0){
         player.alive = false;
     }
+}
+
+function makePickups(){
+    let that = {};
+
+    let pickupArray = [],
+        pickupIndex = [ [1, 0.5], [0.5, 1], [0.1, 0], [0, 0.1] ],
+        Pickups = {
+            num: 4
+        },
+        pickupSize = {
+            width: 0.1,
+            height: 0.15
+        };
+
+    for(let i=0; i < Pickups.num; i++){
+        pickupArray.push( {
+            model: {
+                position: {
+                    x: pickupIndex[i][0],
+                    y: pickupIndex[i][1]
+                },
+                size: {
+                    height: pickupSize.height,
+                    width: pickupSize.width
+                },
+                radius: 0.1
+            },
+            id: i+1,
+            /*type: function(i+1){
+                id = i+1;
+                let type;
+                if(id === 1){ type = health },
+                if(id === 2){ type = armor },
+                if(id === 3){ type = shotgun },
+                if(id === 4){ type = shot_ammo }
+                return type;
+            }*/
+        });
+    }
+
+    Object.defineProperty(that, 'pickupArray', {
+        get: () => pickupArray,
+        set: value => { pickupArray = value; }
+    });
+    return that;
 }
 
 function isInTrajectory(id1, id2, me, myTheta, you){
