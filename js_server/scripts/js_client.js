@@ -1,4 +1,4 @@
-let userId = Math.random();
+let userId = 1;
 
 let socket;
 

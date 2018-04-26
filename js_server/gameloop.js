@@ -9,7 +9,6 @@
 
 let connections = 0;
 let TARGET_USERS_NUM = 5;
-let game_started = false;
 let activeUsers = [];
 let shots = [];
 let updates_messages = [];
@@ -159,7 +158,7 @@ function initIo(http) {
 
     var net = require('net');
 
-    var HOST = '192.168.1.5';
+    var HOST = '144.39.204.109';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -195,27 +194,35 @@ function initIo(http) {
 
     io.on('connection', function (socket) {
         socket.on('join', function (data) {
-            console.log(data.name + ' with id ' + socket.id + ' connected');
-            if (game_started) {
-                console.log('too many');
+            var remoteConnection = socket.request.connection.remoteAddress;
+            let args = remoteConnection.toString().split(":");
+            let clientIp = args[args.length - 1];
+            if(typeof activeUsers[clientIp] !== 'undefined') {
+                activeUsers[clientIp].dead = false;
+                activeUsers[clientIp].socket = socket;
+                activeUsers[clientIp].id = socket.id;
+                activeUsers[clientIp].player.clientId = socket.id;
+                data.name = "Tag_" + clientIp[clientIp.length - 1];
+
+                // notifyReconnect(socket, activeUsers[data.name].user);
+                // io.sockets.sockets[socket.id].emit('start game', "player reconnect");
+                io.emit('chat message',data.name + ' has rejoined the game.');
             } else {
-                io.emit('chat message', 'Tag_' + (connections + 1) + ' has joined the game: ' +
-                    data.name);
-                var name_id = "Tag_" + (connections+1);
+                data.name = "Tag_" + clientIp[clientIp.length - 1];
+                console.log(data.name + ' with id ' + socket.id + ' connected');
+
+                io.emit('chat message', data.name + ' has joined the game: ');
 
                 //used to send specific messages
-                let player = makePlayer(name_id);
-                activeUsers[name_id] = {
+                let player = makePlayer(clientIp);
+                activeUsers[clientIp] = {
+                    userName: data.name,
                     id: socket.id,
                     socket: socket,
                     player: player
                 };
-                connections++;
-                data.name = 'Tag_' + connections;
-                if (connections >= TARGET_USERS_NUM) {
-                    game_started = true;
-                }
             }
+            connections++;
 
             socket.on('chat message', function (msg) {
                 io.emit('chat message', data.name + ": " + msg);
