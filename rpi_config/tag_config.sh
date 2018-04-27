@@ -18,5 +18,5 @@ echo "Run the command ** sudo cp tag_xorg.conf /etc/X11/xorg.conf ** to disable 
 #sudo cp tag_xorg.conf /etc/X11/xorg.conf -> we dont have sudo permissions in this script
 
 # Modify the contents of the kernel image to force resolution out
-echo "Run the comand ** sudo sed -i '/disable_overscan/s/^#//g' /boot/config.txt ** to force resolution out"
+echo "Run the command ** sudo sed -i '/disable_overscan/s/^#//g' /boot/config.txt ** to force resolution out"
 #sudo sed -i '/disable_overscan/s/^#//g' /boot/config.txt -> we dont have sudo permissions in this script
