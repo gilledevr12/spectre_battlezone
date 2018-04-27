@@ -207,6 +207,7 @@ Laser.main = (function(logic, graphics) {
         socketIO = socket;
 
         graphics.initGraphics();
+        createImage('cross.png');
 
         network();
         requestAnimationFrame(gameLoop);
