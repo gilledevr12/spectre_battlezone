@@ -15,6 +15,7 @@ app.use(bodyParser.json());
 
 app.use('/css',express.static(path.join(__dirname,'css')));
 app.use('/scripts',express.static(path.join(__dirname,'scripts')));
+app.use('/images',express.static(path.join(__dirname,'images')));
 
 app.get('/', function(request, response){
   response.sendFile(path.join(__dirname, 'page.html'));

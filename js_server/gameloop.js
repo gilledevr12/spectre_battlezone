@@ -8,17 +8,17 @@
  */
 
 let connections = 0;
-let TARGET_USERS_NUM = 5;
-let game_started = false;
 let activeUsers = [];
 let shots = [];
 let updates_messages = [];
 let Queue = require('./queue');
+let NetworkIds = require('./scripts/network-ids');
 let inputQueue = Queue.createQueue();
 let present = require('present');
 let quit = false;
 const SIMULATION_UPDATE_RATE_MS = 100; // 1/10 of a second update
 let io = null;
+let count = 0;
 let anchors = {};
 
 function initAnchors() {
@@ -86,12 +86,13 @@ function processInput(elapsedTime) {
 
     while (!processMe.empty) {
         let input = processMe.dequeue();
+        let clientIp = input.clientAddress;
         let args = input.message.toString().split(" ");
         //get the client
         for (let index in args){
-            console.log(args[index]);
+            // console.log(args[index]);
         }
-        let client = activeUsers[args[0]];
+        let client = activeUsers[clientIp];
         //TODO update player info here
         //first 3 are acceleration, next mag, uwb, then shots
         if (args[10] === 0) {
@@ -105,8 +106,12 @@ function processInput(elapsedTime) {
             D3: args[9]
         };
         calculatePosition(client.player, dists);
+<<<<<<< HEAD
 
         io.emit('chat message', client.id + ": Heading: " + client.player.direction + "position: x: " + client.player.position.x + " y: " + client.player.position.y);
+=======
+        client.player.reportUpdate = true;
+>>>>>>> fc41fe6c517a253e9071711ec3efcec799f5d92f
     }
 }
 
@@ -131,9 +136,12 @@ function update(elapsedTime) {
                     shots[shot].direction, shots[others].position)) {
                 console.log("A stupendous shot!!!");
                 //here for now, in the send messages later
-                shots[shot].socket.emit("You hit someone!")
-                shots[others].socket.emit("You were hit")
+                // shots[shot].socket.emit("You hit someone!")
+                // shots[others].socket.emit("You were hit")
                 //TODO log a hit and health and stuff
+                shots[others].player.stats.health--;
+                shots[others].player.reportUpdate = true;
+
             } else {
                 console.log("Missed teribbly");
             }
@@ -144,10 +152,44 @@ function update(elapsedTime) {
 
 function updatePlayers(elapsedTime) {
     //TODO send out the player update
-    for (let index in updates_messages){
-        //this type of thing here
-        //shots[shot].socket.emit("You hit someone!")
-        //shots[others].socket.emit("You were hit")
+    // for (let index in updates_messages){
+    //     //this type of thing here
+    //     //shots[shot].socket.emit("You hit someone!")
+    //     //shots[others].socket.emit("You were hit")
+    // }
+    for (let index in activeUsers){
+        if (activeUsers[index].player.reportUpdate){
+            activeUsers[index].player.reportUpdate = false;
+            let update = {
+                position: activeUsers[index].player.position,
+                direction: activeUsers[index].player.direction,
+                inventory: activeUsers[index].player.inventory,
+                stats: activeUsers[index].player.stats,
+                shotFired: activeUsers[index].player.shotFired
+            }
+            activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update)
+            // activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, activeUsers[index].player)
+        }
+    }
+}
+
+function testFunc() {
+    if (count === 0) {
+        for (let index in activeUsers){
+            activeUsers[index].player.shotFired = 0;
+        }
+    }
+    count++;
+    for (let index in activeUsers){
+        activeUsers[index].player.reportUpdate = true;
+        activeUsers[index].player.position.x += .001;
+        activeUsers[index].player.direction += .1;
+        if (count === 30) {
+            activeUsers[index].player.shotFired = 1;
+        }
+    }
+    if (count === 30) {
+        count = 0;
     }
 }
 
@@ -155,6 +197,8 @@ function gameLoop(currentTime, elapsedTime) {
     processInput(elapsedTime);
     update(elapsedTime, currentTime);
     updatePlayers(elapsedTime);
+
+    testFunc();
 
     if (!quit) {
         setTimeout(() => {
@@ -168,7 +212,11 @@ function initIo(http) {
 
     var net = require('net');
 
+<<<<<<< HEAD
     var HOST = '129.123.5.197';
+=======
+    var HOST = '144.39.198.224';
+>>>>>>> fc41fe6c517a253e9071711ec3efcec799f5d92f
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -177,7 +225,11 @@ function initIo(http) {
 
         sock.on('data', function(data) {
 
+<<<<<<< HEAD
             //io.emit('chat message', sock.remoteAddress + ": " + data);
+=======
+            // io.emit('chat message', sock.remoteAddress + ": " + data);
+>>>>>>> fc41fe6c517a253e9071711ec3efcec799f5d92f
 
             inputQueue.enqueue({
                 clientId: sock.remotePort,
@@ -204,27 +256,35 @@ function initIo(http) {
 
     io.on('connection', function (socket) {
         socket.on('join', function (data) {
-            console.log(data.name + ' with id ' + socket.id + ' connected');
-            if (game_started) {
-                console.log('too many');
+            var remoteConnection = socket.request.connection.remoteAddress;
+            let args = remoteConnection.toString().split(":");
+            let clientIp = args[args.length - 1];
+            if(typeof activeUsers[clientIp] !== 'undefined') {
+                activeUsers[clientIp].dead = false;
+                activeUsers[clientIp].socket = socket;
+                activeUsers[clientIp].id = socket.id;
+                // activeUsers[clientIp].player.clientId = socket.id;
+                data.name = "Tag_" + clientIp[clientIp.length - 1];
+
+                // notifyReconnect(socket, activeUsers[data.name].user);
+                // io.sockets.sockets[socket.id].emit('start game', "player reconnect");
+                io.emit('name player', data.name + ' has rejoined the game.');
             } else {
-                io.emit('chat message', 'Tag_' + (connections + 1) + ' has joined the game: ' +
-                    data.name);
-                var name_id = "Tag_" + (connections+1);
+                data.name = "Tag_" + clientIp[clientIp.length - 1];
+                console.log(data.name + ' with id ' + socket.id + ' connected');
+
+                io.emit('name player', data.name + ' has joined the game: ');
 
                 //used to send specific messages
-                let player = makePlayer(name_id);
-                activeUsers[name_id] = {
+                let player = makePlayer(clientIp);
+                activeUsers[clientIp] = {
+                    userName: data.name,
                     id: socket.id,
                     socket: socket,
                     player: player
                 };
-                connections++;
-                data.name = 'Tag_' + connections;
-                if (connections >= TARGET_USERS_NUM) {
-                    game_started = true;
-                }
             }
+            connections++;
 
             socket.on('chat message', function (msg) {
                 io.emit('chat message', data.name + ": " + msg);
@@ -237,7 +297,6 @@ function initIo(http) {
             });
         });
     });
-
 }
 
 function init(http) {
@@ -252,9 +311,16 @@ module.exports.init = init;
 function makePlayer(id){
     let that = {};
 
+    let reportUpdate = false;
+
     Object.defineProperty(that, 'position', {
         get: () => position,
         set: value => { position = value; }
+    });
+
+    Object.defineProperty(that, 'reportUpdate', {
+        get: () => reportUpdate,
+        set: value => { reportUpdate = value; }
     });
 
     Object.defineProperty(that, 'direction', {
@@ -267,22 +333,38 @@ function makePlayer(id){
         set: value => { stats = value; }
     });
 
+    Object.defineProperty(that, 'inventory', {
+        get: () => inventory,
+        set: value => { inventory = value; }
+    });
+
+    Object.defineProperty(that, 'shotFired', {
+        get: () => shotFired ,
+        set: value => { shotFired = value; }
+    });
+
     let stats = {
         id: id,
         alive: true,
-        health: 100,
-        armor: 0,
+        health: 100
     };
 
-    let weapons = [];
-    weapons.push("pea_shooter");
+    let inventory = {
+        armor: 0,
+        ammo: 0,
+        weapon: "pea_shooter"
+    };
+
+    // let weapons = [];
+    // weapons.push("pea_shooter");
 
     let position = {
-        x: 0, //spec.position.x,
-        y: 0 //spec.position.y
+        x: .2, //spec.position.x,
+        y: .2 //spec.position.y
     };
 
     let direction = 0;//spec.direction;
+    let shotFired = 0;
 
     return that;
 }
@@ -328,6 +410,52 @@ function player_hit(distance, weapon){
     if(player.health <= 0){
         player.alive = false;
     }
+}
+
+function makePickups(){
+    let that = {};
+
+    let pickupArray = [],
+        pickupIndex = [ [1, 0.5], [0.5, 1], [0.1, 0], [0, 0.1] ],
+        Pickups = {
+            num: 4
+        },
+        pickupSize = {
+            width: 0.1,
+            height: 0.15
+        };
+
+    for(let i=0; i < Pickups.num; i++){
+        pickupArray.push( {
+            model: {
+                position: {
+                    x: pickupIndex[i][0],
+                    y: pickupIndex[i][1]
+                },
+                size: {
+                    height: pickupSize.height,
+                    width: pickupSize.width
+                },
+                radius: 0.1
+            },
+            id: i+1,
+            /*type: function(i+1){
+                id = i+1;
+                let type;
+                if(id === 1){ type = health },
+                if(id === 2){ type = armor },
+                if(id === 3){ type = shotgun },
+                if(id === 4){ type = shot_ammo }
+                return type;
+            }*/
+        });
+    }
+
+    Object.defineProperty(that, 'pickupArray', {
+        get: () => pickupArray,
+        set: value => { pickupArray = value; }
+    });
+    return that;
 }
 
 function isInTrajectory(id1, id2, me, myTheta, you){

@@ -2,37 +2,21 @@
 <html lang = "en-US">
 <head>
 	<meta charset = "UTF-8">
-	<title>Game Server</title>
-  <link rel="stylesheet" href="css/bootstrap.min.css">
+	<title>Spectre Battlezone</title>
+  <link rel="stylesheet" href="css/HUD.css">
 </head>
 <body>
 
-  <div id="id-chat" class="container">
-
-    <div id="chat-bar" class="card border-primary mb-3 fixed-top fixed-bottom pre-scrollable">
-      <ul id="messages" class="list-group"></ul>
-      <br>
-    </div>
-    <div class="card border-bottom fixed-bottom">
-      <div id="min-players" class="card text-white bg-info mb-3 align-self-center"  style="max-width: 20rem;">
-        <div class="card-header">Minimum number of players joined</div>
-        <div class="card-body">
-          <h4 id="countdown" class="card-title">Ready to Start in: 10</h4>
-          <p class="card-text">Prepare your fingers, blood will be spilt!!!</p>
-        </div>
-      </div>
-      <button id="button-chat" class="btn btn-primary border-bottom-0">Send</button>
-      <br>
-      <input type="text" id="input-send" placeholder="...type text here...">
-      <br>
-    </div>
-  </div>
-
   <div id="id-game">
-    <canvas id = "canvas-main" width = "400" height = "400"></canvas>
+    <canvas id = "canvas-main"></canvas>
+    <canvas id = "canvas-stats"></canvas>
   </div>
   
   <script src="/socket.io/socket.io.js"></script>
+  <script src="scripts/network-ids.js"></script>
   <script src="scripts/js_client.js"></script>
+  <script src="scripts/graphics.js"></script>
+  <script src="scripts/logic.js"></script>
+  <script src="scripts/client_loop.js"></script>
 </body>
 </html>

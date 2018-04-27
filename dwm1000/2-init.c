@@ -209,8 +209,12 @@ bool runRanging(char* token, int num){
         t = clock();
         double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         /* We assume that the transmission is achieved correctly, poll for reception of a frame or error/timeout. See NOTE 9 below. */
+//        while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
+//                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < .135) {
+//            time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
+//        };
         while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < .135) {
+                 (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)) && time_taken < .135) {
             time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
         };
         printf("time %f", time_taken);
@@ -369,7 +373,7 @@ int main(void)
         /* Set expected response's delay and timeout. See NOTE 4, 5 and 6 below.
          * As this example only handles one incoming frame with always the same delay and timeout, those values can be set here once for all. */
         dwt_setrxaftertxdelay(POLL_TX_TO_RESP_RX_DLY_UUS);
-        dwt_setrxtimeout(RESP_RX_TIMEOUT_UUS);
+//        dwt_setrxtimeout(RESP_RX_TIMEOUT_UUS);
 //    dwt_setpreambledetecttimeout(PRE_TIMEOUT);
 
         /* Loop forever initiating ranging exchanges. */

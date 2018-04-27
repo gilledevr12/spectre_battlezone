@@ -10,8 +10,12 @@ void cart_test(map_array map_data){
 }
 
 int main(){
-    FILE* map = fopen("a.sbp","r");
+    FILE* map = fopen("b.sbp","r");
     map_array map_data = build_array(map);
+    printf("\n-- Before Sorting --\n");
+    cart_test(map_data);
+    create_map(map_data);
+    printf("\n-- After Sorting --\n");
     cart_test(map_data);
     return 0;
 }

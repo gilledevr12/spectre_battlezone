@@ -1,0 +1,18 @@
+#canvas-main {
+    background-color: rgba(17,2,13,0.96);
+    z-index: 1;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+#canvas-stats {
+    background-color: cadetblue;
+    z-index: 2;
+    position: absolute;
+    top: 0px
+}
+
+html {
+    cursor: none;
+}
