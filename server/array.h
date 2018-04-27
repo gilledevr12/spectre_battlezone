@@ -3,9 +3,9 @@
 #include <stdlib.h>
 
 typedef struct{
+    char type;
     float x;
     float y;
-    char type;
 } coordinate;
 
 typedef struct{
@@ -22,7 +22,7 @@ void init_array(map_array *a, size_t initSize){
 
 void insert_array(map_array *a, coordinate c){
     if(a->used == a->size){
-        a->size *= 2;
+        a->size += 20;
         a->array = (coordinate*)realloc(a->array, a->size * sizeof(coordinate));
     }
     a->array[a->used++] = c;
