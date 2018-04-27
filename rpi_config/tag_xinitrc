@@ -1,0 +1,1 @@
+exec chromium-browser --app=http://192.168.1.5:3001 --window-size=1100,650 --window-position=0,0 --kiosk

@@ -106,12 +106,7 @@ function processInput(elapsedTime) {
             D3: args[9]
         };
         calculatePosition(client.player, dists);
-<<<<<<< HEAD
-
-        io.emit('chat message', client.id + ": Heading: " + client.player.direction + "position: x: " + client.player.position.x + " y: " + client.player.position.y);
-=======
         client.player.reportUpdate = true;
->>>>>>> fc41fe6c517a253e9071711ec3efcec799f5d92f
     }
 }
 
@@ -212,11 +207,7 @@ function initIo(http) {
 
     var net = require('net');
 
-<<<<<<< HEAD
-    var HOST = '129.123.5.197';
-=======
-    var HOST = '144.39.198.224';
->>>>>>> fc41fe6c517a253e9071711ec3efcec799f5d92f
+    var HOST = '192.168.1.5';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -225,11 +216,7 @@ function initIo(http) {
 
         sock.on('data', function(data) {
 
-<<<<<<< HEAD
             //io.emit('chat message', sock.remoteAddress + ": " + data);
-=======
-            // io.emit('chat message', sock.remoteAddress + ": " + data);
->>>>>>> fc41fe6c517a253e9071711ec3efcec799f5d92f
 
             inputQueue.enqueue({
                 clientId: sock.remotePort,
