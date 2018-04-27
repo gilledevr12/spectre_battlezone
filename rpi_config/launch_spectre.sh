@@ -11,7 +11,7 @@ then
 fi
 
 # Launch the raw-status background program in hidden thread
-/.$LASER_PROGRAM &
+/$LASER_PROGRAM
 
 # Launch the GUI program
-# startx
+# startx &
