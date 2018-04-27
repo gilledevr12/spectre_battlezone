@@ -1,3 +1,87 @@
+let cross = { 
+    texture: 'cross.png',
+    position: {
+        x: 0.15, 
+        y: 0.06,
+    },
+    size: {
+        width: 0.1,
+        height: 0.1
+    }
+};
+
+let shield = { 
+    texture: 'shield.png',
+    position: {
+        x: 0.15, 
+        y: 0.20,
+    },
+    size: {
+        width: 0.1,
+        height: 0.1
+    }
+};
+
+let shell = { 
+    texture: 'shell.png',
+    position: {
+        x: 0.15, 
+        y: 0.35,
+    },
+    size: {
+        width: 0.05,
+        height: 0.1
+    }
+};
+
+let shotgun = { 
+    texture: 'shotgun.png',
+    position: {
+        x: 0.55, 
+        y: 0.49,
+    },
+    size: {
+        width: 0.15,
+        height: 0.04
+    }
+};
+
+let player_red = { 
+    texture: 'player_red.png',
+    position: {
+        x: 0.15, 
+        y: 0.55,
+    },
+    size: {
+        width: 0.05,
+        height: 0.05
+    }
+};
+
+let player_blue = { 
+    texture: 'player_blue.png',
+    position: {
+        x: 0.15, 
+        y: 0.60,
+    },
+    size: {
+        width: 0.05,
+        height: 0.05
+    }
+};
+
+let player_green = { 
+    texture: 'player_green.png',
+    position: {
+        x: 0.15, 
+        y: 0.65,
+    },
+    size: {
+        width: 0.05,
+        height: 0.05
+    }
+};
+
 Laser.main = (function(logic, graphics) {
 
     let socketIO = null;
@@ -160,15 +244,43 @@ Laser.main = (function(logic, graphics) {
         }
         graphics.drawTriangle('green', position, Math.PI * (3/4), size);
         graphics.drawLaser(position,Math.PI * (3/4));
-        let text = {
-            font: '48px serif',
+        let healthText = {
+            font: '64px serif',
             text: "100",
             position: {
                 x: .5,
                 y: .02
             }
         }
-        graphics.drawText(text);
+
+        let armorText = {
+            font: '64px serif',
+            text: "100",
+            position: {
+                x: .5,
+                y: .17
+            }
+        }
+
+        let ammoText = {
+            font: '64px serif',
+            text: "20",
+            position: {
+                x: .5,
+                y: .32
+            }
+        }
+
+        graphics.drawText(healthText);
+        graphics.drawText(armorText);
+        graphics.drawText(ammoText);
+        graphics.drawStatsImage(cross.texture, cross.position, cross.size);
+        graphics.drawStatsImage(shield.texture, shield.position, shield.size);
+        graphics.drawStatsImage(shell.texture, shell.position, shell.size);
+        graphics.drawStatsImage(shotgun.texture, shotgun.position, shotgun.size);
+        //graphics.drawStatsImage(player_red.texture, player_red.position, player_red.size);
+        //graphics.drawStatsImage(player_blue.texture, player_blue.position, player_blue.size);
+        //graphics.drawStatsImage(player_green.texture, player_green.position, player_green.size);
         // draw self
         if (myPlayer.model.dead) {
             // graphics.draw('tombstone.png', myPlayer.model.position, myPlayer.model.size, myPlayer.model.orientation, false);
@@ -205,10 +317,14 @@ Laser.main = (function(logic, graphics) {
     function init(socket, userId) {
         myId = userId;
         socketIO = socket;
-
         graphics.initGraphics();
-        createImage('cross.png');
-
+        graphics.createImage('cross.png');
+        graphics.createImage('shield.png');
+        graphics.createImage('shell.png');
+        graphics.createImage('shotgun.png');
+        graphics.createImage('player_red.png');
+        graphics.createImage('player_blue.png');
+        graphics.createImage('player_green.png');
         network();
         requestAnimationFrame(gameLoop);
     }
