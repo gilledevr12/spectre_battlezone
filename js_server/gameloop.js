@@ -105,13 +105,22 @@ function processInput(elapsedTime) {
             D3: args[9]
         };
         calculatePosition(client.player, dists);
+
+        io.emit('chat message', client.id + ": Heading: " + client.player.direction + "position: x: " + client.player.position.x + " y: " + client.player.position.y);
     }
 }
 
 function findHeading(player, x, y) {
+    let MAG_NORTH = 130.0;
     let heading = Math.atan2(y, x);  // assume pitch, roll are 0
     heading *= (180 / Math.PI);
-    set_direction(player, heading + 180 - 11.32); //declination in logan
+    if (heading < -MAG_NORTH){
+        heading += 360 + MAG_NORTH;
+    } else {
+        heading += MAG_NORTH;
+    }
+    set_direction(player, heading); 
+    console.log('heading: ' + heading);
 }
 
 function update(elapsedTime) {
@@ -159,7 +168,7 @@ function initIo(http) {
 
     var net = require('net');
 
-    var HOST = '192.168.1.5';
+    var HOST = '129.123.5.197';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -168,7 +177,7 @@ function initIo(http) {
 
         sock.on('data', function(data) {
 
-            io.emit('chat message', sock.remoteAddress + ": " + data);
+            //io.emit('chat message', sock.remoteAddress + ": " + data);
 
             inputQueue.enqueue({
                 clientId: sock.remotePort,

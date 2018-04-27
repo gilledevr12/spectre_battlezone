@@ -128,7 +128,7 @@ static uint32 status_reg = 0;
  * frame length of approximately 2.66 ms with above configuration. */
 #define RESP_RX_TO_FINAL_TX_DLY_UUS 11000//3100
 /* Receive response timeout. See NOTE 5 below. */
-#define RESP_RX_TIMEOUT_UUS 128000//2700
+#define RESP_RX_TIMEOUT_UUS 65535//2700
 /* Preamble timeout, in multiple of PAC size. See NOTE 6 below. */
 //#define PRE_TIMEOUT 8
 
@@ -192,13 +192,10 @@ void message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_
 
 
 bool runRanging(char* token, int num){
-    bool blink = false;
     success = false;
     /* Write frame data to DW1000 and prepare transmission. See NOTE 8 below. */
-    while(!blink) {
-        blink = true;
         tx_poll_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
-//    tx_poll_msg[num][8] = token[(strlen(token) - 1)];
+    //tx_poll_msg[num][8] = token[(strlen(token) - 1)];
         dwt_writetxdata(sizeof(tx_poll_msg[num]), tx_poll_msg[num], 0); /* Zero offset in TX buffer. */
         dwt_writetxfctrl(sizeof(tx_poll_msg[num]), 0, 1); /* Zero offset in TX buffer, ranging. */
 
@@ -255,7 +252,6 @@ bool runRanging(char* token, int num){
             if (memcmp(rx_buffer, rx_resp_msg[num], ALL_MSG_COMMON_LEN) == 0) {
                 uint32 final_tx_time;
                 printf("mine\n");
-                blink = true;
 
                 /* Retrieve poll transmission and response reception timestamp. */
                 poll_tx_ts[num] = get_tx_timestamp_u64();
@@ -315,7 +311,6 @@ bool runRanging(char* token, int num){
 
             return false;
         }
-    }
     return true;
 }
 /*! ------------------------------------------------------------------------------------------------------------------
@@ -365,7 +360,7 @@ int main(void)
 
         /* Configure DW1000. See NOTE 7 below. */
         dwt_configure(&config);
-        dwt_configuretxrf(&txconfig);
+        // dwt_configuretxrf(&txconfig);
 
         /* Apply default antenna delay value. See NOTE 1 below. */
         dwt_setrxantennadelay(RX_ANT_DLY);
