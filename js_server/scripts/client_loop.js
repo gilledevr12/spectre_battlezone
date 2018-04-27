@@ -96,35 +96,45 @@ Laser.main = (function(logic, graphics) {
     }
 
     function updateSelf(data) {
-        if(data.hasOwnProperty('winner')) {
-            if(data.winner){
-                // alert("Congratulations! You are the winner!");
-            }
-        }
-        if (data.hasOwnProperty('weapon')){
-            myPlayer.model.weapon = data.weapon;
-        }
-        if (data.hasOwnProperty('health')){
-            myPlayer.model.health = data.health;
-        }
-        if (data.hasOwnProperty('ammo')){
-            myPlayer.model.ammo = data.ammo;
-        }
-        if (data.dead){
-            myPlayer.model.dead = data.dead;
-        }
-        gameTime = data.gameTime;
-        // pickups = data.pickups;
+        // if(data.hasOwnProperty('winner')) {
+        //     if(data.winner){
+        //         // alert("Congratulations! You are the winner!");
+        //     }
+        // }
+        // if (data.hasOwnProperty('weapon')){
+        //     myPlayer.model.weapon = data.weapon;
+        // }
+        // if (data.hasOwnProperty('health')){
+        //     myPlayer.model.health = data.health;
+        // }
+        // if (data.hasOwnProperty('ammo')){
+        //     myPlayer.model.ammo = data.ammo;
+        // }
+        // if (data.dead){
+        //     myPlayer.model.dead = data.dead;
+        // }
+        // gameTime = data.gameTime;
+        // // pickups = data.pickups;
+        // console.log(data)
+        myPlayer.model.position = data.position;
+        myPlayer.model.stats = data.stats;
+        myPlayer.model.direction = data.direction;
+        myPlayer.model.inventory = data.inventory;
+        myPlayer.model.shotFired = data.shotFired;
+
     }
 
     function reconnectPlayerSelf(data) {
-        myPlayer.model.orientation = data.orientation;
-        myPlayer.model.position.x = data.position.x;
-        myPlayer.model.position.y = data.position.y;
+        myPlayer.model.direction = data.direction;
+        myPlayer.model.position = data.position;
     }
 
     function connectPlayerSelf(data) {
         myPlayer.model.userId = data.userId;
+        // myPlayer.model.position = data.position;
+        // myPlayer.model.stats = data.stats;
+        // myPlayer.model.direction = data.direction;
+        // myPlayer.model.inventory = data.inventory;
         // myPlayer.model.position.x = data.position.x;
         // myPlayer.model.position.y = data.position.y;
     }
@@ -151,15 +161,11 @@ Laser.main = (function(logic, graphics) {
             // }
         }
 
-        let position = {
-            x: .2, y: .5
+        // console.log(myPlayer.model)
+        graphics.drawTriangle('green', myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
+        if (myPlayer.model.shotFired){
+            graphics.drawLaser(myPlayer.model.position, myPlayer.model.direction);
         }
-
-        let size = {
-            width: .04, height: .04
-        }
-        graphics.drawTriangle('green', position, Math.PI * (3/4), size);
-        graphics.drawLaser(position,Math.PI * (3/4));
         let text = {
             font: '48px serif',
             text: "100",
@@ -207,7 +213,7 @@ Laser.main = (function(logic, graphics) {
         socketIO = socket;
 
         graphics.initGraphics();
-        createImage('cross.png');
+        graphics.createImage('cross.png');
 
         network();
         requestAnimationFrame(gameLoop);

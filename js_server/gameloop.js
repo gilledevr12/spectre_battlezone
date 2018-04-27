@@ -8,16 +8,17 @@
  */
 
 let connections = 0;
-let TARGET_USERS_NUM = 5;
 let activeUsers = [];
 let shots = [];
 let updates_messages = [];
 let Queue = require('./queue');
+let NetworkIds = require('./scripts/network-ids');
 let inputQueue = Queue.createQueue();
 let present = require('present');
 let quit = false;
 const SIMULATION_UPDATE_RATE_MS = 100; // 1/10 of a second update
 let io = null;
+let count = 0;
 let anchors = {};
 
 function initAnchors() {
@@ -85,12 +86,13 @@ function processInput(elapsedTime) {
 
     while (!processMe.empty) {
         let input = processMe.dequeue();
+        let clientIp = input.clientAddress;
         let args = input.message.toString().split(" ");
         //get the client
         for (let index in args){
-            console.log(args[index]);
+            // console.log(args[index]);
         }
-        let client = activeUsers[args[0]];
+        let client = activeUsers[clientIp];
         //TODO update player info here
         //first 3 are acceleration, next mag, uwb, then shots
         if (args[10] === 0) {
@@ -104,6 +106,7 @@ function processInput(elapsedTime) {
             D3: args[9]
         };
         calculatePosition(client.player, dists);
+        client.player.reportUpdate = true;
     }
 }
 
@@ -121,9 +124,12 @@ function update(elapsedTime) {
                     shots[shot].direction, shots[others].position)) {
                 console.log("A stupendous shot!!!");
                 //here for now, in the send messages later
-                shots[shot].socket.emit("You hit someone!")
-                shots[others].socket.emit("You were hit")
+                // shots[shot].socket.emit("You hit someone!")
+                // shots[others].socket.emit("You were hit")
                 //TODO log a hit and health and stuff
+                shots[others].player.stats.health--;
+                shots[others].player.reportUpdate = true;
+
             } else {
                 console.log("Missed teribbly");
             }
@@ -134,10 +140,44 @@ function update(elapsedTime) {
 
 function updatePlayers(elapsedTime) {
     //TODO send out the player update
-    for (let index in updates_messages){
-        //this type of thing here
-        //shots[shot].socket.emit("You hit someone!")
-        //shots[others].socket.emit("You were hit")
+    // for (let index in updates_messages){
+    //     //this type of thing here
+    //     //shots[shot].socket.emit("You hit someone!")
+    //     //shots[others].socket.emit("You were hit")
+    // }
+    for (let index in activeUsers){
+        if (activeUsers[index].player.reportUpdate){
+            activeUsers[index].player.reportUpdate = false;
+            let update = {
+                position: activeUsers[index].player.position,
+                direction: activeUsers[index].player.direction,
+                inventory: activeUsers[index].player.inventory,
+                stats: activeUsers[index].player.stats,
+                shotFired: activeUsers[index].player.shotFired
+            }
+            activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update)
+            // activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, activeUsers[index].player)
+        }
+    }
+}
+
+function testFunc() {
+    if (count === 0) {
+        for (let index in activeUsers){
+            activeUsers[index].player.shotFired = 0;
+        }
+    }
+    count++;
+    for (let index in activeUsers){
+        activeUsers[index].player.reportUpdate = true;
+        activeUsers[index].player.position.x += .001;
+        activeUsers[index].player.direction += .1;
+        if (count === 30) {
+            activeUsers[index].player.shotFired = 1;
+        }
+    }
+    if (count === 30) {
+        count = 0;
     }
 }
 
@@ -145,6 +185,8 @@ function gameLoop(currentTime, elapsedTime) {
     processInput(elapsedTime);
     update(elapsedTime, currentTime);
     updatePlayers(elapsedTime);
+
+    testFunc();
 
     if (!quit) {
         setTimeout(() => {
@@ -201,7 +243,7 @@ function initIo(http) {
                 activeUsers[clientIp].dead = false;
                 activeUsers[clientIp].socket = socket;
                 activeUsers[clientIp].id = socket.id;
-                activeUsers[clientIp].player.clientId = socket.id;
+                // activeUsers[clientIp].player.clientId = socket.id;
                 data.name = "Tag_" + clientIp[clientIp.length - 1];
 
                 // notifyReconnect(socket, activeUsers[data.name].user);
@@ -249,9 +291,16 @@ module.exports.init = init;
 function makePlayer(id){
     let that = {};
 
+    let reportUpdate = false;
+
     Object.defineProperty(that, 'position', {
         get: () => position,
         set: value => { position = value; }
+    });
+
+    Object.defineProperty(that, 'reportUpdate', {
+        get: () => reportUpdate,
+        set: value => { reportUpdate = value; }
     });
 
     Object.defineProperty(that, 'direction', {
@@ -264,22 +313,38 @@ function makePlayer(id){
         set: value => { stats = value; }
     });
 
+    Object.defineProperty(that, 'inventory', {
+        get: () => inventory,
+        set: value => { inventory = value; }
+    });
+
+    Object.defineProperty(that, 'shotFired', {
+        get: () => shotFired ,
+        set: value => { shotFired = value; }
+    });
+
     let stats = {
         id: id,
         alive: true,
-        health: 100,
-        armor: 0,
+        health: 100
     };
 
-    let weapons = [];
-    weapons.push("pea_shooter");
+    let inventory = {
+        armor: 0,
+        ammo: 0,
+        weapon: "pea_shooter"
+    };
+
+    // let weapons = [];
+    // weapons.push("pea_shooter");
 
     let position = {
-        x: 0, //spec.position.x,
-        y: 0 //spec.position.y
+        x: .2, //spec.position.x,
+        y: .2 //spec.position.y
     };
 
     let direction = 0;//spec.direction;
+    let shotFired = 0;
 
     return that;
 }

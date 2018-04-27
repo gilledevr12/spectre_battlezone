@@ -12,3 +12,7 @@
     position: absolute;
     top: 0px
 }
+
+html {
+    cursor: none;
+}
