@@ -1,33 +1,15 @@
-Laser.main = (function(logic, graphics, assets) {
+Laser.main = (function(logic, graphics) {
 
     let socketIO = null;
-    let beenDead = false;
 
     let lastTimeStamp, messageId = 1,
         myPlayer = {
             model: logic.Player(),
-            sprite: logic.Sprite({
-                spriteSheet: 'bunnysheet.png',
-                spriteCount: 8,
-                me: true,
-                spriteSize: .05,			// Maintain the size on the sprite
-            }, graphics)},
-        background = null,
-        initialized = false,
-        mini = graphics.miniMap(),
+        },
         jobQueue = logic.createQueue(),
         otherUsers = [],
-        missiles = {},
-        hits = [],
-        pregame = true,
-        gameCount = 0,
         gameTime = 10 * 60, //seconds
-        shield = {x:0,y:0,radius:0,particles:[]},
         pickups = [],
-        worldParams = {
-            height: 5,
-            width: 5
-        },
         myId;
 
     function network() {
@@ -83,21 +65,7 @@ Laser.main = (function(logic, graphics, assets) {
 
     function playerHits(data) {
         if (data.userId === myPlayer.model.userId) {
-            hits.push({
-                particle: logic.ParticleSystem({
-                    position: {
-                        x: data.position.x,
-                        y: data.position.y
-                    },
-                    size: .005,
-                    speed: .2,
-                    lifetime: 200,
-                    fill: 'rgba(255, 0, 0, 0.5)',
-                    direction: data.direction - Math.PI,
-                    theta: Math.PI/4
-                }, graphics),
-                life: 200
-            });
+
         }
     }
 
@@ -121,6 +89,10 @@ Laser.main = (function(logic, graphics, assets) {
                     break;
             }
         }
+    }
+
+    function updatePickups(data) {
+
     }
 
     function updateSelf(data) {
@@ -159,184 +131,52 @@ Laser.main = (function(logic, graphics, assets) {
 
     function update(elapsedTime){
         updateMsgs();
-        if (pregame) {
-            if (isNaN(gameCount)){
-                gameCount = 0;
-            }
-            gameCount += elapsedTime;
-            if (gameCount > 10000 && !initialized){
-                document.addEventListener("click", printMousePos);
-            }
-            if (gameCount > 20000) {
-                pregame = false;
-                document.removeEventListener("click", printMousePos);
-                update(elapsedTime);
-            }
-        }
-        shiftView(myPlayer.model.position, elapsedTime);
-        myPlayer.model.position = obstacle();
-        myPlayer.model.projected = myPlayer.model.position;
         for (let index in otherUsers){
-            otherUsers[index].model.update(elapsedTime);
-            otherUsers[index].sprite.update(elapsedTime);
-        }
-        myPlayer.sprite.update(elapsedTime);
-
-        for (let index in hits){
-            hits[index].life -= elapsedTime;
-            hits[index].particle.update(elapsedTime);
-            if (hits[index].life < 0) {
-                hits.splice(index, 1);
-            }
-        }
-
-        let removeMissiles = [];
-        for (let missile in missiles) {
-            if (!missiles[missile].update(elapsedTime)) {
-                removeMissiles.push(missiles[missile]);
-            } else if (missiles[missile].particle) {
-                missiles[missile].particle.setPosition(missiles[missile].position.x, missiles[missile].position.y);
-                missiles[missile].particle.update(elapsedTime);
-            }
-        }
-
-        for(let a = 0; a < shield.particles.length; a++) {
-            let angle = a*(2*Math.PI/360);
-            shield.particles[a].setPosition(shield.x+ Math.cos(angle)*shield.radius,shield.y+ Math.sin(angle)*shield.radius);
-            shield.particles[a].update(elapsedTime);
-        }
-
-        for (let missile = 0; missile < removeMissiles.length; missile++) {
-            delete missiles[removeMissiles[missile].id];
+            // otherUsers[index].model.update(elapsedTime);
         }
     }
 
     function render(){
         graphics.clear();
-        if (pregame){
-            graphics.drawGame();
-            let myPosition = {
-                x: (myPlayer.model.position.x + background.viewport.left)/5,
-                y: (myPlayer.model.position.y + background.viewport.top)/5,
-            }
-            graphics.drawPeople(myPosition);
-            for (let index in otherUsers){
-                let position = {
-                    x: otherUsers[index].model.map.x/5,
-                    y: otherUsers[index].model.map.y/5
-                }
-                graphics.drawPeople(position);
-            }
-            return;
-        }
-        background.render();
+        graphics.drawBorder();
 
         for (let index in otherUsers){
-            let object = otherUsers[index].model.state.position;
-            if (!object.hasOwnProperty('x')) continue;
-            let position = drawObjects(object);
-            if(!otherUsers[index].model.state.dead){
-                if (position.hasOwnProperty('x')){
-                    otherUsers[index].sprite.render(position, otherUsers[index].model.state.orientation - (Math.PI/2));
-                }
-            }
+
         }
-        for (let missile in missiles){
-            let position = drawObjects(missiles[missile].position);
-            if (position.hasOwnProperty('x')){
-                graphics.drawMissile(position, missiles[missile].direction, 'orange');
-                if (missiles[missile].particle){
-                    missiles[missile].particle.render(background.viewport);
-                }
-            }
-        }
+
         for (let pickup in pickups){
-            let position = drawObjects(pickups[pickup].position);
-            if (position.hasOwnProperty('x')){
-                graphics.draw(pickups[pickup].texture, position, {width: pickups[pickup].width,height: pickups[pickup].height},0,false);
-            }
+            // let position = pickups[pickup].position;
+            // if (position.hasOwnProperty('x')){
+            //     // graphics.draw(pickups[pickup].texture, position, {width: pickups[pickup].width,height: pickups[pickup].height},0,false);
+            // }
         }
 
-        for (let building in buildingArray){
-            let position = drawObjects(buildingArray[building].model.position, true);
-            if (position.hasOwnProperty('x')){
-                graphics.draw(buildingArray[building].texture, position,
-                    buildingArray[building].model.size, buildingArray[building].model.orientation, false)
-            }
+        let position = {
+            x: .2, y: .5
         }
 
+        let size = {
+            width: .04, height: .04
+        }
+        graphics.drawTriangle('green', position, Math.PI * (3/4), size);
+        graphics.drawLaser(position,Math.PI * (3/4));
+        let text = {
+            font: '48px serif',
+            text: "100",
+            position: {
+                x: .5,
+                y: .02
+            }
+        }
+        graphics.drawText(text);
         // draw self
-        if(myPlayer.model.dead){
-            if(!beenDead){
-                beenDead = true;
-                deadSound.play();
-            }
-
-            graphics.draw('tombstone.png', myPlayer.model.position, myPlayer.model.size, myPlayer.model.orientation, false);
-        }else{
-            myPlayer.sprite.render(myPlayer.model.position, myPlayer.model.orientation);
-            if (myPlayer.model.weapon >= 0) {
-                let vectorX = Math.cos(myPlayer.model.orientation) * (myPlayer.model.radius*1.75);
-                let vectorY = Math.sin(myPlayer.model.orientation) * (myPlayer.model.radius*1.75);
-                let position = {
-                    x: myPlayer.model.position.x + vectorX,
-                    y: myPlayer.model.position.y + vectorY
-                }
-                if (myPlayer.model.weapon){
-                    let size = {
-                        width: .04,
-                        height: .04
-                    }
-                    graphics.draw('bazooka2.png', position, size, myPlayer.model.orientation, false);
-                } else {
-                    let size = {
-                        width: .05,
-                        height: .01
-                    }
-                    graphics.draw('bazooka1.png', position, size, myPlayer.model.orientation, false);
-                }
-            }
-            let rectSize = {
-                width: .05,
-                height: .01
-            }
-            let rectPosition = {
-                x: myPlayer.model.position.x - .02,
-                y: myPlayer.model.position.y - .04
-            }
-
-            graphics.drawRectangle(rectPosition, rectSize, 0, 'red', 'black');
-            rectSize.width = (myPlayer.model.health/100)*rectSize.width;
-            graphics.drawRectangle(rectPosition, rectSize, 0, 'green', 'black');
+        if (myPlayer.model.dead) {
+            // graphics.draw('tombstone.png', myPlayer.model.position, myPlayer.model.size, myPlayer.model.orientation, false);
+        } else {
+            // myPlayer.sprite.render(myPlayer.model.position, myPlayer.model.orientation);
         }
 
-        for (let tree in treeArray){
-            let position = drawObjects(treeArray[tree].model.position, true);
-            if (position.hasOwnProperty('x')){
-                graphics.draw(treeArray[tree].texture, position,
-                    treeArray[tree].model.size, treeArray[tree].model.orientation, false)
-            }
-        }
-
-        for (let index in hits){
-            hits[index].particle.render(background.viewport);
-        }
-        graphics.drawShield(shield, background.viewport);
-
-        for (let particle = 0; particle<shield.particles.length; particle += (5-Math.ceil(shield.radius))) {
-            let position = drawObjects(shield.particles[particle].position, true);
-            if (position.hasOwnProperty('x')){
-                shield.particles[particle].render(background.viewport)
-            }
-        }
-
-        mini.drawMini();
-        mini.drawPosition(myPlayer.model.position, background.viewport, background.size);
-        mini.drawShield(shield, background.viewport, background.size);
-
-        document.getElementById('field-clock').innerHTML = gameClock(gameTime);
-        document.getElementById('health-display').innerHTML = "Health: " + myPlayer.model.health;
-        document.getElementById('ammo-display').innerHTML = "Ammo: " + myPlayer.model.ammo;
+        // graphics.drawText();
     }
 
     function gameLoop(time) {
@@ -376,5 +216,5 @@ Laser.main = (function(logic, graphics, assets) {
         init : init
     };
 
-}(Laser.logic, Laser.graphics, Laser.assets));
+}(Laser.logic, Laser.graphics));
 

@@ -167,7 +167,7 @@ function initIo(http) {
 
         sock.on('data', function(data) {
 
-            io.emit('chat message', sock.remoteAddress + ": " + data);
+            // io.emit('chat message', sock.remoteAddress + ": " + data);
 
             inputQueue.enqueue({
                 clientId: sock.remotePort,
@@ -206,12 +206,12 @@ function initIo(http) {
 
                 // notifyReconnect(socket, activeUsers[data.name].user);
                 // io.sockets.sockets[socket.id].emit('start game', "player reconnect");
-                io.emit('chat message',data.name + ' has rejoined the game.');
+                io.emit('name player', data.name + ' has rejoined the game.');
             } else {
                 data.name = "Tag_" + clientIp[clientIp.length - 1];
                 console.log(data.name + ' with id ' + socket.id + ' connected');
 
-                io.emit('chat message', data.name + ' has joined the game: ');
+                io.emit('name player', data.name + ' has joined the game: ');
 
                 //used to send specific messages
                 let player = makePlayer(clientIp);
