@@ -9,7 +9,6 @@
 
 let connections = 0;
 let TARGET_USERS_NUM = 5;
-let game_started = false;
 let activeUsers = [];
 let shots = [];
 let updates_messages = [];
@@ -159,7 +158,7 @@ function initIo(http) {
 
     var net = require('net');
 
-    var HOST = '192.168.1.5';
+    var HOST = '144.39.198.224';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -168,7 +167,7 @@ function initIo(http) {
 
         sock.on('data', function(data) {
 
-            io.emit('chat message', sock.remoteAddress + ": " + data);
+            // io.emit('chat message', sock.remoteAddress + ": " + data);
 
             inputQueue.enqueue({
                 clientId: sock.remotePort,
@@ -195,27 +194,35 @@ function initIo(http) {
 
     io.on('connection', function (socket) {
         socket.on('join', function (data) {
-            console.log(data.name + ' with id ' + socket.id + ' connected');
-            if (game_started) {
-                console.log('too many');
+            var remoteConnection = socket.request.connection.remoteAddress;
+            let args = remoteConnection.toString().split(":");
+            let clientIp = args[args.length - 1];
+            if(typeof activeUsers[clientIp] !== 'undefined') {
+                activeUsers[clientIp].dead = false;
+                activeUsers[clientIp].socket = socket;
+                activeUsers[clientIp].id = socket.id;
+                activeUsers[clientIp].player.clientId = socket.id;
+                data.name = "Tag_" + clientIp[clientIp.length - 1];
+
+                // notifyReconnect(socket, activeUsers[data.name].user);
+                // io.sockets.sockets[socket.id].emit('start game', "player reconnect");
+                io.emit('name player', data.name + ' has rejoined the game.');
             } else {
-                io.emit('chat message', 'Tag_' + (connections + 1) + ' has joined the game: ' +
-                    data.name);
-                var name_id = "Tag_" + (connections+1);
+                data.name = "Tag_" + clientIp[clientIp.length - 1];
+                console.log(data.name + ' with id ' + socket.id + ' connected');
+
+                io.emit('name player', data.name + ' has joined the game: ');
 
                 //used to send specific messages
-                let player = makePlayer(name_id);
-                activeUsers[name_id] = {
+                let player = makePlayer(clientIp);
+                activeUsers[clientIp] = {
+                    userName: data.name,
                     id: socket.id,
                     socket: socket,
                     player: player
                 };
-                connections++;
-                data.name = 'Tag_' + connections;
-                if (connections >= TARGET_USERS_NUM) {
-                    game_started = true;
-                }
             }
+            connections++;
 
             socket.on('chat message', function (msg) {
                 io.emit('chat message', data.name + ": " + msg);
@@ -228,7 +235,6 @@ function initIo(http) {
             });
         });
     });
-
 }
 
 function init(http) {
@@ -319,6 +325,52 @@ function player_hit(distance, weapon){
     if(player.health <= 0){
         player.alive = false;
     }
+}
+
+function makePickups(){
+    let that = {};
+
+    let pickupArray = [],
+        pickupIndex = [ [1, 0.5], [0.5, 1], [0.1, 0], [0, 0.1] ],
+        Pickups = {
+            num: 4
+        },
+        pickupSize = {
+            width: 0.1,
+            height: 0.15
+        };
+
+    for(let i=0; i < Pickups.num; i++){
+        pickupArray.push( {
+            model: {
+                position: {
+                    x: pickupIndex[i][0],
+                    y: pickupIndex[i][1]
+                },
+                size: {
+                    height: pickupSize.height,
+                    width: pickupSize.width
+                },
+                radius: 0.1
+            },
+            id: i+1,
+            /*type: function(i+1){
+                id = i+1;
+                let type;
+                if(id === 1){ type = health },
+                if(id === 2){ type = armor },
+                if(id === 3){ type = shotgun },
+                if(id === 4){ type = shot_ammo }
+                return type;
+            }*/
+        });
+    }
+
+    Object.defineProperty(that, 'pickupArray', {
+        get: () => pickupArray,
+        set: value => { pickupArray = value; }
+    });
+    return that;
 }
 
 function isInTrajectory(id1, id2, me, myTheta, you){
