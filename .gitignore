@@ -1,2 +1,3 @@
 *.swp
 /.project
+js_server/node_modules
