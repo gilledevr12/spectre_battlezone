@@ -182,7 +182,7 @@ Laser.graphics = (function() {
         context.closePath();
         context.strokeStyle = 'red';
 
-        context.lineWidth = 1;
+        context.lineWidth = 4;
         context.stroke();
         context.restore();
     }
