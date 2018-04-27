@@ -111,6 +111,7 @@ Laser.graphics = (function() {
             spec.text, spec.position.x * canvas_stats.width, spec.position.y * canvas_stats.height);
 
         context_stats.strokeStyle = 'black';
+        context_stats.lineWidth = 4;
         context_stats.strokeText(
             spec.text, spec.position.x * canvas_stats.width, spec.position.y * canvas_stats.height);
         context_stats.restore();

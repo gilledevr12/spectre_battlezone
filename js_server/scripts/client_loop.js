@@ -1,48 +1,48 @@
 let cross = { 
     texture: 'cross.png',
     position: {
-        x: 0.15, 
-        y: 0.06,
+        x: 0.25, 
+        y: 0.10,
     },
     size: {
-        width: 0.1,
-        height: 0.1
+        width: 0.22,
+        height: 0.19
     }
 };
 
 let shield = { 
     texture: 'shield.png',
     position: {
-        x: 0.15, 
-        y: 0.20,
+        x: 0.25, 
+        y: 0.35,
     },
     size: {
-        width: 0.1,
-        height: 0.1
+        width: 0.22,
+        height: 0.19
     }
 };
 
 let shell = { 
     texture: 'shell.png',
     position: {
-        x: 0.15, 
-        y: 0.35,
+        x: 0.25, 
+        y: 0.60,
     },
     size: {
-        width: 0.05,
-        height: 0.1
+        width: 0.09,
+        height: 0.12
     }
 };
 
 let shotgun = { 
     texture: 'shotgun.png',
     position: {
-        x: 0.55, 
-        y: 0.49,
+        x: 0.50, 
+        y: 0.87,
     },
     size: {
-        width: 0.15,
-        height: 0.04
+        width: 0.35,
+        height: 0.08
     }
 };
 
@@ -251,29 +251,29 @@ Laser.main = (function(logic, graphics) {
             graphics.drawLaser(myPlayer.model.position, myPlayer.model.direction);
         }
         let healthText = {
-            font: '64px serif',
+            font: '130px serif',
             text: "100",
             position: {
                 x: .5,
-                y: .02
+                y: .0001
             }
         }
 
         let armorText = {
-            font: '64px serif',
+            font: '130px serif',
             text: "100",
             position: {
                 x: .5,
-                y: .17
+                y: .25
             }
         }
 
         let ammoText = {
-            font: '64px serif',
+            font: '130px serif',
             text: "20",
             position: {
                 x: .5,
-                y: .32
+                y: .50
             }
         }
 
