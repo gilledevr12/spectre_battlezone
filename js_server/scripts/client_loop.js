@@ -42,7 +42,7 @@ let shotgun = {
     },
     size: {
         width: 0.35,
-        height: 0.12
+        height: 0.08
     }
 };
 
