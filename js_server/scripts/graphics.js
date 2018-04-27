@@ -66,7 +66,7 @@ Laser.graphics = (function() {
         context.translate(-(center.x * canvas.width), -(center.y * canvas.height));
     }
 
-    function drawImage(texture, center, size) {
+    function drawMapImage(texture, center, size) {
         context.save();
         context.drawImage(images[texture],
             Math.floor((center.x - (size.width / 2)) * canvas.width),
@@ -74,6 +74,16 @@ Laser.graphics = (function() {
             Math.ceil(size.width * canvas.width), Math.ceil(size.height * canvas.height));
 
         context.restore();
+    }
+
+    function drawStatsImage(texture, center, size) {
+        context_stats.save();
+        context_stats.drawImage(images[texture],
+            Math.floor((center.x - (size.width / 2)) * canvas_stats.width),
+            Math.floor((center.y - (size.height / 2)) * canvas_stats.height),
+            Math.ceil(size.width * canvas_stats.width), Math.ceil(size.height * canvas_stats.height));
+
+        context_stats.restore();
     }
 
     function drawBorder() {
@@ -179,7 +189,8 @@ Laser.graphics = (function() {
     return {
         clear: clear,
         createImage: createImage,
-        drawImage: drawImage,
+        drawMapImage: drawMapImage,
+        drawStatsImage: drawStatsImage,
         drawTriangle: drawTriangle,
         drawCircle: drawCircle,
         initGraphics: initGraphics,

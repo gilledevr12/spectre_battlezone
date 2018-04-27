@@ -13,6 +13,4 @@ cp launch_spectre.sh 	/home/pi/.
 sed -i "s/$LASER_PROGRAM &/$LASER_PROGRAM $TAG_ID&/" /home/pi/launch_spectre.sh
 
 #Endure the displays will not timeout or powerdown
-sed -i "s/BLANK_TIME.*/BLANK_TIME=0/" /etc/kdb/config
-sed -i "s/POWERDOWN_TIME.*/POWERDOWN_TIME=0/" /etc/kdb/config
-/etc/init.d/kdb restart
+sudo cp xorg.conf /etc/X11/xorg.conf
