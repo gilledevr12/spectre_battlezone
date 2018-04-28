@@ -12,7 +12,7 @@ Laser.main = (function(logic, graphics) {
         pickups = [],
         myId;
 
-    let cross = logic.cross, shell = logic.shell, shotgun = logic.shotgun, shield = logic.shield;
+    let cross = logic.cross, shell = logic.shell, shotgun = logic.shotgun, shield = logic.shield, time = logic.time();
 
     function network() {
         socketIO.on(NetworkIds.CONNECT_ACK, data => {
@@ -143,6 +143,8 @@ Laser.main = (function(logic, graphics) {
 
     function update(elapsedTime){
         updateMsgs();
+        var parseTime = (time.getTime()).split(" ");
+        time.text = parseTime[0];
         for (let index in otherUsers){
             // otherUsers[index].model.update(elapsedTime);
         }
@@ -172,6 +174,7 @@ Laser.main = (function(logic, graphics) {
         graphics.drawText(logic.healthText);
         graphics.drawText(logic.armorText);
         graphics.drawText(logic.ammoText);
+        graphics.drawText(time);
         graphics.drawStatsImage(cross.texture, cross.position, cross.size);
         graphics.drawStatsImage(shield.texture, shield.position, shield.size);
         graphics.drawStatsImage(shell.texture, shell.position, shell.size);

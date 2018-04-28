@@ -254,3 +254,45 @@ Laser.logic.player_green = {
     }
 };
 
+Laser.logic.time = function () {
+
+    let that = {};
+
+    that.getTime = function () {
+        var date = new Date();
+        return date.toTimeString();
+    };
+
+    Object.defineProperty(that, 'fill', {
+        get: () => fill,
+    });
+
+    Object.defineProperty(that, 'position', {
+        get: () => position,
+    });
+
+    Object.defineProperty(that, 'width', {
+        get: () => width,
+    });
+
+    Object.defineProperty(that, 'font', {
+        get: () => font,
+    });
+
+
+    Object.defineProperty(that, 'text', {
+        get: () => text,
+        set: value => { text = value; }
+    });
+
+    let font = '60px serif';
+    let text = '';
+    let position = {
+        x: .05,
+        y: .87
+    };
+    let width = 2;
+    let fill = 'black';
+
+    return that;
+};
