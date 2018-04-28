@@ -114,9 +114,16 @@ function processInput(elapsedTime) {
 }
 
 function findHeading(player, x, y) {
+    let MAG_NORTH = 130.0;
     let heading = Math.atan2(y, x);  // assume pitch, roll are 0
     heading *= (180 / Math.PI);
-    set_direction(player, heading + 180 - 11.32); //declination in logan
+    if (heading < -MAG_NORTH){
+        heading += 360 + MAG_NORTH;
+    } else {
+        heading += MAG_NORTH;
+    }
+    set_direction(player, heading); 
+    console.log('heading: ' + heading);
 }
 
 function update(elapsedTime) {
@@ -213,9 +220,7 @@ function initIo(http, http2) {
 
     var net = require('net');
 
-    // var HOST = '144.39.198.224';
-    // var HOST = '144.39.204.109';
-    var HOST = '192.168.1.67';
+    var HOST = '192.168.1.5';
     var PORT = 3000;
 
     net.createServer(function(sock) {

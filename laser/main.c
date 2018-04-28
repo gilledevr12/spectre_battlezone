@@ -60,7 +60,6 @@ uint8_t MUTEX = 0;
 uint8_t ready;
 
 #define TRIGGER_PIN     29      //actual pin 40
-#define V_SOURCE_PIN    28      //actual pin 38
 #define GND_PIN         28.5    //actual pin 39
 
 #define PI              3.14159
@@ -160,8 +159,6 @@ unsigned char pin_setup(){
             return 1;
         }
         pinMode(TRIGGER_PIN, INPUT);
-        pinMode(V_SOURCE_PIN, OUTPUT);
-        digitalWrite(V_SOURCE_PIN, HIGH);
         return 0;
     #else
         return 1;

@@ -64,7 +64,7 @@ static uint32 status_reg = 0;
 /* This is the delay from the end of the frame transmission to the enable of the receiver, as programmed for the DW1000's wait for response feature. */
 #define RESP_TX_TO_FINAL_RX_DLY_UUS 500
 /* Receive final timeout. See NOTE 5 below. */
-#define FINAL_RX_TIMEOUT_UUS 120000//3300
+#define FINAL_RX_TIMEOUT_UUS 65535//3300
 /* Preamble timeout, in multiple of PAC size. See NOTE 6 below. */
 //#define PRE_TIMEOUT 8
 
