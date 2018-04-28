@@ -21,17 +21,17 @@ let io = null;
 let ioServer = null;
 let count = 0;
 let anchors = {};
-let X_MAX = 15;
-let Y_MAX = 15;
+let X_MAX = 9.67;
+let Y_MAX = 10.18;
 
 function initAnchors() {
     //TODO put values here
-    let a1_x_dist = 0,
-        a1_y_dist = 8.39,
-        a2_x_dist = 7.77,
-        a2_y_dist = 0,
-        a3_x_dist = 15.24,
-        a3_y_dist = 8.79;
+    let a1_x_dist = 4.90,
+        a1_y_dist = 4.42,
+        a2_x_dist = 3.55,
+        a2_y_dist = 3.23,
+        a3_x_dist = 4.27,
+        a3_y_dist = 5.26;
     anchors.a1 = {
         x: a1_x_dist * (-1) * 2,
         y: a1_y_dist * (-1) * 2,
@@ -206,7 +206,7 @@ function gameLoop(currentTime, elapsedTime) {
     update(elapsedTime, currentTime);
     updatePlayers(elapsedTime);
 
-    testFunc();
+    // testFunc();
 
     if (!quit) {
         setTimeout(() => {
