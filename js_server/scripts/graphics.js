@@ -139,13 +139,19 @@ Laser.graphics = (function() {
 
     function drawTriangle(color, center, direction, size) {
         context.save();
-        rotateCanvas(center, direction);
+
+        let position = {
+            x: center.x,
+            y: 1 - center.y
+        };
+
+        rotateCanvas(position, direction);
 
         context.beginPath();
 
-        context.moveTo(center.x*canvas.width, center.y*canvas.height - (size.height*canvas.height/2));
-        context.lineTo(center.x*canvas.width + (size.width*canvas.width/3), center.y*canvas.height + (size.height*canvas.height/3));
-        context.lineTo(center.x*canvas.width - (size.width*canvas.width/3), center.y*canvas.height + (size.height*canvas.height/3));
+        context.moveTo(position.x*canvas.width, position.y*canvas.height - (size.height*canvas.height/2));
+        context.lineTo(position.x*canvas.width + (size.width*canvas.width/3), position.y*canvas.height + (size.height*canvas.height/3));
+        context.lineTo(position.x*canvas.width - (size.width*canvas.width/3), position.y*canvas.height + (size.height*canvas.height/3));
         context.closePath();
         context.fillStyle = color;
 
