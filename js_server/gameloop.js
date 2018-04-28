@@ -18,8 +18,11 @@ let present = require('present');
 let quit = false;
 const SIMULATION_UPDATE_RATE_MS = 100; // 1/10 of a second update
 let io = null;
+let ioServer = null;
 let count = 0;
 let anchors = {};
+let X_MAX = 15;
+let Y_MAX = 15;
 
 function initAnchors() {
     //TODO put values here
@@ -147,8 +150,10 @@ function updatePlayers(elapsedTime) {
     // }
     for (let index in activeUsers){
         if (activeUsers[index].player.reportUpdate){
+            let name = activeUsers[index].userName;
             activeUsers[index].player.reportUpdate = false;
             let update = {
+                name: name,
                 position: activeUsers[index].player.position,
                 direction: activeUsers[index].player.direction,
                 inventory: activeUsers[index].player.inventory,
@@ -157,6 +162,14 @@ function updatePlayers(elapsedTime) {
             }
             activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update)
             // activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, activeUsers[index].player)
+
+            for (let index in activeUsers){
+                if (activeUsers[index].userName !== name){
+                    activeUsers[index].socket.emit(NetworkIds.UPDATE_OTHER, update);
+                    ioServer.emit(NetworkIds.UPDATE_OTHER, update);
+                }
+            }
+
         }
     }
 }
@@ -196,11 +209,13 @@ function gameLoop(currentTime, elapsedTime) {
     }
 }
 
-function initIo(http) {
+function initIo(http, http2) {
 
     var net = require('net');
 
-    var HOST = '144.39.198.224';
+    // var HOST = '144.39.198.224';
+    // var HOST = '144.39.204.109';
+    var HOST = '192.168.1.67';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -209,7 +224,7 @@ function initIo(http) {
 
         sock.on('data', function(data) {
 
-            // io.emit('chat message', sock.remoteAddress + ": " + data);
+            ioServer.emit('log message', sock.remoteAddress + ": " + data);
 
             inputQueue.enqueue({
                 clientId: sock.remotePort,
@@ -232,7 +247,19 @@ function initIo(http) {
 
     console.log('Server listening on ' + HOST +':'+ PORT);
 
+    ioServer = require('socket.io')(http2);
     io = require('socket.io')(http);
+
+    ioServer.on('connection', function (socket) {
+        socket.on('join', function (data) {
+            ioServer.emit('ready', data.name + ' has joined the game: ');
+
+
+            // socket.on('chat message', function (msg) {
+            //     io.emit('chat message', data.name + ": " + msg);
+            // });
+        });
+    });
 
     io.on('connection', function (socket) {
         socket.on('join', function (data) {
@@ -279,9 +306,9 @@ function initIo(http) {
     });
 }
 
-function init(http) {
+function init(http, http2) {
     initAnchors();
-    initIo(http);
+    initIo(http, http2);
     testTrajectory();
     gameLoop(present(),0);
 }
@@ -362,8 +389,8 @@ function get_direction(player){
 }
 
 function set_position(player, position){
-    player.position.x = position.x;
-    player.position.y = position.y;
+    player.position.x = position.x/X_MAX;
+    player.position.y = position.y/Y_MAX;
 }
 
 function get_postion(player){

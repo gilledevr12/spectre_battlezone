@@ -16,3 +16,9 @@
 html {
     cursor: none;
 }
+
+#log-bar {
+    background-color: transparent;
+    z-index: 3;
+    top: 0px;
+}

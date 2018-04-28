@@ -5,6 +5,7 @@ let socket;
 let Laser = {
     logic: {},
     main: {},
+    main_hub: {},
     graphics: {},
 };
 
@@ -15,23 +16,39 @@ socket.on('connect', function(){
 });
 
 socket.on('name player', function (msg) {
+    document.getElementById('log-bar').hidden = true;
     var res = msg.split(" ");
     if (res[res.length - 1] === userId) userId = res[0];
     Laser.main.init(socket, userId);
 });
 
-// socket.on('chat message', function(msg){
-//     var res = msg.split(" ");
-//     if (res[res.length - 1] === userId) userId = res[0];
-//     var node = document.createElement("li");
-//     var br = document.createElement("br");
-//     var textnode = document.createTextNode(msg);
-//     node.appendChild(textnode);
-//     node.appendChild(br);
-//     node.className = "list-group-item justify-content-between align-items-center";
-//     document.getElementById("messages").appendChild(node);
-//     document.getElementById("chat-bar").scrollTop = document.getElementById("chat-bar").scrollHeight;
-// });
+socket.on('ready', function (msg) {
+    Laser.main_hub.init(socket);
+});
+
+socket.on('chat message', function(msg){
+    var res = msg.split(" ");
+    if (res[res.length - 1] === userId) userId = res[0];
+    var node = document.createElement("li");
+    var br = document.createElement("br");
+    var textnode = document.createTextNode(msg);
+    node.appendChild(textnode);
+    node.appendChild(br);
+    node.className = "list-group-item justify-content-between align-items-center";
+    document.getElementById("messages").appendChild(node);
+    document.getElementById("chat-bar").scrollTop = document.getElementById("chat-bar").scrollHeight;
+});
+
+socket.on('log message', function(msg){
+    var node = document.createElement("li");
+    var br = document.createElement("br");
+    var textnode = document.createTextNode(msg);
+    node.appendChild(textnode);
+    node.appendChild(br);
+    node.className = "list-group-item justify-content-between align-items-center";
+    document.getElementById("logmessages").appendChild(node);
+    document.getElementById("log-bar").scrollTop = document.getElementById("log-bar").scrollHeight;
+});
 
 var time = new Date().getTime();
 

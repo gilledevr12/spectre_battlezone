@@ -3,6 +3,7 @@
 <head>
 	<meta charset = "UTF-8">
 	<title>Spectre Battlezone</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/HUD.css">
 </head>
 <body>
@@ -10,6 +11,10 @@
   <div id="id-game">
     <canvas id = "canvas-main"></canvas>
     <canvas id = "canvas-stats"></canvas>
+    <div id="log-bar" class="card border-primary mb-3 fixed-top fixed-bottom pre-scrollable">
+      <ul id="logmessages" class="list-group"></ul>
+      <br>
+    </div>
   </div>
   
   <script src="/socket.io/socket.io.js"></script>
@@ -18,5 +23,6 @@
   <script src="scripts/graphics.js"></script>
   <script src="scripts/logic.js"></script>
   <script src="scripts/client_loop.js"></script>
+  <script src="scripts/hub_loop.js"></script>
 </body>
 </html>

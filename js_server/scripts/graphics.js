@@ -1,9 +1,11 @@
 Laser.graphics = (function() {
     let canvas = document.getElementById('canvas-main');
     let canvas_stats = document.getElementById('canvas-stats');
+    let log_bar = document.getElementById('log-bar');
 
     let context = canvas.getContext('2d');
     let context_stats = canvas_stats.getContext('2d');
+
 
     let images = {};
 
@@ -23,6 +25,10 @@ Laser.graphics = (function() {
         canvas_stats.width = window.innerWidth - canvas.width;
         canvas_stats.height = canvas.height;
         canvas_stats.style.left = (canvas.width).toString() + "px";
+
+        log_bar.width = window.innerWidth - canvas.width;
+        log_bar.height = canvas.height;
+        log_bar.style.left = (canvas.width).toString() + "px";
 
     }
 
@@ -104,14 +110,14 @@ Laser.graphics = (function() {
     function drawText(spec) {
         context_stats.save();
         context_stats.font = spec.font;
-        context_stats.fillStyle = 'chocolate';
+        context_stats.fillStyle = spec.fill;
         context_stats.textBaseline = 'top';
 
         context_stats.fillText(
             spec.text, spec.position.x * canvas_stats.width, spec.position.y * canvas_stats.height);
 
         context_stats.strokeStyle = 'black';
-        context_stats.lineWidth = 4;
+        context_stats.lineWidth = spec.width;
         context_stats.strokeText(
             spec.text, spec.position.x * canvas_stats.width, spec.position.y * canvas_stats.height);
         context_stats.restore();

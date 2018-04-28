@@ -81,3 +81,176 @@ Laser.logic.createQueue = function () {
     return that;
 
 };
+
+Laser.logic.p1 = {
+    font: '48px serif',
+    text: "|-Player1-|",
+    position: {
+        x: .001,
+        y: .51
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.p2 = {
+    font: '48px serif',
+    text: "|-Player2-|",
+    position: {
+        x: .333,
+        y: .51
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.p3 = {
+    font: '48px serif',
+    text: "|-Player3-|",
+    position: {
+        x: .666,
+        y: .51
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.health1 = {
+    font: '35px serif',
+    text: "Health: ",
+    position: {
+        x: .021,
+        y: .6
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.ammo = {
+    font: '35px serif',
+    text: "Ammo: ",
+    position: {
+        x: .021,
+        y: .65
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.healthText = {
+    font: '130px serif',
+    text: "100",
+    position: {
+        x: .5,
+        y: .0001
+    },
+    width: 4,
+    fill: 'chocolate'
+}
+
+Laser.logic.armorText = {
+    font: '130px serif',
+    text: "100",
+    position: {
+        x: .5,
+        y: .25
+    },
+    width: 4,
+    fill: 'chocolate'
+}
+
+Laser.logic.ammoText = {
+    font: '130px serif',
+    text: "20",
+    position: {
+        x: .5,
+        y: .50
+    },
+    width: 4,
+    fill: 'chocolate'
+}
+
+Laser.logic.cross = {
+    texture: 'cross.png',
+    position: {
+        x: 0.25,
+        y: 0.10,
+    },
+    size: {
+        width: 0.22,
+        height: 0.19
+    }
+};
+
+Laser.logic.shield = {
+    texture: 'shield.png',
+    position: {
+        x: 0.25,
+        y: 0.35,
+    },
+    size: {
+        width: 0.22,
+        height: 0.19
+    }
+};
+
+Laser.logic.shell = {
+    texture: 'shell.png',
+    position: {
+        x: 0.25,
+        y: 0.60,
+    },
+    size: {
+        width: 0.09,
+        height: 0.12
+    }
+};
+
+Laser.logic.shotgun = {
+    texture: 'shotgun.png',
+    position: {
+        x: 0.50,
+        y: 0.87,
+    },
+    size: {
+        width: 0.35,
+        height: 0.08
+    }
+};
+
+Laser.logic.player_red = {
+    texture: 'player_red.png',
+    position: {
+        x: 0.15,
+        y: 0.55,
+    },
+    size: {
+        width: 0.05,
+        height: 0.05
+    }
+};
+
+Laser.logic.player_blue = {
+    texture: 'player_blue.png',
+    position: {
+        x: 0.15,
+        y: 0.60,
+    },
+    size: {
+        width: 0.05,
+        height: 0.05
+    }
+};
+
+Laser.logic.player_green = {
+    texture: 'player_green.png',
+    position: {
+        x: 0.15,
+        y: 0.65,
+    },
+    size: {
+        width: 0.05,
+        height: 0.05
+    }
+};
+

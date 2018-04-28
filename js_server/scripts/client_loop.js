@@ -1,87 +1,3 @@
-let cross = { 
-    texture: 'cross.png',
-    position: {
-        x: 0.25, 
-        y: 0.10,
-    },
-    size: {
-        width: 0.22,
-        height: 0.19
-    }
-};
-
-let shield = { 
-    texture: 'shield.png',
-    position: {
-        x: 0.25, 
-        y: 0.35,
-    },
-    size: {
-        width: 0.22,
-        height: 0.19
-    }
-};
-
-let shell = { 
-    texture: 'shell.png',
-    position: {
-        x: 0.25, 
-        y: 0.60,
-    },
-    size: {
-        width: 0.09,
-        height: 0.12
-    }
-};
-
-let shotgun = { 
-    texture: 'shotgun.png',
-    position: {
-        x: 0.50, 
-        y: 0.87,
-    },
-    size: {
-        width: 0.35,
-        height: 0.08
-    }
-};
-
-let player_red = { 
-    texture: 'player_red.png',
-    position: {
-        x: 0.15, 
-        y: 0.55,
-    },
-    size: {
-        width: 0.05,
-        height: 0.05
-    }
-};
-
-let player_blue = { 
-    texture: 'player_blue.png',
-    position: {
-        x: 0.15, 
-        y: 0.60,
-    },
-    size: {
-        width: 0.05,
-        height: 0.05
-    }
-};
-
-let player_green = { 
-    texture: 'player_green.png',
-    position: {
-        x: 0.15, 
-        y: 0.65,
-    },
-    size: {
-        width: 0.05,
-        height: 0.05
-    }
-};
-
 Laser.main = (function(logic, graphics) {
 
     let socketIO = null;
@@ -95,6 +11,8 @@ Laser.main = (function(logic, graphics) {
         gameTime = 10 * 60, //seconds
         pickups = [],
         myId;
+
+    let cross = logic.cross, shell = logic.shell, shotgun = logic.shotgun, shield = logic.shield;
 
     function network() {
         socketIO.on(NetworkIds.CONNECT_ACK, data => {
@@ -250,36 +168,10 @@ Laser.main = (function(logic, graphics) {
         if (myPlayer.model.shotFired){
             graphics.drawLaser(myPlayer.model.position, myPlayer.model.direction);
         }
-        let healthText = {
-            font: '130px serif',
-            text: "100",
-            position: {
-                x: .5,
-                y: .0001
-            }
-        }
 
-        let armorText = {
-            font: '130px serif',
-            text: "100",
-            position: {
-                x: .5,
-                y: .25
-            }
-        }
-
-        let ammoText = {
-            font: '130px serif',
-            text: "20",
-            position: {
-                x: .5,
-                y: .50
-            }
-        }
-
-        graphics.drawText(healthText);
-        graphics.drawText(armorText);
-        graphics.drawText(ammoText);
+        graphics.drawText(logic.healthText);
+        graphics.drawText(logic.armorText);
+        graphics.drawText(logic.ammoText);
         graphics.drawStatsImage(cross.texture, cross.position, cross.size);
         graphics.drawStatsImage(shield.texture, shield.position, shield.size);
         graphics.drawStatsImage(shell.texture, shell.position, shell.size);
@@ -306,19 +198,6 @@ Laser.main = (function(logic, graphics) {
 
         requestAnimationFrame(gameLoop);
     };
-
-    //
-    // function printMousePos(event) {
-    //     let message = {
-    //         id: messageId++,
-    //         type: NetworkIds.CLICK,
-    //         userId: myId,
-    //         x: event.clientX,
-    //         y: event.clientY,
-    //         width: document.getElementById('canvas-pregame').width,
-    //         height: document.getElementById('canvas-pregame').height
-    //     };
-    // }
 
     function init(socket, userId) {
         myId = userId;
