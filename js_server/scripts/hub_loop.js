@@ -78,8 +78,21 @@ Laser.main_hub = (function(logic, graphics) {
 
     }
 
+    function assignColor(){
+        if (otherUsers.length === 1){
+            return 'green';
+        }
+        if (otherUsers.length === 2){
+            return 'red';
+        }
+        if (otherUsers.length === 3){
+            return 'yellow';
+        }
+    }
+
     function connectPlayer(data) {
         otherUsers[data.userId] = logic.Player();
+        otherUsers[data.userId].color = assignColor();
     }
 
     function updatePickups(data) {
@@ -98,6 +111,10 @@ Laser.main_hub = (function(logic, graphics) {
         graphics.drawBorder();
 
         for (let index in otherUsers){
+            graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position, otherUsers[index].direction, otherUsers[index].size);
+            if (otherUsers[index].shotFired){
+                graphics.drawLaser(otherUsers[index].position, otherUsers[index].direction);
+            }
 
         }
 
