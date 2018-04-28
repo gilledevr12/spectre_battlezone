@@ -27,9 +27,9 @@ app.use('*', function(request, response){
 });
 
 http.listen(3001, function() {
-    http2.listen(3002, function() {
+    // http2.listen(3002, function() {
         game.init(http, http2);
         console.log('Server running at http://localhost:3001/');
         console.log('game logger running at http://localhost:3002/');
-    });
+    // });
 });

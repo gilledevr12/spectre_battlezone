@@ -64,10 +64,10 @@ function calculatePosition(player, dists) {
     };
     equations.one.f = dists.D1 - dists.D2 - equations.one.c;
     equations.two.f = dists.D1 - dists.D3 - equations.two.c;
-    console.log(equations.one.x);
-    console.log(equations.one.y);
-    console.log(equations.one.c);
-    console.log(equations.one.f);
+    // console.log(equations.one.x);
+    // console.log(equations.one.y);
+    // console.log(equations.one.c);
+    // console.log(equations.one.f);
     let x = (equations.two.f - ((equations.two.y*equations.one.f)/equations.one.y)) /
         (equations.two.x - ((equations.two.y*equations.one.x)/equations.one.y));
     let y = (equations.one.f - (equations.one.x * x))/(equations.one.y);
@@ -229,7 +229,7 @@ function initIo(http, http2) {
 
         sock.on('data', function(data) {
 
-            ioServer.emit('log message', sock.remoteAddress + ": " + data);
+            // ioServer.emit('log message', sock.remoteAddress + ": " + data);
 
             inputQueue.enqueue({
                 clientId: sock.remotePort,
@@ -252,19 +252,19 @@ function initIo(http, http2) {
 
     console.log('Server listening on ' + HOST +':'+ PORT);
 
-    ioServer = require('socket.io')(http2);
+    // ioServer = require('socket.io')(http2);
     io = require('socket.io')(http);
 
-    ioServer.on('connection', function (socket) {
-        socket.on('join', function (data) {
-            ioServer.emit('ready', data.name + ' has joined the game: ');
-
-
-            // socket.on('chat message', function (msg) {
-            //     io.emit('chat message', data.name + ": " + msg);
-            // });
-        });
-    });
+    // ioServer.on('connection', function (socket) {
+    //     socket.on('join', function (data) {
+    //         ioServer.emit('ready', data.name + ' has joined the game: ');
+    //
+    //
+    //         // socket.on('chat message', function (msg) {
+    //         //     io.emit('chat message', data.name + ": " + msg);
+    //         // });
+    //     });
+    // });
 
     io.on('connection', function (socket) {
         socket.on('join', function (data) {
