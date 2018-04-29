@@ -53,7 +53,7 @@ socket.on('log message', function(msg){
 var time = new Date().getTime();
 
 function refresh(){
-	if(new Date().getTime() - time >= 120000){
+	if(new Date().getTime() - time >= 360000){
 		window.location.reload(true);
 	} else {
 		setTimeout(refresh, 5000);

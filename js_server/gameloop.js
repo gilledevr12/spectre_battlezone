@@ -21,10 +21,16 @@ let io = null;
 let ioServer = null;
 let count = 0;
 let anchors = {};
-let X_MAX = 9.67;
-let Y_MAX = 10.18;
+let Y_MAX = 9.67;
+let X_MAX = 10.18;
 
 function initAnchors() {
+    // let a1_x_dist = 7.08,
+    // a1_y_dist = 9.07,
+    // a2_x_dist = 5.10,
+    // a2_y_dist = .07,
+    // a3_x_dist = 10.18,
+    // a3_y_dist = 3.10;
     //TODO put values here
     let a1_x_dist = 4.90,
         a1_y_dist = 4.42,
@@ -62,12 +68,8 @@ function calculatePosition(player, dists) {
             c: anchors.a1.c - anchors.a3.c
         }
     };
-    equations.one.f = dists.D1 - dists.D2 - equations.one.c;
-    equations.two.f = dists.D1 - dists.D3 - equations.two.c;
-    // console.log(equations.one.x);
-    // console.log(equations.one.y);
-    // console.log(equations.one.c);
-    // console.log(equations.one.f);
+    equations.one.f = (dists.D1 * dists.D1) - (dists.D2 * dists.D2) - equations.one.c;
+    equations.two.f = (dists.D1 * dists.D1) - (dists.D3 * dists.D3) - equations.two.c;
     let x = (equations.two.f - ((equations.two.y*equations.one.f)/equations.one.y)) /
         (equations.two.x - ((equations.two.y*equations.one.x)/equations.one.y));
     let y = (equations.one.f - (equations.one.x * x))/(equations.one.y);
@@ -114,15 +116,16 @@ function processInput(elapsedTime) {
 }
 
 function findHeading(player, x, y) {
-    let MAG_NORTH = 130.0;
+    let MAG_NORTH = 158.0;
     let heading = Math.atan2(y, x);  // assume pitch, roll are 0
     heading *= (180 / Math.PI);
-    if (heading < -MAG_NORTH){
-        heading += 360 + MAG_NORTH;
-    } else {
-        heading += MAG_NORTH;
+    heading -= MAG_NORTH;
+    if (heading < 0){
+        heading += 360;
+    } else if (heading > 360) {
+        heading -= 360;
     }
-    set_direction(player, heading); 
+    set_direction(player, heading + 90); 
     console.log('heading: ' + heading);
 }
 
@@ -174,6 +177,7 @@ function updatePlayers(elapsedTime) {
                 if (activeUsers[index].userName !== name){
                     activeUsers[index].socket.emit(NetworkIds.UPDATE_OTHER, update);
                     ioServer.emit(NetworkIds.UPDATE_OTHER, update);
+                    ioServer.emit('log message', update);
                 }
             }
 
@@ -252,19 +256,19 @@ function initIo(http, http2) {
 
     console.log('Server listening on ' + HOST +':'+ PORT);
 
-    // ioServer = require('socket.io')(http2);
+    ioServer = require('socket.io')(http2);
     io = require('socket.io')(http);
 
-    // ioServer.on('connection', function (socket) {
-    //     socket.on('join', function (data) {
-    //         ioServer.emit('ready', data.name + ' has joined the game: ');
-    //
-    //
-    //         // socket.on('chat message', function (msg) {
-    //         //     io.emit('chat message', data.name + ": " + msg);
-    //         // });
-    //     });
-    // });
+    ioServer.on('connection', function (socket) {
+        socket.on('join', function (data) {
+            ioServer.emit('ready', data.name + ' has joined the game: ');
+    
+    
+            // socket.on('chat message', function (msg) {
+            //     io.emit('chat message', data.name + ": " + msg);
+            // });
+        });
+    });
 
     io.on('connection', function (socket) {
         socket.on('join', function (data) {
@@ -386,6 +390,7 @@ function add_weapon(player, weapon){
 }
 
 function set_direction(player, direction){
+    direction *= (Math.PI/180);
     player.direction = direction;
 }
 

@@ -2,8 +2,8 @@ Laser.main_hub = (function(logic, graphics) {
 
     let socketIO = null;
 
-    let X_MAX = 15;
-    let Y_MAX = 15;
+    let Y_MAX = 9.67;
+    let X_MAX = 10.18;
     let lastTimeStamp,
         jobQueue = logic.createQueue(),
         otherUsers = [],
