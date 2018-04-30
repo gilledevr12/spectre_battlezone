@@ -36,8 +36,8 @@ float MAG_BIAS[3] = {0, 0, 0};
 #define MAG_PERFORMANCE     3           //ultra high power performance
 #define MAG_MODE            0           //continuous conversion
 #define MAG_CALIBRATION_COUNTER_MAX 3
-#define MAG_X_OFFSET 	    205
-#define MAG_Y_OFFSET	    670
+#define MAG_X_OFFSET 	    372
+#define MAG_Y_OFFSET	    591
 //Some Res?
 const float GYRO_RES    =   0.007476807;
 const float ACCEL_RES   =   0.000061035;

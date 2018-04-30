@@ -212,7 +212,7 @@ function initIo(http, http2) {
 
     var net = require('net');
 
-    var HOST = '192.168.1.5';
+    var HOST = '129.123.121.211';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -267,13 +267,13 @@ function initIo(http, http2) {
                 activeUsers[clientIp].socket = socket;
                 activeUsers[clientIp].id = socket.id;
                 // activeUsers[clientIp].player.clientId = socket.id;
-                data.name = "Tag_" + clientIp[clientIp.length - 1];
+                data.name = activeUsers[clientIp].userName;
 
                 // notifyReconnect(socket, activeUsers[data.name].user);
                 // io.sockets.sockets[socket.id].emit('start game', "player reconnect");
                 io.emit('name player', data.name + ' has rejoined the game.');
             } else {
-                data.name = "Tag_" + clientIp[clientIp.length - 1];
+                data.name = activeUsers[clientIp].userName;
                 console.log(data.name + ' with id ' + socket.id + ' connected');
 
                 activeUsers[clientIp].id = socket.id;
@@ -324,9 +324,9 @@ function connectPlayers() {
 }
 
 function createPlayers() {
-    let p1 = '192.168.1.21';
-    let p2 = '192.168.1.22';
-    let p3 = '192.168.1.23';
+    let p1 = '144.39.195.27';
+    let p2 = '144.39.105.156';
+    let p3 = '144.139.251.161';
 
     let player1 = makePlayer(p1, 'green');
     let player2 = makePlayer(p2, 'red');
