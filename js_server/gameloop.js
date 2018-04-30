@@ -94,13 +94,11 @@ function processInput(elapsedTime) {
         let clientIp = input.clientAddress;
         let args = input.message.toString().split(" ");
         //get the client
-        for (let index in args){
-            // console.log(args[index]);
-        }
         let client = activeUsers[clientIp];
         //TODO update player info here
         //first 3 are acceleration, next mag, uwb, then shots
-        if (args[10] === 0) {
+        if (args[10] === 1) {
+            client.player.shotFired = 1;
             console.log('got hit?')
             shots.push(client.player);
         }
@@ -136,9 +134,6 @@ function update(elapsedTime) {
             if (isInTrajectory(shots[shot].stats.id, shots[others].stats.id, shots[shot].position,
                     shots[shot].direction, shots[others].position)) {
                 console.log("A stupendous shot!!!");
-                //here for now, in the send messages later
-                // shots[shot].socket.emit("You hit someone!")
-                // shots[others].socket.emit("You were hit")
                 //TODO log a hit and health and stuff
                 shots[others].player.stats.health--;
                 shots[others].player.reportUpdate = true;
@@ -153,35 +148,34 @@ function update(elapsedTime) {
 
 function updatePlayers(elapsedTime) {
     //TODO send out the player update
-    // for (let index in updates_messages){
-    //     //this type of thing here
-    //     //shots[shot].socket.emit("You hit someone!")
-    //     //shots[others].socket.emit("You were hit")
-    // }
     for (let index in activeUsers){
         if (activeUsers[index].player.reportUpdate){
             let name = activeUsers[index].userName;
             activeUsers[index].player.reportUpdate = false;
             let update = {
-                name: name,
+                userId: name,
                 position: activeUsers[index].player.position,
                 direction: activeUsers[index].player.direction,
                 inventory: activeUsers[index].player.inventory,
                 stats: activeUsers[index].player.stats,
                 shotFired: activeUsers[index].player.shotFired
-            }
-            activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update)
-            // activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, activeUsers[index].player)
+            };
+            activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update);
+            ioServer.emit(NetworkIds.UPDATE_OTHER, update);
+            ioServer.emit('log message', name + '- x: ' + update.position.x + ' y: ' +
+                update.position.y + ' heading: ' + update.direction);
 
             for (let index in activeUsers){
                 if (activeUsers[index].userName !== name){
                     activeUsers[index].socket.emit(NetworkIds.UPDATE_OTHER, update);
-                    ioServer.emit(NetworkIds.UPDATE_OTHER, update);
-                    ioServer.emit('log message', update);
                 }
             }
 
         }
+    }
+    //reset the shots fired
+    for (let index in activeUsers){
+        activeUsers[index].shotFired = 0;
     }
 }
 
@@ -224,7 +218,8 @@ function initIo(http, http2) {
 
     var net = require('net');
 
-    var HOST = '192.168.1.5';
+    // var HOST = '192.168.1.67';
+    var HOST = '144.39.204.109';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -262,8 +257,7 @@ function initIo(http, http2) {
     ioServer.on('connection', function (socket) {
         socket.on('join', function (data) {
             ioServer.emit('ready', data.name + ' has joined the game: ');
-    
-    
+            connectPlayers();
             // socket.on('chat message', function (msg) {
             //     io.emit('chat message', data.name + ": " + msg);
             // });
@@ -289,16 +283,10 @@ function initIo(http, http2) {
                 data.name = "Tag_" + clientIp[clientIp.length - 1];
                 console.log(data.name + ' with id ' + socket.id + ' connected');
 
-                io.emit('name player', data.name + ' has joined the game: ');
+                activeUsers[clientIp].id = socket.id;
+                activeUsers[clientIp].socket = socket;
 
-                //used to send specific messages
-                let player = makePlayer(clientIp);
-                activeUsers[clientIp] = {
-                    userName: data.name,
-                    id: socket.id,
-                    socket: socket,
-                    player: player
-                };
+                io.emit('name player', data.name + ' has joined the game: ');
             }
             connections++;
 
@@ -315,19 +303,60 @@ function initIo(http, http2) {
     });
 }
 
+function connectPlayers() {
+    let message;
+    for (let index in activeUsers){
+        message = {
+            userName: activeUsers[index].userName
+        };
+        ioServer.emit(NetworkIds.CONNECT_OTHER, message);
+    }
+}
+
+function createPlayers() {
+    let p1 = '192.168.1.21';
+    let p2 = '192.168.1.22';
+    let p3 = '192.168.1.23';
+
+    let player1 = makePlayer(p1, 'green');
+    let player2 = makePlayer(p2, 'red');
+    let player3 = makePlayer(p3, 'yellow');
+    activeUsers[p1] = {
+        userName: 'Tag_1',
+        player: player1
+    };
+
+    activeUsers[p2] = {
+        userName: 'Tag_2',
+        player: player2
+    };
+
+    activeUsers[p3] = {
+        userName: 'Tag_3',
+        player: player3
+    };
+
+}
+
 function init(http, http2) {
     initAnchors();
     initIo(http, http2);
     testTrajectory();
+    createPlayers();
     gameLoop(present(),0);
 }
 
 module.exports.init = init;
 
-function makePlayer(id){
+function makePlayer(id, fill){
     let that = {};
 
     let reportUpdate = false;
+
+    Object.defineProperty(that, 'color', {
+        get: () => color,
+        set: value => { color = value; }
+    });
 
     Object.defineProperty(that, 'position', {
         get: () => position,
@@ -378,6 +407,8 @@ function makePlayer(id){
         x: .2, //spec.position.x,
         y: .2 //spec.position.y
     };
+
+    let color = fill;
 
     let direction = 0;//spec.direction;
     let shotFired = 0;

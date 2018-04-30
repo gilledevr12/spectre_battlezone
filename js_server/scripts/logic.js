@@ -31,11 +31,18 @@ Laser.logic.Player = function () {
         set: value => { shotFired = value; }
     });
 
+    Object.defineProperty(that, 'color', {
+        get: () => color,
+        set: value => { color = value; }
+    });
+
     let stats = {
         id: '',
         alive: true,
         health: 100
     };
+
+    let color = '';
 
     let inventory = {
         armor: 0,

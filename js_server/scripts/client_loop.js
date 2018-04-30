@@ -22,12 +22,12 @@ Laser.main = (function(logic, graphics) {
             });
         });
 
-        // socketIO.on(NetworkIds.CONNECT_OTHER, data => {
-        //     jobQueue.enqueue({
-        //         type: NetworkIds.CONNECT_OTHER,
-        //         data: data
-        //     });
-        // });
+        socketIO.on(NetworkIds.CONNECT_OTHER, data => {
+            jobQueue.enqueue({
+                type: NetworkIds.CONNECT_OTHER,
+                data: data
+            });
+        });
 
         socketIO.on(NetworkIds.RECONNECT_SELF, data => {
             jobQueue.enqueue({
@@ -43,12 +43,12 @@ Laser.main = (function(logic, graphics) {
         //     });
         // });
 
-        // socketIO.on(NetworkIds.UPDATE_OTHER, data => {
-        //     jobQueue.enqueue({
-        //         type: NetworkIds.UPDATE_OTHER,
-        //         data: data
-        //     });
-        // });
+        socketIO.on(NetworkIds.UPDATE_OTHER, data => {
+            jobQueue.enqueue({
+                type: NetworkIds.UPDATE_OTHER,
+                data: data
+            });
+        });
 
         socketIO.on(NetworkIds.UPDATE_SELF, data => {
             jobQueue.enqueue({
@@ -80,6 +80,9 @@ Laser.main = (function(logic, graphics) {
                 case NetworkIds.CONNECT_ACK:
                     connectPlayerSelf(message.data);
                     break;
+                case NetworkIds.CONNECT_OTHER:
+                    connectPlayer(message.data);
+                    break;
                 case NetworkIds.RECONNECT_SELF:
                     reconnectPlayerSelf(message.data);
                     break;
@@ -89,8 +92,19 @@ Laser.main = (function(logic, graphics) {
                 case NetworkIds.UPDATE_PICKUPS:
                     updatePickups(message.data);
                     break;
+                case NetworkIds.UPDATE_OTHER:
+                    updateOther(message.data);
+                    break;
             }
         }
+    }
+
+    function updateOther(data) {
+        otherUsers[data.userId].position = data.position;
+        otherUsers[data.userId].stats = data.stats;
+        otherUsers[data.userId].direction = data.direction;
+        otherUsers[data.userId].inventory = data.inventory;
+        otherUsers[data.userId].shotFired = data.shotFired;
     }
 
     function updatePickups(data) {
@@ -123,16 +137,23 @@ Laser.main = (function(logic, graphics) {
         myPlayer.model.direction = data.direction;
         myPlayer.model.inventory = data.inventory;
         myPlayer.model.shotFired = data.shotFired;
-
     }
 
     function reconnectPlayerSelf(data) {
         myPlayer.model.direction = data.direction;
         myPlayer.model.position = data.position;
+        myPlayer.model.color = data.color;
+    }
+
+    function connectPlayer(data) {
+        myPlayer.model.userId = data.userId;
+        otherUsers[data.userId] = logic.Player();
+        otherUsers[data.userId].color = data.color;
     }
 
     function connectPlayerSelf(data) {
         myPlayer.model.userId = data.userId;
+        myPlayer.model.color = data.color;
         // myPlayer.model.position = data.position;
         // myPlayer.model.stats = data.stats;
         // myPlayer.model.direction = data.direction;
@@ -155,7 +176,8 @@ Laser.main = (function(logic, graphics) {
         graphics.drawBorder();
 
         for (let index in otherUsers){
-
+            graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position, otherUsers[index].direction,
+                otherUsers[index].size);
         }
 
         for (let pickup in pickups){
@@ -165,8 +187,7 @@ Laser.main = (function(logic, graphics) {
             // }
         }
 
-        // console.log(myPlayer.model)
-        graphics.drawTriangle('green', myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
+        graphics.drawTriangle(myPlayer.model.color, myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
         if (myPlayer.model.shotFired){
             graphics.drawLaser(myPlayer.model.position, myPlayer.model.direction);
         }
