@@ -4,7 +4,7 @@
 /////////////////////////////////////////
 //            MQTT Constants           //
 /////////////////////////////////////////
-#define MQTT_HOSTNAME "192.168.1.5" //change to the host name of the server
+#define MQTT_HOSTNAME "129.123.121.211" //change to the host name of the server
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "location_sync"
 #define MQTT_TOPIC_TAG "location_tag"
