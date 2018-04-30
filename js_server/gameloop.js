@@ -212,8 +212,7 @@ function initIo(http, http2) {
 
     var net = require('net');
 
-    // var HOST = '192.168.1.67';
-    var HOST = '144.39.204.109';
+    var HOST = '192.168.1.5';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -331,7 +330,7 @@ function createPlayers() {
 
     let player1 = makePlayer(p1, 'green');
     let player2 = makePlayer(p2, 'red');
-    let player3 = makePlayer(p3, 'yellow');
+    let player3 = makePlayer(p3, 'blue');
     activeUsers[p1] = {
         userName: 'Tag_1',
         player: player1
