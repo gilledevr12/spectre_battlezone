@@ -17,9 +17,10 @@ socket.on('connect', function(){
 
 socket.on('name player', function (msg) {
     document.getElementById('log-bar').hidden = true;
-    var res = msg.split(" ");
-    if (res[res.length - 1] === userId) userId = res[0];
-    Laser.main.init(socket, userId);
+    // var res = msg.split(" ");
+    // if (res[res.length - 1] === userId) userId = res[0];
+    userId = msg.name;
+    Laser.main.init(socket, userId, msg.color);
 });
 
 socket.on('ready', function (msg) {

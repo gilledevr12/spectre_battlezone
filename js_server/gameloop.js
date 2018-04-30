@@ -286,7 +286,12 @@ function initIo(http, http2) {
                 activeUsers[clientIp].id = socket.id;
                 activeUsers[clientIp].socket = socket;
 
-                io.emit('name player', data.name + ' has joined the game: ');
+                let push = {
+                    name: data.name,
+                    color: activeUsers[clientIp].player.color
+                };
+                // io.emit('name player', data.name + ' has joined the game: ');
+                io.emit('name player', push);
             }
             connections++;
 
@@ -307,7 +312,8 @@ function connectPlayers() {
     let message;
     for (let index in activeUsers){
         message = {
-            userName: activeUsers[index].userName
+            userName: activeUsers[index].userName,
+            color: activeUsers[index].player.color
         };
         ioServer.emit(NetworkIds.CONNECT_OTHER, message);
     }

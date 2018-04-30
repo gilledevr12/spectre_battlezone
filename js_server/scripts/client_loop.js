@@ -223,9 +223,10 @@ Laser.main = (function(logic, graphics) {
         requestAnimationFrame(gameLoop);
     };
 
-    function init(socket, userId) {
+    function init(socket, userId, color) {
         myId = userId;
         socketIO = socket;
+        myPlayer.model.color = color;
         graphics.initGraphics();
         graphics.createImage('cross.png');
         graphics.createImage('shield.png');
