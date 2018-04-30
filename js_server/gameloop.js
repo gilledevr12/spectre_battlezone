@@ -25,12 +25,6 @@ let Y_MAX = 9.67;
 let X_MAX = 10.18;
 
 function initAnchors() {
-    // let a1_x_dist = 7.08,
-    // a1_y_dist = 9.07,
-    // a2_x_dist = 5.10,
-    // a2_y_dist = .07,
-    // a3_x_dist = 10.18,
-    // a3_y_dist = 3.10;
     //TODO put values here
     let a1_x_dist = 4.90,
         a1_y_dist = 4.42,
@@ -153,7 +147,7 @@ function updatePlayers(elapsedTime) {
             let name = activeUsers[index].userName;
             activeUsers[index].player.reportUpdate = false;
             let update = {
-                userId: name,
+                userName: name,
                 position: activeUsers[index].player.position,
                 direction: activeUsers[index].player.direction,
                 inventory: activeUsers[index].player.inventory,
@@ -287,11 +281,22 @@ function initIo(http, http2) {
                 activeUsers[clientIp].socket = socket;
 
                 let push = {
-                    name: data.name,
+                    userName: data.name,
                     color: activeUsers[clientIp].player.color
                 };
                 // io.emit('name player', data.name + ' has joined the game: ');
                 io.emit('name player', push);
+                let client = activeUsers[clientIp];
+                for (let index in activeUsers){
+                    if (activeUsers[index].userName !== client.userName && activeUsers[index].hasOwnProperty('socket')){
+                        activeUsers[index].socket.emit(NetworkIds.CONNECT_OTHER, push);
+                        let other = {
+                            userName: activeUsers[index].userName,
+                            color: activeUsers[index].player.color
+                        };
+                        client.socket.emit(NetworkIds.CONNECT_OTHER, other);
+                    }
+                }
             }
             connections++;
 

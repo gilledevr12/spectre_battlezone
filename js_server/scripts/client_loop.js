@@ -66,7 +66,7 @@ Laser.main = (function(logic, graphics) {
     }
 
     function playerHits(data) {
-        if (data.userId === myPlayer.model.userId) {
+        if (data.userName === myPlayer.model.userName) {
 
         }
     }
@@ -100,11 +100,11 @@ Laser.main = (function(logic, graphics) {
     }
 
     function updateOther(data) {
-        otherUsers[data.userId].position = data.position;
-        otherUsers[data.userId].stats = data.stats;
-        otherUsers[data.userId].direction = data.direction;
-        otherUsers[data.userId].inventory = data.inventory;
-        otherUsers[data.userId].shotFired = data.shotFired;
+        otherUsers[data.userName].position = data.position;
+        otherUsers[data.userName].stats = data.stats;
+        otherUsers[data.userName].direction = data.direction;
+        otherUsers[data.userName].inventory = data.inventory;
+        otherUsers[data.userName].shotFired = data.shotFired;
     }
 
     function updatePickups(data) {
@@ -146,13 +146,13 @@ Laser.main = (function(logic, graphics) {
     }
 
     function connectPlayer(data) {
-        myPlayer.model.userId = data.userId;
-        otherUsers[data.userId] = logic.Player();
-        otherUsers[data.userId].color = data.color;
+        otherUsers[data.userName].stats.id = data.userName;
+        otherUsers[data.userName] = logic.Player();
+        otherUsers[data.userName].color = data.color;
     }
 
     function connectPlayerSelf(data) {
-        myPlayer.model.userId = data.userId;
+        myPlayer.model.stats.id = data.userName;
         myPlayer.model.color = data.color;
         // myPlayer.model.position = data.position;
         // myPlayer.model.stats = data.stats;
