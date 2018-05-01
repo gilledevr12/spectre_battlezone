@@ -93,7 +93,7 @@ Laser.logic.p1 = {
     font: '48px serif',
     text: "|-Player1-|",
     position: {
-        x: .001,
+        x: .1,
         y: .51
     },
     width: 1,
@@ -104,7 +104,7 @@ Laser.logic.p2 = {
     font: '48px serif',
     text: "|-Player2-|",
     position: {
-        x: .333,
+        x: .433,
         y: .51
     },
     width: 1,
@@ -115,7 +115,7 @@ Laser.logic.p3 = {
     font: '48px serif',
     text: "|-Player3-|",
     position: {
-        x: .666,
+        x: .766,
         y: .51
     },
     width: 1,
@@ -127,12 +127,22 @@ Laser.logic.health1 = {
     text: "Health: ",
     position: {
         x: .021,
-        y: .6
+        y: .61
     },
     width: 1,
     fill: 'black'
 }
 
+Laser.logic.armor = {
+    font: '35px serif',
+    text: "Armor: ",
+    position: {
+        x: .021,
+        y: .71
+    },
+    width: 1,
+    fill: 'black'
+}
 Laser.logic.ammo = {
     font: '35px serif',
     text: "Ammo: ",
