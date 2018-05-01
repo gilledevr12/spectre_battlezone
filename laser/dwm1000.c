@@ -42,7 +42,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
     if (memcmp(play, "locate", 6) == 0) {
         LIMIT = 3;
     } else {
-        LIMIT = .2;
+        LIMIT = .14;
     }
 
     /* Clear reception timeout to start next ranging process. */
@@ -55,14 +55,14 @@ bool runRanging(char *token, int num, char* play, char* poll){
     double time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
 
     /* Poll for reception of a frame or error/timeout. See NOTE 8 below. */
-//    while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-//             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < LIMIT) {
-//        time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
-//    };
-    while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-             (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)) && time_taken < LIMIT) {
-        time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
-    };
+   while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
+            (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) && time_taken < LIMIT) {
+       time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
+   };
+    // while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
+    //          (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)) && time_taken < LIMIT) {
+    //     time_taken = ((double)(clock() - t))/CLOCKS_PER_SEC;
+    // };
     if (time_taken > LIMIT){
         printf("restarting\n");
         quitting = true;
@@ -98,7 +98,7 @@ bool runRanging(char *token, int num, char* play, char* poll){
 
             /* Set expected delay and timeout for final message reception. See NOTE 4 and 5 below. */
             dwt_setrxaftertxdelay(RESP_TX_TO_FINAL_RX_DLY_UUS);
-//            dwt_setrxtimeout(FINAL_RX_TIMEOUT_UUS);
+           dwt_setrxtimeout(FINAL_RX_TIMEOUT_UUS);
 
             /* Write and send the response message. See NOTE 10 below.*/
             tx_resp_msg[num][ALL_MSG_SN_IDX] = frame_seq_nb;
@@ -117,16 +117,16 @@ bool runRanging(char *token, int num, char* play, char* poll){
                 time_taken = ((double) (clock() - t)) / CLOCKS_PER_SEC;
 
                 /* Poll for reception of expected "final" frame or error/timeout. See NOTE 8 below. */
-//                while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-//                         (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
-//                       time_taken < LIMIT - .05) {
-//                    time_taken = ((double) (clock() - t)) / CLOCKS_PER_SEC;
-//                };
-                while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
-                         (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)) &&
-                       time_taken < LIMIT - .05) {
-                    time_taken = ((double) (clock() - t)) / CLOCKS_PER_SEC;
-                };
+               while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
+                        (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR)) &&
+                      time_taken < LIMIT - .05) {
+                   time_taken = ((double) (clock() - t)) / CLOCKS_PER_SEC;
+               };
+                // while (!((status_reg = dwt_read32bitreg(SYS_STATUS_ID)) &
+                //          (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR)) &&
+                //        time_taken < LIMIT - .05) {
+                //     time_taken = ((double) (clock() - t)) / CLOCKS_PER_SEC;
+                // };
 
                 /* Increment frame sequence number after transmission of the response message (modulo 256). */
                 frame_seq_nb++;

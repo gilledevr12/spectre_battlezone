@@ -21,17 +21,17 @@ let io = null;
 let ioServer = null;
 let count = 0;
 let anchors = {};
-let Y_MAX = 9.67;
-let X_MAX = 10.18;
+let X_MAX = 12.23;
+let Y_MAX = 9.2;
 
 function initAnchors() {
     //TODO put values here
-    let a1_x_dist = 4.90,
-        a1_y_dist = 4.42,
-        a2_x_dist = 3.55,
-        a2_y_dist = 3.23,
-        a3_x_dist = 4.27,
-        a3_y_dist = 5.26;
+    let a1_x_dist = 9.87,
+        a1_y_dist = 4.04,
+        a2_x_dist = 6.26,
+        a2_y_dist = 6.75,
+        a3_x_dist = 4.83,
+        a3_y_dist = 2.46;
     anchors.a1 = {
         x: a1_x_dist * (-1) * 2,
         y: a1_y_dist * (-1) * 2,
@@ -108,7 +108,7 @@ function processInput(elapsedTime) {
 }
 
 function findHeading(player, x, y) {
-    let MAG_NORTH = 158.0;
+    let MAG_NORTH = 47.0;
     let heading = Math.atan2(y, x);  // assume pitch, roll are 0
     heading *= (180 / Math.PI);
     heading -= MAG_NORTH;
@@ -212,7 +212,7 @@ function initIo(http, http2) {
 
     var net = require('net');
 
-    var HOST = '192.168.1.5';
+    var HOST = '129.123.121.211';
     var PORT = 3000;
 
     net.createServer(function(sock) {
@@ -267,13 +267,13 @@ function initIo(http, http2) {
                 activeUsers[clientIp].socket = socket;
                 activeUsers[clientIp].id = socket.id;
                 // activeUsers[clientIp].player.clientId = socket.id;
-                data.name = "Tag_" + clientIp[clientIp.length - 1];
+                data.name = activeUsers[clientIp].userName;
 
                 // notifyReconnect(socket, activeUsers[data.name].user);
                 // io.sockets.sockets[socket.id].emit('start game', "player reconnect");
                 io.emit('name player', data.name + ' has rejoined the game.');
             } else {
-                data.name = "Tag_" + clientIp[clientIp.length - 1];
+                data.name = activeUsers[clientIp].userName;
                 console.log(data.name + ' with id ' + socket.id + ' connected');
 
                 activeUsers[clientIp].id = socket.id;
@@ -324,9 +324,9 @@ function connectPlayers() {
 }
 
 function createPlayers() {
-    let p1 = '192.168.1.21';
-    let p2 = '192.168.1.22';
-    let p3 = '192.168.1.23';
+    let p1 = '144.39.195.27';
+    let p2 = '144.39.105.156';
+    let p3 = '144.39.251.161';
 
     let player1 = makePlayer(p1, 'green');
     let player2 = makePlayer(p2, 'red');
