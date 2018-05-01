@@ -18,8 +18,8 @@ socket.on('connect', function(){
 socket.on('name player', function (msg) {
     document.getElementById('log-bar').hidden = true;
     // var res = msg.split(" ");
-    // if (res[res.length - 1] === userId) userId = res[0];
-    userId = msg.name;
+    // if (res[res.length - 1] === userName) userName = res[0];
+    userId = msg.userName;
     Laser.main.init(socket, userId, msg.color);
 });
 

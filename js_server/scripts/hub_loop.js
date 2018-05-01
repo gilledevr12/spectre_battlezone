@@ -70,11 +70,11 @@ Laser.main_hub = (function(logic, graphics) {
     }
 
     function updateOther(data){
-        otherUsers[data.userId].position = data.position;
-        otherUsers[data.userId].stats = data.stats;
-        otherUsers[data.userId].direction = data.direction;
-        otherUsers[data.userId].inventory = data.inventory;
-        otherUsers[data.userId].shotFired = data.shotFired;
+        otherUsers[data.userName].position = data.position;
+        otherUsers[data.userName].stats = data.stats;
+        otherUsers[data.userName].direction = data.direction;
+        otherUsers[data.userName].inventory = data.inventory;
+        otherUsers[data.userName].shotFired = data.shotFired;
 
     }
 
@@ -130,7 +130,17 @@ Laser.main_hub = (function(logic, graphics) {
         graphics.drawText(logic.p2);
         graphics.drawText(logic.p3);
         graphics.drawText(logic.health1);
+        graphics.drawText(logic.armor);
         graphics.drawText(logic.ammo);
+        graphics.drawText(logic.p1HealthText);
+        graphics.drawText(logic.p2HealthText);
+        graphics.drawText(logic.p3HealthText);
+        graphics.drawText(logic.p1ArmorText);
+        graphics.drawText(logic.p2ArmorText);
+        graphics.drawText(logic.p3ArmorText);
+        graphics.drawText(logic.p1AmmoText);
+        graphics.drawText(logic.p2AmmoText);
+        graphics.drawText(logic.p3AmmoText);
     }
 
     function gameLoop(time) {

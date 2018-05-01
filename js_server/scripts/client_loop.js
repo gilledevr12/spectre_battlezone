@@ -146,8 +146,8 @@ Laser.main = (function(logic, graphics) {
     }
 
     function connectPlayer(data) {
-        otherUsers[data.userName].stats.id = data.userName;
         otherUsers[data.userName] = logic.Player();
+        otherUsers[data.userName].stats.id = data.userName;
         otherUsers[data.userName].color = data.color;
     }
 

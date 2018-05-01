@@ -93,7 +93,7 @@ Laser.logic.p1 = {
     font: '48px serif',
     text: "|-Player1-|",
     position: {
-        x: .1,
+        x: .18,
         y: .51
     },
     width: 1,
@@ -102,9 +102,9 @@ Laser.logic.p1 = {
 
 Laser.logic.p2 = {
     font: '48px serif',
-    text: "|-Player2-|",
+    text: "-Player2-",
     position: {
-        x: .433,
+        x: .44,
         y: .51
     },
     width: 1,
@@ -115,7 +115,7 @@ Laser.logic.p3 = {
     font: '48px serif',
     text: "|-Player3-|",
     position: {
-        x: .766,
+        x: .67,
         y: .51
     },
     width: 1,
@@ -127,7 +127,7 @@ Laser.logic.health1 = {
     text: "Health: ",
     position: {
         x: .021,
-        y: .61
+        y: .60
     },
     width: 1,
     fill: 'black'
@@ -138,7 +138,7 @@ Laser.logic.armor = {
     text: "Armor: ",
     position: {
         x: .021,
-        y: .71
+        y: .65
     },
     width: 1,
     fill: 'black'
@@ -148,7 +148,7 @@ Laser.logic.ammo = {
     text: "Ammo: ",
     position: {
         x: .021,
-        y: .65
+        y: .70
     },
     width: 1,
     fill: 'black'
@@ -186,6 +186,97 @@ Laser.logic.ammoText = {
     width: 4,
     fill: 'chocolate'
 }
+Laser.logic.p1HealthText = {
+    font: '35px serif',
+    text: "100",
+    position: {
+        x: .25,
+        y: .60
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p2HealthText = {
+    font: '35px serif',
+    text: "100",
+    position: {
+        x: .51,
+        y: .60
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p3HealthText = {
+    font: '35px serif',
+    text: "100",
+    position: {
+        x: .74,
+        y: .60
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p1ArmorText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .25,
+        y: .65
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p2ArmorText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .51,
+        y: .65
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p3ArmorText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .74,
+        y: .65
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p1AmmoText = {
+    font: '35px serif',
+    text: "20",
+    position: {
+        x: .25,
+        y: .70
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p2AmmoText = {
+    font: '35px serif',
+    text: "20",
+    position: {
+        x: .51,
+        y: .70
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p3AmmoText = {
+    font: '35px serif',
+    text: "20",
+    position: {
+        x: .74,
+        y: .70
+    },
+    width: 1,
+    fill: 'black'
+}
+
 
 Laser.logic.cross = {
     texture: 'cross.png',
