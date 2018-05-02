@@ -73,7 +73,7 @@ function calculatePosition(player, dists) {
         x: x,
         y: y
     };
-    console.log('x: ' + position.x + " y: " + position.y);
+    // console.log('x: ' + position.x + " y: " + position.y);
     set_position(player, position);
 
 }
@@ -95,6 +95,7 @@ function processInput(elapsedTime) {
         //first 3 are acceleration, next mag, uwb, then shots
         if (args[10] === 1) {
             client.player.shotFired = 1;
+            client.player.inventory.ammo--;
             console.log('got hit?');
             shots.push(client.player);
         }
@@ -120,19 +121,19 @@ function findHeading(player, x, y) {
         heading -= 360;
     }
     set_direction(player, heading + 90); 
-    console.log('heading: ' + heading);
+    // console.log('heading: ' + heading);
 }
 
 function update(elapsedTime) {
     //TODO game logic here
     for (let shot in shots){
-        for (let others in shots){
-            if (isInTrajectory(shots[shot].stats.id, shots[others].stats.id, shots[shot].position,
-                    shots[shot].direction, shots[others].position)) {
+        for (let others in activeUsers){
+            if (isInTrajectory(shots[shot].stats.id, activeUsers[others].player.stats.id, shots[shot].position,
+                    shots[shot].direction, activeUsers[others].player.position)) {
                 console.log("A stupendous shot!!!");
                 //TODO log a hit and health and stuff
-                shots[others].player.stats.health--;
-                shots[others].player.reportUpdate = true;
+                activeUsers[others].player.stats.health--;
+                activeUsers[others].player.reportUpdate = true;
 
             } else {
                 console.log("Missed teribbly");
@@ -193,14 +194,12 @@ function updatePlayers(elapsedTime) {
             pick_date.pickup = (pickups.pickupArray[index].id)-1;
             io.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
             ioServer.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
-            console.log('show')
         } else if (pickups.pickupArray[index].life !== PICKUP_LIFE && pickups.pickupArray[index].alive === true) {
             pickups.pickupArray[index].alive = false;
             pick_date.msg = 'taken';
             pick_date.pickup = (pickups.pickupArray[index].id)-1;
             io.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
             ioServer.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
-            console.log('hide')
         }
     }
 
@@ -283,7 +282,7 @@ function initIo(http, http2) {
 
     net.createServer(function(sock) {
 
-        console.log('CONNECTED: ' + sock.remoteAddress +':'+ sock.remotePort);
+        // console.log('CONNECTED: ' + sock.remoteAddress +':'+ sock.remotePort);
 
         sock.on('data', function(data) {
 
@@ -295,7 +294,7 @@ function initIo(http, http2) {
                 message: data
             });
 
-            console.log('DATA ' + sock.remoteAddress + ': ' + data);
+            // console.log('DATA ' + sock.remoteAddress + ': ' + data);
             // Write the data back to the socket, the client will receive it as data from the server
             sock.write('You said "' + data + '"');
 
@@ -303,7 +302,7 @@ function initIo(http, http2) {
 
         // Add a 'close' event handler to this instance of socket
         sock.on('close', function(data) {
-            console.log('CLOSED: ' + sock.remoteAddress +' '+ sock.remotePort);
+            // console.log('CLOSED: ' + sock.remoteAddress +' '+ sock.remotePort);
         });
 
     }).listen(PORT, HOST);
