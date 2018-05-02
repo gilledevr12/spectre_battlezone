@@ -20,11 +20,11 @@ socket.on('name player', function (msg) {
     // var res = msg.split(" ");
     // if (res[res.length - 1] === userName) userName = res[0];
     userId = msg.userName;
-    Laser.main.init(socket, userId, msg.color);
+    Laser.main.init(socket, userId, msg.color, msg.pickups);
 });
 
 socket.on('ready', function (msg) {
-    Laser.main_hub.init(socket);
+    Laser.main_hub.init(socket, msg.pickups);
 });
 
 socket.on('chat message', function(msg){

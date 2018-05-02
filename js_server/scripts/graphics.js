@@ -75,9 +75,15 @@ Laser.graphics = (function() {
 
     function drawMapImage(texture, center, size) {
         context.save();
+
+        let position = {
+            x: center.x,
+            y: 1 - center.y
+        };
+
         context.drawImage(images[texture],
-            Math.floor((center.x - (size.width / 2)) * canvas.width),
-            Math.floor((center.y - (size.height / 2)) * canvas.height),
+            Math.floor((position.x - (size.width / 2)) * canvas.width),
+            Math.floor((position.y - (size.height / 2)) * canvas.height),
             Math.ceil(size.width * canvas.width), Math.ceil(size.height * canvas.height));
 
         context.restore();
@@ -185,8 +191,14 @@ Laser.graphics = (function() {
         context.restore();
     }
 
-    function drawLaser(center, orientation) {
+    function drawLaser(position, orientation) {
         context.save();
+
+        let center = {
+            x: position.x,
+            y: 1 - position.y
+        };
+
         rotateCanvas(center, orientation);
         context.beginPath();
         context.moveTo(center.x*canvas.width, center.y*canvas.height);
