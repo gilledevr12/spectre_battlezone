@@ -26,7 +26,7 @@ let Y_MAX = 9.2;
 
 function initAnchors() {
     //TODO put values here
-    let a1_x_dist = 9.87,
+    let a1_x_dist = 8.71,
         a1_y_dist = 4.04,
         a2_x_dist = 6.26,
         a2_y_dist = 6.75,
@@ -154,14 +154,16 @@ function updatePlayers(elapsedTime) {
                 stats: activeUsers[index].player.stats,
                 shotFired: activeUsers[index].player.shotFired
             };
-            activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update);
+            if (activeUsers[index].hasOwnProperty('socket')){
+                activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update);
+            }
             ioServer.emit(NetworkIds.UPDATE_OTHER, update);
             ioServer.emit('log message', name + '- x: ' + update.position.x + ' y: ' +
                 update.position.y + ' heading: ' + update.direction);
 
             for (let index in activeUsers){
                 if (activeUsers[index].userName !== name){
-                    activeUsers[index].socket.emit(NetworkIds.UPDATE_OTHER, update);
+                    // activeUsers[index].socket.emit(NetworkIds.UPDATE_OTHER, update);
                 }
             }
 

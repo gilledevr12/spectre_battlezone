@@ -100,11 +100,11 @@ Laser.main = (function(logic, graphics) {
     }
 
     function updateOther(data) {
-        otherUsers[data.userName].position = data.position;
-        otherUsers[data.userName].stats = data.stats;
-        otherUsers[data.userName].direction = data.direction;
-        otherUsers[data.userName].inventory = data.inventory;
-        otherUsers[data.userName].shotFired = data.shotFired;
+        // otherUsers[data.userName].position = data.position;
+        // otherUsers[data.userName].stats = data.stats;
+        // otherUsers[data.userName].direction = data.direction;
+        // otherUsers[data.userName].inventory = data.inventory;
+        // otherUsers[data.userName].shotFired = data.shotFired;
     }
 
     function updatePickups(data) {
