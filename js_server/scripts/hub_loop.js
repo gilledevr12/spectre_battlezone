@@ -96,7 +96,13 @@ Laser.main_hub = (function(logic, graphics) {
     }
 
     function updatePickups(data) {
-
+        if (data.msg === 'show') {
+            pickups[data.pickup].alive = true;
+            console.log('showme')
+        } else if (data.msg === 'taken') {
+            pickups[data.pickup].alive = false;
+            console.log('pickme')
+        }
     }
 
     function update(elapsedTime){
@@ -110,20 +116,21 @@ Laser.main_hub = (function(logic, graphics) {
         graphics.clear();
         graphics.drawBorder();
 
+        for (let pickup in pickups){
+            let position = pickups[pickup].model.position;
+            if (position.hasOwnProperty('x') && pickups[pickup].alive){
+                graphics.drawMapImage(pickups[pickup].type, position, pickups[pickup].model.size)
+            }
+        }
+
         for (let index in otherUsers){
             graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position,
                 otherUsers[index].direction, otherUsers[index].size);
             if (otherUsers[index].shotFired){
+                console.log('Fired')
                 graphics.drawLaser(otherUsers[index].position, otherUsers[index].direction);
             }
 
-        }
-
-        for (let pickup in pickups){
-            // let position = pickups[pickup].position;
-            // if (position.hasOwnProperty('x')){
-            //     // graphics.draw(pickups[pickup].texture, position, {width: pickups[pickup].width,height: pickups[pickup].height},0,false);
-            // }
         }
 
         graphics.drawText(logic.p1);
@@ -153,9 +160,19 @@ Laser.main_hub = (function(logic, graphics) {
         requestAnimationFrame(gameLoop);
     };
 
-    function init(socket) {
+    function init(socket, server_pickups) {
         socketIO = socket;
+        for (let index in server_pickups){
+            pickups.push(server_pickups[index])
+        }
         graphics.initGraphics();
+        graphics.createImage('cross.png');
+        graphics.createImage('shield.png');
+        graphics.createImage('shell.png');
+        graphics.createImage('shotgun.png');
+        graphics.createImage('player_red.png');
+        graphics.createImage('player_blue.png');
+        graphics.createImage('player_green.png');
         network();
         requestAnimationFrame(gameLoop);
     }

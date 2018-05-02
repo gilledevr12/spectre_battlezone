@@ -3,9 +3,10 @@ Laser.main = (function(logic, graphics) {
     let socketIO = null;
 
     let lastTimeStamp, messageId = 1,
-        myPlayer = {
-            model: logic.Player(),
-        },
+        myPlayer = {},
+        // myPlayer = {
+        //     model: logic.Player(),
+        // },
         jobQueue = logic.createQueue(),
         otherUsers = [],
         gameTime = 10 * 60, //seconds
@@ -108,30 +109,14 @@ Laser.main = (function(logic, graphics) {
     }
 
     function updatePickups(data) {
-
+        if (data.msg === 'show') {
+            pickups[data.pickup].alive = true;
+        } else if (data.msg === 'taken') {
+            pickups[data.pickup].alive = false;
+        }
     }
 
     function updateSelf(data) {
-        // if(data.hasOwnProperty('winner')) {
-        //     if(data.winner){
-        //         // alert("Congratulations! You are the winner!");
-        //     }
-        // }
-        // if (data.hasOwnProperty('weapon')){
-        //     myPlayer.model.weapon = data.weapon;
-        // }
-        // if (data.hasOwnProperty('health')){
-        //     myPlayer.model.health = data.health;
-        // }
-        // if (data.hasOwnProperty('ammo')){
-        //     myPlayer.model.ammo = data.ammo;
-        // }
-        // if (data.dead){
-        //     myPlayer.model.dead = data.dead;
-        // }
-        // gameTime = data.gameTime;
-        // // pickups = data.pickups;
-        // console.log(data)
         myPlayer.model.position = data.position;
         myPlayer.model.stats = data.stats;
         myPlayer.model.direction = data.direction;
@@ -152,6 +137,7 @@ Laser.main = (function(logic, graphics) {
     }
 
     function connectPlayerSelf(data) {
+        //TODO delete or use
         myPlayer.model.stats.id = data.userName;
         myPlayer.model.color = data.color;
         // myPlayer.model.position = data.position;
@@ -169,6 +155,7 @@ Laser.main = (function(logic, graphics) {
         for (let index in otherUsers){
             // otherUsers[index].model.update(elapsedTime);
         }
+        logic.healthText.text = myPlayer.model.stats.health;
     }
 
     function render(){
@@ -181,10 +168,10 @@ Laser.main = (function(logic, graphics) {
         }
 
         for (let pickup in pickups){
-            // let position = pickups[pickup].position;
-            // if (position.hasOwnProperty('x')){
-            //     // graphics.draw(pickups[pickup].texture, position, {width: pickups[pickup].width,height: pickups[pickup].height},0,false);
-            // }
+            let position = pickups[pickup].model.position;
+            if (position.hasOwnProperty('x') && pickups[pickup].alive){
+                graphics.drawMapImage(pickups[pickup].type, position, pickups[pickup].model.size)
+            }
         }
 
         graphics.drawTriangle(myPlayer.model.color, myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
@@ -223,10 +210,13 @@ Laser.main = (function(logic, graphics) {
         requestAnimationFrame(gameLoop);
     };
 
-    function init(socket, userId, color) {
+    function init(socket, userId, color, server_pickups) {
         myId = userId;
         socketIO = socket;
-        myPlayer.model.color = color;
+        for (let index in server_pickups){
+            pickups.push(server_pickups[index]);
+        }
+        myPlayer.model = logic.Player();
         graphics.initGraphics();
         graphics.createImage('cross.png');
         graphics.createImage('shield.png');
@@ -235,6 +225,7 @@ Laser.main = (function(logic, graphics) {
         graphics.createImage('player_red.png');
         graphics.createImage('player_blue.png');
         graphics.createImage('player_green.png');
+        myPlayer.model.color = color;
         network();
         requestAnimationFrame(gameLoop);
     }

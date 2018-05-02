@@ -11,6 +11,7 @@ let connections = 0;
 let activeUsers = [];
 let shots = [];
 let updates_messages = [];
+let pickups = {};
 let Queue = require('./queue');
 let NetworkIds = require('./scripts/network-ids');
 let inputQueue = Queue.createQueue();
@@ -23,6 +24,7 @@ let count = 0;
 let anchors = {};
 let X_MAX = 12.23;
 let Y_MAX = 9.2;
+let PICKUP_LIFE = 20000;
 
 function initAnchors() {
     //TODO put values here
@@ -71,7 +73,7 @@ function calculatePosition(player, dists) {
         x: x,
         y: y
     };
-    console.log('x: ' + position.x + " y: " + position.y);
+    // console.log('x: ' + position.x + " y: " + position.y);
     set_position(player, position);
 
 }
@@ -93,7 +95,8 @@ function processInput(elapsedTime) {
         //first 3 are acceleration, next mag, uwb, then shots
         if (args[10] === 1) {
             client.player.shotFired = 1;
-            console.log('got hit?')
+            client.player.inventory.ammo--;
+            console.log('got hit?');
             shots.push(client.player);
         }
         findHeading(client.player, args[4], args[5]);
@@ -118,19 +121,19 @@ function findHeading(player, x, y) {
         heading -= 360;
     }
     set_direction(player, heading + 90); 
-    console.log('heading: ' + heading);
+    // console.log('heading: ' + heading);
 }
 
 function update(elapsedTime) {
     //TODO game logic here
     for (let shot in shots){
-        for (let others in shots){
-            if (isInTrajectory(shots[shot].stats.id, shots[others].stats.id, shots[shot].position,
-                    shots[shot].direction, shots[others].position)) {
+        for (let others in activeUsers){
+            if (isInTrajectory(shots[shot].stats.id, activeUsers[others].player.stats.id, shots[shot].position,
+                    shots[shot].direction, activeUsers[others].player.position)) {
                 console.log("A stupendous shot!!!");
                 //TODO log a hit and health and stuff
-                shots[others].player.stats.health--;
-                shots[others].player.reportUpdate = true;
+                activeUsers[others].player.stats.health--;
+                activeUsers[others].player.reportUpdate = true;
 
             } else {
                 console.log("Missed teribbly");
@@ -138,10 +141,68 @@ function update(elapsedTime) {
         }
     }
     shots.length = 0;
+
+    for (let pick in pickups.pickupArray) {
+        if (!pickups.pickupArray[pick].alive) {
+            pickups.pickupArray[pick].life -= elapsedTime;
+            if (pickups.pickupArray[pick].life < 0) pickups.pickupArray[pick].life = PICKUP_LIFE;
+        }
+    }
+
+    //pickup crap here
+    for (let index in activeUsers) {
+        for (let pick in pickups.pickupArray){
+            if (collided(activeUsers[index].player, pickups.pickupArray[pick].model)
+                && pickups.pickupArray[pick].alive){
+
+                //run pickup logic
+                switch (pickups.pickupArray[pick].id) {
+                    case 1:
+                        activeUsers[index].player.stats.health += 25;
+                        if (activeUsers[index].player.stats.health > 100) activeUsers[index].player.stats.health = 100;
+                        pickups.pickupArray[pick].life -= elapsedTime;
+                        break;
+                    case 2:
+                        activeUsers[index].player.inventory.armor += 50;
+                        if (activeUsers[index].player.inventory.armor > 200)
+                            activeUsers[index].player.inventory.armor = 200;
+                        pickups.pickupArray[pick].life -= elapsedTime;
+                        break;
+                    case 3:
+                        activeUsers[index].player.inventory.ammo += 10;
+                        if (activeUsers[index].player.inventory.ammo > 50)
+                            activeUsers[index].player.inventory.ammo = 50;
+                        pickups.pickupArray[pick].life -= elapsedTime;
+                        break;
+                    case 4:
+                        pickups.pickupArray[pick].life -= elapsedTime;
+                        break;
+                }
+            }
+        }
+    }
 }
 
 function updatePlayers(elapsedTime) {
     //TODO send out the player update
+
+    let pick_date = {};
+    for (let index in pickups.pickupArray){
+        if (pickups.pickupArray[index].life === PICKUP_LIFE && pickups.pickupArray[index].alive === false){
+            pickups.pickupArray[index].alive = true;
+            pick_date.msg = 'show';
+            pick_date.pickup = (pickups.pickupArray[index].id)-1;
+            io.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
+            ioServer.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
+        } else if (pickups.pickupArray[index].life !== PICKUP_LIFE && pickups.pickupArray[index].alive === true) {
+            pickups.pickupArray[index].alive = false;
+            pick_date.msg = 'taken';
+            pick_date.pickup = (pickups.pickupArray[index].id)-1;
+            io.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
+            ioServer.emit(NetworkIds.UPDATE_PICKUPS, pick_date);
+        }
+    }
+
     for (let index in activeUsers){
         if (activeUsers[index].player.reportUpdate){
             let name = activeUsers[index].userName;
@@ -162,7 +223,7 @@ function updatePlayers(elapsedTime) {
                 update.position.y + ' heading: ' + update.direction);
 
             for (let index in activeUsers){
-                if (activeUsers[index].userName !== name){
+                if (activeUsers[index].userName !== name && activeUsers[index].hasOwnProperty('socket')){
                     // activeUsers[index].socket.emit(NetworkIds.UPDATE_OTHER, update);
                 }
             }
@@ -188,6 +249,7 @@ function testFunc() {
         activeUsers[index].player.direction += .1;
         if (count === 30) {
             activeUsers[index].player.shotFired = 1;
+            activeUsers[index].player.stats.health--;
         }
     }
     if (count === 30) {
@@ -200,7 +262,7 @@ function gameLoop(currentTime, elapsedTime) {
     update(elapsedTime, currentTime);
     updatePlayers(elapsedTime);
 
-    // testFunc();
+    testFunc();
 
     if (!quit) {
         setTimeout(() => {
@@ -215,11 +277,12 @@ function initIo(http, http2) {
     var net = require('net');
 
     var HOST = '129.123.121.211';
+    // var HOST = '144.39.203.228';
     var PORT = 3000;
 
     net.createServer(function(sock) {
 
-        console.log('CONNECTED: ' + sock.remoteAddress +':'+ sock.remotePort);
+        // console.log('CONNECTED: ' + sock.remoteAddress +':'+ sock.remotePort);
 
         sock.on('data', function(data) {
 
@@ -231,7 +294,7 @@ function initIo(http, http2) {
                 message: data
             });
 
-            console.log('DATA ' + sock.remoteAddress + ': ' + data);
+            // console.log('DATA ' + sock.remoteAddress + ': ' + data);
             // Write the data back to the socket, the client will receive it as data from the server
             sock.write('You said "' + data + '"');
 
@@ -239,7 +302,7 @@ function initIo(http, http2) {
 
         // Add a 'close' event handler to this instance of socket
         sock.on('close', function(data) {
-            console.log('CLOSED: ' + sock.remoteAddress +' '+ sock.remotePort);
+            // console.log('CLOSED: ' + sock.remoteAddress +' '+ sock.remotePort);
         });
 
     }).listen(PORT, HOST);
@@ -251,7 +314,10 @@ function initIo(http, http2) {
 
     ioServer.on('connection', function (socket) {
         socket.on('join', function (data) {
-            ioServer.emit('ready', data.name + ' has joined the game: ');
+            let msg = {
+                pickups: pickups.pickupArray
+            }
+            ioServer.emit('ready', msg);
             connectPlayers();
             // socket.on('chat message', function (msg) {
             //     io.emit('chat message', data.name + ": " + msg);
@@ -264,29 +330,33 @@ function initIo(http, http2) {
             var remoteConnection = socket.request.connection.remoteAddress;
             let args = remoteConnection.toString().split(":");
             let clientIp = args[args.length - 1];
-            if(typeof activeUsers[clientIp] !== 'undefined') {
+            if(activeUsers[clientIp].joined) {
                 activeUsers[clientIp].dead = false;
                 activeUsers[clientIp].socket = socket;
                 activeUsers[clientIp].id = socket.id;
                 // activeUsers[clientIp].player.clientId = socket.id;
                 data.name = activeUsers[clientIp].userName;
-
-                // notifyReconnect(socket, activeUsers[data.name].user);
-                // io.sockets.sockets[socket.id].emit('start game', "player reconnect");
-                io.emit('name player', data.name + ' has rejoined the game.');
+                let push = {
+                    userName: data.name,
+                    color: activeUsers[clientIp].player.color,
+                    pickups: pickups.pickupArray
+                };
+                socket.emit('name player', push);
             } else {
                 data.name = activeUsers[clientIp].userName;
                 console.log(data.name + ' with id ' + socket.id + ' connected');
 
                 activeUsers[clientIp].id = socket.id;
                 activeUsers[clientIp].socket = socket;
+                activeUsers[clientIp].joined = true;
 
                 let push = {
                     userName: data.name,
-                    color: activeUsers[clientIp].player.color
+                    color: activeUsers[clientIp].player.color,
+                    pickups: pickups.pickupArray
                 };
-                // io.emit('name player', data.name + ' has joined the game: ');
-                io.emit('name player', push);
+
+                socket.emit('name player', push);
                 let client = activeUsers[clientIp];
                 for (let index in activeUsers){
                     if (activeUsers[index].userName !== client.userName && activeUsers[index].hasOwnProperty('socket')){
@@ -327,6 +397,8 @@ function connectPlayers() {
 
 function createPlayers() {
     let p1 = '144.39.195.27';
+    // let p1 = '144.39.203.228';
+
     let p2 = '144.39.105.156';
     let p3 = '144.39.251.161';
 
@@ -335,17 +407,20 @@ function createPlayers() {
     let player3 = makePlayer(p3, 'blue');
     activeUsers[p1] = {
         userName: 'Tag_1',
-        player: player1
+        player: player1,
+        joined: false
     };
 
     activeUsers[p2] = {
         userName: 'Tag_2',
-        player: player2
+        player: player2,
+        joined: false
     };
 
     activeUsers[p3] = {
         userName: 'Tag_3',
-        player: player3
+        player: player3,
+        joined: false
     };
 
 }
@@ -355,6 +430,7 @@ function init(http, http2) {
     initIo(http, http2);
     testTrajectory();
     createPlayers();
+    pickups = makePickups();
     gameLoop(present(),0);
 }
 
@@ -400,6 +476,11 @@ function makePlayer(id, fill){
         set: value => { shotFired = value; }
     });
 
+    Object.defineProperty(that, 'radius', {
+        get: () => radius,
+        set: value => { radius = value; }
+    });
+
     let stats = {
         id: id,
         alive: true,
@@ -419,6 +500,8 @@ function makePlayer(id, fill){
         x: .2, //spec.position.x,
         y: .2 //spec.position.y
     };
+
+    let radius = .02;
 
     let color = fill;
 
@@ -472,20 +555,42 @@ function player_hit(distance, weapon){
     }
 }
 
+function collided(obj1, obj2) {
+    let distance = Math.sqrt(Math.pow(obj1.position.x - obj2.position.x, 2) + Math.pow(obj1.position.y - obj2.position.y, 2));
+    //leeway of .05
+    let radii = obj1.radius + obj2.radius + .01;
+
+    return distance <= radii;
+}
+
 function makePickups(){
     let that = {};
 
     let pickupArray = [],
-        pickupIndex = [ [1, 0.5], [0.5, 1], [0.1, 0], [0, 0.1] ],
+        pickupIndex = [ [0.8, 0.5], [0.5, 0.8], [0.1, 0.7], [0.3, 0.2] ],
         Pickups = {
             num: 4
         },
         pickupSize = {
-            width: 0.1,
-            height: 0.15
+            width: 0.05,
+            height: 0.05
         };
 
     for(let i=0; i < Pickups.num; i++){
+        var pickup_type;
+
+        if(i === 0){ pickup_type = 'cross.png' }
+        if(i === 1){ pickup_type = 'shield.png' }
+        if(i === 2){
+            pickup_type = 'shell.png';
+            pickupSize.width = .025;
+        }
+        if(i === 3){
+            pickup_type = 'shotgun.png';
+            pickupSize.width = .07;
+            pickupSize.height = .03;
+        }
+
         pickupArray.push( {
             model: {
                 position: {
@@ -496,18 +601,12 @@ function makePickups(){
                     height: pickupSize.height,
                     width: pickupSize.width
                 },
-                radius: 0.1
+                radius: 0.025
             },
             id: i+1,
-            /*type: function(i+1){
-                id = i+1;
-                let type;
-                if(id === 1){ type = health },
-                if(id === 2){ type = armor },
-                if(id === 3){ type = shotgun },
-                if(id === 4){ type = shot_ammo }
-                return type;
-            }*/
+            type: pickup_type,
+            life: PICKUP_LIFE,
+            alive: true
         });
     }
 
