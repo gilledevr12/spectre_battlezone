@@ -1,4 +1,4 @@
-Laser.main_hub = (function(logic, graphics) {
+Laser.main_hub = (function (logic, graphics) {
 
     let socketIO = null;
 
@@ -47,7 +47,7 @@ Laser.main_hub = (function(logic, graphics) {
         });
     }
 
-    function updateMsgs(){
+    function updateMsgs() {
         let processMe = jobQueue;
         jobQueue = jobQueue = logic.createQueue();
         while (!processMe.empty) {
@@ -69,13 +69,12 @@ Laser.main_hub = (function(logic, graphics) {
         }
     }
 
-    function updateOther(data){
+    function updateOther(data) {
         otherUsers[data.userName].position = data.position;
         otherUsers[data.userName].stats = data.stats;
         otherUsers[data.userName].direction = data.direction;
         otherUsers[data.userName].inventory = data.inventory;
         otherUsers[data.userName].shotFired = data.shotFired;
-
     }
 
     // function assignColor(){
@@ -105,29 +104,31 @@ Laser.main_hub = (function(logic, graphics) {
         }
     }
 
-    function update(elapsedTime){
+    function update(elapsedTime) {
         updateMsgs();
-        for (let index in otherUsers){
-            // otherUsers[index].model.update(elapsedTime);
-        }
+        logic.p1HealthText.text = otherUsers['Tag_1'].stats.health;
+        logic.p1AmmoText.text = otherUsers['Tag_1'].inventory.ammo;
+        logic.p1ArmorText.text = otherUsers['Tag_1'].inventory.armor;
+        logic.p2HealthText.text = otherUsers['Tag_2'].stats.health;
+        logic.p2AmmoText.text = otherUsers['Tag_2'].inventory.ammo;
+        logic.p2ArmorText.text = otherUsers['Tag_2'].inventory.armor;
     }
 
-    function render(){
+    function render() {
         graphics.clear();
         graphics.drawBorder();
 
-        for (let pickup in pickups){
+        for (let pickup in pickups) {
             let position = pickups[pickup].model.position;
-            if (position.hasOwnProperty('x') && pickups[pickup].alive){
+            if (position.hasOwnProperty('x') && pickups[pickup].alive) {
                 graphics.drawMapImage(pickups[pickup].type, position, pickups[pickup].model.size)
             }
         }
 
-        for (let index in otherUsers){
+        for (let index in otherUsers) {
             graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position,
                 otherUsers[index].direction, otherUsers[index].size);
-            if (otherUsers[index].shotFired){
-                console.log('Fired')
+            if (otherUsers[index].shotFired) {
                 graphics.drawLaser(otherUsers[index].position, otherUsers[index].direction);
             }
 
@@ -162,7 +163,7 @@ Laser.main_hub = (function(logic, graphics) {
 
     function init(socket, server_pickups) {
         socketIO = socket;
-        for (let index in server_pickups){
+        for (let index in server_pickups) {
             pickups.push(server_pickups[index])
         }
         graphics.initGraphics();
@@ -178,7 +179,7 @@ Laser.main_hub = (function(logic, graphics) {
     }
 
     return {
-        init : init
+        init: init
     };
 
 }(Laser.logic, Laser.graphics));

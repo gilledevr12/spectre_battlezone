@@ -156,6 +156,8 @@ Laser.main = (function(logic, graphics) {
             // otherUsers[index].model.update(elapsedTime);
         }
         logic.healthText.text = myPlayer.model.stats.health;
+        logic.ammoText.text = myPlayer.model.inventory.ammo;
+        logic.armorText.text = myPlayer.model.inventory.armor;
     }
 
     function render(){

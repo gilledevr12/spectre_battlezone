@@ -91,9 +91,10 @@ function processInput(elapsedTime) {
         let args = input.message.toString().split(" ");
         //get the client
         let client = activeUsers[clientIp];
+        let shot = args[10][0];
         //TODO update player info here
         //first 3 are acceleration, next mag, uwb, then shots
-        if (args[10] === 1) {
+        if (shot === "1" && client.player.inventory.ammo > 0) {
             client.player.shotFired = 1;
             client.player.inventory.ammo--;
             console.log('got hit?');
@@ -111,16 +112,20 @@ function processInput(elapsedTime) {
 }
 
 function findHeading(player, x, y) {
-    let MAG_NORTH = 47.0;
+    let MAG_NORTH = -103.0;
     let heading = Math.atan2(y, x);  // assume pitch, roll are 0
-    heading *= (180 / Math.PI);
-    heading -= MAG_NORTH;
-    if (heading < 0){
-        heading += 360;
-    } else if (heading > 360) {
-        heading -= 360;
+    // heading *= (180 / Math.PI);
+
+    //force the 'north' direction to pi/2 (90 deg)
+    heading -= ((MAG_NORTH * Math.PI / 180) + ( Math.PI / 2 ));
+
+    //do some bounds checking
+    if (heading < -Math.PI ){
+        heading += ( 2 * Math.PI );
+    } else if (heading > Math.PI) {
+        heading -= ( Math.PI * 2 );
     }
-    set_direction(player, heading + 90); 
+    set_direction(player, heading); 
     // console.log('heading: ' + heading);
 }
 
@@ -128,15 +133,17 @@ function update(elapsedTime) {
     //TODO game logic here
     for (let shot in shots){
         for (let others in activeUsers){
-            if (isInTrajectory(shots[shot].stats.id, activeUsers[others].player.stats.id, shots[shot].position,
+            if (shots[shot].stats.id !== activeUsers[others].stats.id){
+                if (isInTrajectory(shots[shot].stats.id, activeUsers[others].player.stats.id, shots[shot].position,
                     shots[shot].direction, activeUsers[others].player.position)) {
                 console.log("A stupendous shot!!!");
                 //TODO log a hit and health and stuff
                 activeUsers[others].player.stats.health--;
                 activeUsers[others].player.reportUpdate = true;
 
-            } else {
-                console.log("Missed teribbly");
+                } else {
+                    console.log("Missed teribbly");
+                }
             }
         }
     }
@@ -232,7 +239,7 @@ function updatePlayers(elapsedTime) {
     }
     //reset the shots fired
     for (let index in activeUsers){
-        activeUsers[index].shotFired = 0;
+        activeUsers[index].player.shotFired = 0;
     }
 }
 
@@ -262,7 +269,7 @@ function gameLoop(currentTime, elapsedTime) {
     update(elapsedTime, currentTime);
     updatePlayers(elapsedTime);
 
-    testFunc();
+    // testFunc();
 
     if (!quit) {
         setTimeout(() => {
@@ -396,15 +403,15 @@ function connectPlayers() {
 }
 
 function createPlayers() {
-    let p1 = '144.39.195.27';
+    // let p1 = '144.39.192.179';
     // let p1 = '144.39.203.228';
 
     let p2 = '144.39.105.156';
-    let p3 = '144.39.251.161';
+    let p1 = '144.39.251.161';
 
     let player1 = makePlayer(p1, 'green');
     let player2 = makePlayer(p2, 'red');
-    let player3 = makePlayer(p3, 'blue');
+    // let player3 = makePlayer(p3, 'blue');
     activeUsers[p1] = {
         userName: 'Tag_1',
         player: player1,
@@ -417,11 +424,11 @@ function createPlayers() {
         joined: false
     };
 
-    activeUsers[p3] = {
-        userName: 'Tag_3',
-        player: player3,
-        joined: false
-    };
+    // activeUsers[p3] = {
+    //     userName: 'Tag_3',
+    //     player: player3,
+    //     joined: false
+    // };
 
 }
 
@@ -619,12 +626,26 @@ function makePickups(){
 
 function isInTrajectory(id1, id2, me, myTheta, you){
     console.log(id1 + ": " + me.x + "," + me.y + " firing at " + id2 + ": " + you.x + "," + you.y + " with trajectory: " + myTheta);
-    let temp_theta = Math.atan2(you.y - me.y, you.x - me.x) * 180 / Math.PI;
+    let temp_theta = Math.atan2(you.y - me.y, you.x - me.x);// * 180 / Math.PI;
     console.log("calcd theta: " + temp_theta);
     let temp_distance = Math.sqrt((you.y - me.y)*(you.y - me.y) + (you.x - me.x)*(you.x - me.x));
-    let theta_tolerance = temp_distance * 0.25;
-    console.log("distance: " + temp_distance + " tolerance " + theta_tolerance);
-    if((temp_theta < myTheta + theta_tolerance) && (temp_theta > myTheta - theta_tolerance))
+    //.26 radians is 15 degrees either side (30 degrees)
+    let thetaMax = myTheta + .26;
+    if (thetaMax > Math.PI){
+        thetaMax -= (2*Math.PI)
+    }
+    let thetaMin = myTheta - .26;
+    if (thetaMin < Math.PI){
+        thetaMin += (2*Math.PI)
+    }
+    // let theta_tolerance = temp_distance * 0.78;
+    // console.log("distance: " + temp_distance + " tolerance " + theta_tolerance);
+    // if((temp_theta < myTheta + theta_tolerance) && (temp_theta > myTheta - theta_tolerance))
+    if(temp_theta > thetaMin && temp_theta < thetaMax)
+        return 1;
+    else if (thetaMax < thetaMin && temp_theta > thetaMin && temp_theta > thetaMax)
+        return 1;
+    else if (thetaMax < thetaMin && temp_theta < thetaMin && temp_theta < thetaMax)
         return 1;
     else
         return 0;
