@@ -11,6 +11,7 @@ let connections = 0;
 let activeUsers = [];
 let shots = [];
 let updates_messages = [];
+let theDead = [];
 let pickups = {};
 let Queue = require('./queue');
 let NetworkIds = require('./scripts/network-ids');
@@ -106,8 +107,42 @@ function processInput(elapsedTime) {
             D2: args[8],
             D3: args[9]
         };
-        calculatePosition(client.player, dists);
+        //error checking
+        let fault = false;
+        let correction = errorChecking(dists.D1);
+        if (correction === 'error'){
+            fault = true;
+        } else if (correction !== 'okay') {
+            dists.D1 = correction;
+        }
+        correction = errorChecking(dists.D2);;
+        if (correction === 'error'){
+            fault = true;
+        } else if (correction !== 'okay') {
+            dists.D2 = correction;
+        }
+        correction = errorChecking(dists.D3);
+        if (correction === 'error'){
+            fault = true;
+        } else if (correction !== 'okay') {
+            dists.D3 = correction;
+        }
+
+        if (!fault){
+            calculatePosition(client.player, dists);
+        }
         client.player.reportUpdate = true;
+    }
+}
+
+function errorChecking(dist) {
+    if (dist > 40 || dist < -5){
+        return 'error';
+    }
+    if (dist < 0) {
+        return 0;
+    } else {
+        return 'okay';
     }
 }
 
@@ -139,6 +174,23 @@ function update(elapsedTime) {
                 console.log("A stupendous shot!!!");
                 //TODO log a hit and health and stuff
                 activeUsers[others].player.stats.health--;
+                if (activeUsers[others].player.stats.health < 1 && activeUsers[others].player.stats.alive) {
+                    activeUsers[others].player.stats.alive = false;
+                    activeUsers[others].player.stats.deaths++;
+                    let deadGuy = {
+                        player: activeUsers[others].player,
+                        userName: activeUsers[others].userName,
+                        id: activeUsers[others].player.stats.id,
+                        time: 7000
+                    }
+                    theDead.push(deadGuy);
+                    shots[shot].stats.kills++;
+                    let update = {
+                        shooter: shots[shot].stats.id,
+                        victim: activeUsers[others].player.stats.id
+                    };
+                    updates_messages.push(update);
+                }
                 activeUsers[others].player.reportUpdate = true;
 
                 } else {
@@ -148,6 +200,19 @@ function update(elapsedTime) {
         }
     }
     shots.length = 0;
+
+    for (let index in theDead){
+        theDead[index].time -= elapsedTime;
+        if (theDead[index].time < 0){
+            let kills = activeUsers[theDead[index].id].player.stats.kills;
+            let deaths = activeUsers[theDead[index].id].player.stats.deaths;
+            activeUsers[theDead[index].id].player = makePlayer(theDead[index].id,
+                activeUsers[theDead[index].id].player.color);
+            activeUsers[theDead[index].id].player.stats.kills = kills;
+            activeUsers[theDead[index].id].player.stats.deaths = deaths;
+            delete theDead[index];
+        }
+    }
 
     for (let pick in pickups.pickupArray) {
         if (!pickups.pickupArray[pick].alive) {
@@ -220,7 +285,7 @@ function updatePlayers(elapsedTime) {
                 direction: activeUsers[index].player.direction,
                 inventory: activeUsers[index].player.inventory,
                 stats: activeUsers[index].player.stats,
-                shotFired: activeUsers[index].player.shotFired
+                shotFired: activeUsers[index].player.shotFired,
             };
             if (activeUsers[index].hasOwnProperty('socket')){
                 activeUsers[index].socket.emit(NetworkIds.UPDATE_SELF, update);
@@ -241,6 +306,19 @@ function updatePlayers(elapsedTime) {
     for (let index in activeUsers){
         activeUsers[index].player.shotFired = 0;
     }
+
+    for (let index in updates_messages){
+        let shooterId = updates_messages[index].shooter;
+        let shooteeId = updates_messages[index].victim;
+        let whoDied = {
+            userName: activeUsers[shooteeId].userName,
+            position: activeUsers[shooteeId].player.position
+        };
+        ioServer.emit(NetworkIds.DEATH, whoDied)
+        // activeUsers[shooterId].socket.emit(NetworkIds.DEATH, whoDied)
+        // activeUsers[shooteeId].socket.emit(NetworkIds.DEATH, whoDied)
+    }
+    updates_messages.length = 0;
 }
 
 function testFunc() {
@@ -256,9 +334,27 @@ function testFunc() {
         activeUsers[index].player.direction += .1;
         if (count === 30) {
             activeUsers[index].player.shotFired = 1;
-            activeUsers[index].player.stats.health--;
+            activeUsers[index].player.stats.health -= 15;
+        }
+        if (activeUsers[index].player.stats.health < 1 && activeUsers[index].player.stats.alive) {
+            activeUsers[index].player.stats.alive = false;
+            activeUsers[index].player.stats.deaths++;
+            let deadGuy = {
+                player: activeUsers[index].player,
+                userName: activeUsers[index].userName,
+                id: activeUsers[index].player.stats.id,
+                time: 7000
+            }
+            theDead.push(deadGuy);
+            activeUsers[index].player.stats.kills++;
+            let update = {
+                shooter: activeUsers[index].player.stats.id,
+                victim: activeUsers[index].player.stats.id
+            };
+            updates_messages.push(update);
         }
     }
+
     if (count === 30) {
         count = 0;
     }
@@ -269,7 +365,7 @@ function gameLoop(currentTime, elapsedTime) {
     update(elapsedTime, currentTime);
     updatePlayers(elapsedTime);
 
-    // testFunc();
+    testFunc();
 
     if (!quit) {
         setTimeout(() => {
@@ -491,12 +587,14 @@ function makePlayer(id, fill){
     let stats = {
         id: id,
         alive: true,
-        health: 100
+        health: 100,
+        kills: 0,
+        deaths: 0
     };
 
     let inventory = {
         armor: 0,
-        ammo: 0,
+        ammo: 20,
         weapon: "pea_shooter"
     };
 
@@ -532,6 +630,18 @@ function get_direction(player){
 }
 
 function set_position(player, position){
+    if (position.x > X_MAX) {
+        position.x = X_MAX;
+    }
+    if (position.x < 0) {
+        position.x = 0;
+    }
+    if (position.y > Y_MAX) {
+        position.y = Y_MAX;
+    }
+    if (position.y < 0) {
+        position.y = 0;
+    }
     player.position.x = position.x/X_MAX;
     player.position.y = position.y/Y_MAX;
 }
@@ -652,20 +762,22 @@ function isInTrajectory(id1, id2, me, myTheta, you){
 }
 
 function testTrajectory(){
-    let spec1 = { position: { x: 2,  y: 2 }, direction:   55 }
-    let spec2 = { position: { x: 17, y: 4 }, direction: -200 }
-    let spec3 = { position: { x: 13,  y: 18 }, direction: -200 }
-    let p1 = makePlayer(spec1);
-    let p2 = makePlayer(spec2);
-    let p3 = makePlayer(spec3);
+    // let spec2 = { position: { x: 17, y: 4 }, direction: -200 }
+    let p1 = makePlayer('dude', 'green');
+    // let p2 = makePlayer(spec2);
+    let p3 = makePlayer('dudette', 'red');
+    p1.position = { x: 2,  y: 2 };
+    p1.direction = 55 * (Math.PI/180);
+    p3.position = { x: 13,  y: 18 };
+    p3.direction = -200 * (Math.PI/180);
 
-    let ret = isInTrajectory(1, 3, p1.position, 55.0, p3.position);
+    let ret = isInTrajectory(1, 3, p1.position, p1.direction, p3.position);
     if(ret)
         console.log("HIT!");
     else
         console.log("MISS!");
 
-    ret = isInTrajectory(3, 1, p3.position, -200.0, p1.position);
+    ret = isInTrajectory(3, 1, p3.position, p3.direction, p1.position);
     if(ret)
         console.log("HIT!");
     else

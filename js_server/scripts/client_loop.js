@@ -11,6 +11,7 @@ Laser.main = (function(logic, graphics) {
         otherUsers = [],
         gameTime = 10 * 60, //seconds
         pickups = [],
+        theDead = [],
         myId;
 
     let cross = logic.cross, shell = logic.shell, shotgun = logic.shotgun, shield = logic.shield, time = logic.time();
@@ -64,6 +65,13 @@ Laser.main = (function(logic, graphics) {
                 data: data
             });
         });
+
+        socketIO.on(NetworkIds.DEATH, data => {
+            jobQueue.enqueue({
+                type: NetworkIds.DEATH,
+                data: data
+            });
+        });
     }
 
     function playerHits(data) {
@@ -96,6 +104,9 @@ Laser.main = (function(logic, graphics) {
                 case NetworkIds.UPDATE_OTHER:
                     updateOther(message.data);
                     break;
+                case NetworkIds.DEATH:
+                    updateKill(message.data);
+                    break;
             }
         }
     }
@@ -113,6 +124,18 @@ Laser.main = (function(logic, graphics) {
             pickups[data.pickup].alive = true;
         } else if (data.msg === 'taken') {
             pickups[data.pickup].alive = false;
+        }
+    }
+
+    function updateKill(data) {
+        //do something if me? maybe not needed
+        if (data.userName !== myId) {
+            let deadPerson = {
+                time: 7000,
+                position: data.player.position,
+                size: myPlayer.model.size,
+            }
+            theDead.push(deadPerson);
         }
     }
 
@@ -152,8 +175,11 @@ Laser.main = (function(logic, graphics) {
         updateMsgs();
         var parseTime = (time.getTime()).split(" ");
         time.text = parseTime[0];
-        for (let index in otherUsers){
-            // otherUsers[index].model.update(elapsedTime);
+        for (let index in theDead){
+            theDead[index].time -= elapsedTime;
+            if (theDead[index].time < 0){
+                delete theDead[index];
+            }
         }
         logic.healthText.text = myPlayer.model.stats.health;
         logic.ammoText.text = myPlayer.model.inventory.ammo;
@@ -176,9 +202,17 @@ Laser.main = (function(logic, graphics) {
             }
         }
 
-        graphics.drawTriangle(myPlayer.model.color, myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
-        if (myPlayer.model.shotFired){
-            graphics.drawLaser(myPlayer.model.position, myPlayer.model.direction);
+        for (let index in theDead){
+            graphics.drawMapImage('skull.png', theDead[index].position, theDead[index].size)
+        }
+
+        if (myPlayer.model.stats.alive){
+            graphics.drawTriangle(myPlayer.model.color, myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
+            if (myPlayer.model.shotFired){
+                graphics.drawLaser(myPlayer.model.position, myPlayer.model.direction);
+            }
+        } else {
+            graphics.drawMapImage('skull.png', myPlayer.model.position, myPlayer.model.size)
         }
 
         graphics.drawText(logic.healthText);
@@ -220,6 +254,7 @@ Laser.main = (function(logic, graphics) {
         }
         myPlayer.model = logic.Player();
         graphics.initGraphics();
+        graphics.createImage('skull.png');
         graphics.createImage('cross.png');
         graphics.createImage('shield.png');
         graphics.createImage('shell.png');

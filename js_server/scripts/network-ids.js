@@ -16,6 +16,10 @@
             value: 'update-pickups',
             writable: false
         },
+        'DEATH': {
+            value: 'death',
+            writable: false
+        },
         'INPUT_MOVE_DOWN': {
             value: 'moveDown',
             writable: false

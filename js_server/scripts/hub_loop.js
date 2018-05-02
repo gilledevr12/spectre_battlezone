@@ -8,7 +8,8 @@ Laser.main_hub = (function (logic, graphics) {
         jobQueue = logic.createQueue(),
         otherUsers = [],
         gameTime = 10 * 60, //seconds
-        pickups = [];
+        pickups = [],
+        theDead = [];
 
     function network() {
         // socketIO.on(NetworkIds.CONNECT_ACK, data => {
@@ -45,6 +46,13 @@ Laser.main_hub = (function (logic, graphics) {
                 data: data
             });
         });
+
+        socketIO.on(NetworkIds.DEATH, data => {
+            jobQueue.enqueue({
+                type: NetworkIds.DEATH,
+                data: data
+            });
+        });
     }
 
     function updateMsgs() {
@@ -65,8 +73,24 @@ Laser.main_hub = (function (logic, graphics) {
                 case NetworkIds.UPDATE_PICKUPS:
                     updatePickups(message.data);
                     break;
+                case NetworkIds.DEATH:
+                    updateKill(message.data);
+                    break;
             }
         }
+    }
+
+    function updateKill(data) {
+        console.log(data.position.x)
+        console.log(data.position.y)
+
+        //do something if me? maybe not needed
+        let deadPerson = {
+            time: 7000,
+            position: data.position,
+            size: otherUsers['Tag_1'].size
+        }
+        theDead[data.userName] = deadPerson;
     }
 
     function updateOther(data) {
@@ -76,18 +100,6 @@ Laser.main_hub = (function (logic, graphics) {
         otherUsers[data.userName].inventory = data.inventory;
         otherUsers[data.userName].shotFired = data.shotFired;
     }
-
-    // function assignColor(){
-    //     if (Object.keys(otherUsers).length === 1){
-    //         return 'green';
-    //     }
-    //     if (Object.keys(otherUsers).length === 2){
-    //         return 'red';
-    //     }
-    //     if (Object.keys(otherUsers).length === 3){
-    //         return 'yellow';
-    //     }
-    // }
 
     function connectPlayer(data) {
         otherUsers[data.userName] = logic.Player();
@@ -109,9 +121,13 @@ Laser.main_hub = (function (logic, graphics) {
         logic.p1HealthText.text = otherUsers['Tag_1'].stats.health;
         logic.p1AmmoText.text = otherUsers['Tag_1'].inventory.ammo;
         logic.p1ArmorText.text = otherUsers['Tag_1'].inventory.armor;
+        logic.p1KillText.text = otherUsers['Tag_1'].stats.kills;
+        logic.p1DeathText.text = otherUsers['Tag_1'].stats.deaths;
         logic.p2HealthText.text = otherUsers['Tag_2'].stats.health;
         logic.p2AmmoText.text = otherUsers['Tag_2'].inventory.ammo;
         logic.p2ArmorText.text = otherUsers['Tag_2'].inventory.armor;
+        logic.p2KillText.text = otherUsers['Tag_2'].stats.kills;
+        logic.p2DeathText.text = otherUsers['Tag_2'].stats.deaths;
     }
 
     function render() {
@@ -126,29 +142,43 @@ Laser.main_hub = (function (logic, graphics) {
         }
 
         for (let index in otherUsers) {
-            graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position,
-                otherUsers[index].direction, otherUsers[index].size);
-            if (otherUsers[index].shotFired) {
-                graphics.drawLaser(otherUsers[index].position, otherUsers[index].direction);
+            if (otherUsers[index].stats.alive){
+                graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position,
+                    otherUsers[index].direction, otherUsers[index].size);
+                if (otherUsers[index].shotFired) {
+                    graphics.drawLaser(otherUsers[index].position, otherUsers[index].direction);
+                }
+            } else {
+                if (theDead[index] !== undefined) {
+                    console.log(index)
+                    graphics.drawMapImage('skull.png', theDead[index].position, theDead[index].size)
+                }
             }
-
         }
 
         graphics.drawText(logic.p1);
         graphics.drawText(logic.p2);
-        graphics.drawText(logic.p3);
-        graphics.drawText(logic.health1);
+        // graphics.drawText(logic.p3);
+        graphics.drawText(logic.health);
         graphics.drawText(logic.armor);
         graphics.drawText(logic.ammo);
+        graphics.drawText(logic.kills);
+        graphics.drawText(logic.deaths);
         graphics.drawText(logic.p1HealthText);
         graphics.drawText(logic.p2HealthText);
-        graphics.drawText(logic.p3HealthText);
+        // graphics.drawText(logic.p3HealthText);
         graphics.drawText(logic.p1ArmorText);
         graphics.drawText(logic.p2ArmorText);
-        graphics.drawText(logic.p3ArmorText);
+        // graphics.drawText(logic.p3ArmorText);
         graphics.drawText(logic.p1AmmoText);
         graphics.drawText(logic.p2AmmoText);
-        graphics.drawText(logic.p3AmmoText);
+        // graphics.drawText(logic.p3AmmoText);
+        graphics.drawText(logic.p1KillText);
+        graphics.drawText(logic.p2KillText);
+        // graphics.drawText(logic.p3KillText);
+        graphics.drawText(logic.p1DeathText);
+        graphics.drawText(logic.p2DeathText);
+        // graphics.drawText(logic.p3DeathText);
     }
 
     function gameLoop(time) {
@@ -167,6 +197,7 @@ Laser.main_hub = (function (logic, graphics) {
             pickups.push(server_pickups[index])
         }
         graphics.initGraphics();
+        graphics.createImage('skull.png');
         graphics.createImage('cross.png');
         graphics.createImage('shield.png');
         graphics.createImage('shell.png');

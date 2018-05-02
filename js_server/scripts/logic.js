@@ -39,14 +39,16 @@ Laser.logic.Player = function () {
     let stats = {
         id: '',
         alive: true,
-        health: 100
+        health: 100,
+        kills: 0,
+        deaths: 0
     };
 
     let color = '';
 
     let inventory = {
         armor: 0,
-        ammo: 0,
+        ammo: 20,
         weapon: "pea_shooter"
     };
 
@@ -102,7 +104,7 @@ Laser.logic.p1 = {
 
 Laser.logic.p2 = {
     font: '48px serif',
-    text: "-Player2-",
+    text: "-Player2-|",
     position: {
         x: .44,
         y: .51
@@ -122,7 +124,7 @@ Laser.logic.p3 = {
     fill: 'black'
 }
 
-Laser.logic.health1 = {
+Laser.logic.health = {
     font: '35px serif',
     text: "Health: ",
     position: {
@@ -149,6 +151,28 @@ Laser.logic.ammo = {
     position: {
         x: .021,
         y: .70
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.kills = {
+    font: '35px serif',
+    text: "Kills: ",
+    position: {
+        x: .021,
+        y: .75
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.deaths = {
+    font: '35px serif',
+    text: "Deaths: ",
+    position: {
+        x: .021,
+        y: .80
     },
     width: 1,
     fill: 'black'
@@ -277,6 +301,67 @@ Laser.logic.p3AmmoText = {
     fill: 'black'
 }
 
+Laser.logic.p1KillText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .25,
+        y: .75
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p2KillText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .51,
+        y: .75
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p3KillText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .74,
+        y: .75
+    },
+    width: 1,
+    fill: 'black'
+}
+
+Laser.logic.p1DeathText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .25,
+        y: .80
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p2DeathText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .51,
+        y: .80
+    },
+    width: 1,
+    fill: 'black'
+}
+Laser.logic.p3DeathText = {
+    font: '35px serif',
+    text: "0",
+    position: {
+        x: .74,
+        y: .80
+    },
+    width: 1,
+    fill: 'black'
+}
 
 Laser.logic.cross = {
     texture: 'cross.png',
