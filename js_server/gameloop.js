@@ -29,7 +29,7 @@ let PICKUP_LIFE = 20000;
 
 function initAnchors() {
     //TODO put values here
-    let a1_x_dist = 8.71,
+    let a1_x_dist = 9.87,
         a1_y_dist = 4.04,
         a2_x_dist = 6.26,
         a2_y_dist = 6.75,
@@ -111,24 +111,35 @@ function processInput(elapsedTime) {
         let fault = false;
         let correction = errorChecking(dists.D1);
         if (correction === 'error'){
+            console.log('error1')
             fault = true;
         } else if (correction !== 'okay') {
-            dists.D1 = correction;
+            console.log('notokay1')            
+            dists.D1 = correction;            
         }
         correction = errorChecking(dists.D2);;
         if (correction === 'error'){
+            console.log('error2')            
             fault = true;
         } else if (correction !== 'okay') {
             dists.D2 = correction;
+            console.log('notokay2')                        
         }
         correction = errorChecking(dists.D3);
         if (correction === 'error'){
+            console.log('error3')
+            
             fault = true;
         } else if (correction !== 'okay') {
             dists.D3 = correction;
+            console.log('notokay3')                        
         }
 
+        
         if (!fault){
+            console.log(dists.D1);
+        console.log(dists.D2);
+        console.log(dists.D3);
             calculatePosition(client.player, dists);
         }
         client.player.reportUpdate = true;
@@ -168,7 +179,7 @@ function update(elapsedTime) {
     //TODO game logic here
     for (let shot in shots){
         for (let others in activeUsers){
-            if (shots[shot].stats.id !== activeUsers[others].stats.id){
+            if (shots[shot].stats.id !== activeUsers[others].player.stats.id){
                 if (isInTrajectory(shots[shot].stats.id, activeUsers[others].player.stats.id, shots[shot].position,
                     shots[shot].direction, activeUsers[others].player.position)) {
                 console.log("A stupendous shot!!!");
@@ -315,8 +326,8 @@ function updatePlayers(elapsedTime) {
             position: activeUsers[shooteeId].player.position
         };
         ioServer.emit(NetworkIds.DEATH, whoDied)
-        // activeUsers[shooterId].socket.emit(NetworkIds.DEATH, whoDied)
-        // activeUsers[shooteeId].socket.emit(NetworkIds.DEATH, whoDied)
+        activeUsers[shooterId].socket.emit(NetworkIds.DEATH, whoDied)
+        activeUsers[shooteeId].socket.emit(NetworkIds.DEATH, whoDied)
     }
     updates_messages.length = 0;
 }
@@ -365,7 +376,7 @@ function gameLoop(currentTime, elapsedTime) {
     update(elapsedTime, currentTime);
     updatePlayers(elapsedTime);
 
-    testFunc();
+    // testFunc();
 
     if (!quit) {
         setTimeout(() => {
@@ -502,8 +513,8 @@ function createPlayers() {
     // let p1 = '144.39.192.179';
     // let p1 = '144.39.203.228';
 
-    let p2 = '144.39.105.156';
-    let p1 = '144.39.251.161';
+    let p1 = '144.39.192.179';
+    let p2 = '144.39.251.161';
 
     let player1 = makePlayer(p1, 'green');
     let player2 = makePlayer(p2, 'red');
@@ -621,7 +632,7 @@ function add_weapon(player, weapon){
 }
 
 function set_direction(player, direction){
-    direction *= (Math.PI/180);
+    // direction *= (Math.PI/180);
     player.direction = direction;
 }
 
@@ -630,18 +641,18 @@ function get_direction(player){
 }
 
 function set_position(player, position){
-    if (position.x > X_MAX) {
-        position.x = X_MAX;
-    }
-    if (position.x < 0) {
-        position.x = 0;
-    }
-    if (position.y > Y_MAX) {
-        position.y = Y_MAX;
-    }
-    if (position.y < 0) {
-        position.y = 0;
-    }
+    // if (position.x > X_MAX) {
+    //     position.x = X_MAX;
+    // }
+    // if (position.x < 0) {
+    //     position.x = 0;
+    // }
+    // if (position.y > Y_MAX) {
+    //     position.y = Y_MAX;
+    // }
+    // if (position.y < 0) {
+    //     position.y = 0;
+    // }
     player.position.x = position.x/X_MAX;
     player.position.y = position.y/Y_MAX;
 }
@@ -745,7 +756,7 @@ function isInTrajectory(id1, id2, me, myTheta, you){
         thetaMax -= (2*Math.PI)
     }
     let thetaMin = myTheta - .26;
-    if (thetaMin < Math.PI){
+    if (thetaMin < (-Math.PI)){
         thetaMin += (2*Math.PI)
     }
     // let theta_tolerance = temp_distance * 0.78;
