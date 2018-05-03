@@ -23,18 +23,18 @@ let io = null;
 let ioServer = null;
 let count = 0;
 let anchors = {};
-let X_MAX = 12.23;
-let Y_MAX = 9.2;
+let X_MAX = 12.16;
+let Y_MAX = 9.017;
 let PICKUP_LIFE = 20000;
 
 function initAnchors() {
     //TODO put values here
-    let a1_x_dist = 9.87,
-        a1_y_dist = 4.04,
-        a2_x_dist = 6.26,
-        a2_y_dist = 6.75,
-        a3_x_dist = 4.83,
-        a3_y_dist = 2.46;
+    let a1_x_dist = 8.68,
+        a1_y_dist = 2.74,
+        a2_x_dist = 6.81,
+        a2_y_dist = 6.85,
+        a3_x_dist = 4.26,
+        a3_y_dist = 2.74;
     anchors.a1 = {
         x: a1_x_dist * (-1) * 2,
         y: a1_y_dist * (-1) * 2,
@@ -111,35 +111,26 @@ function processInput(elapsedTime) {
         let fault = false;
         let correction = errorChecking(dists.D1);
         if (correction === 'error'){
-            console.log('error1')
             fault = true;
         } else if (correction !== 'okay') {
-            console.log('notokay1')            
             dists.D1 = correction;            
         }
         correction = errorChecking(dists.D2);;
         if (correction === 'error'){
-            console.log('error2')            
             fault = true;
         } else if (correction !== 'okay') {
             dists.D2 = correction;
-            console.log('notokay2')                        
         }
         correction = errorChecking(dists.D3);
         if (correction === 'error'){
-            console.log('error3')
             
             fault = true;
         } else if (correction !== 'okay') {
             dists.D3 = correction;
-            console.log('notokay3')                        
         }
 
         
         if (!fault){
-            console.log(dists.D1);
-        console.log(dists.D2);
-        console.log(dists.D3);
             calculatePosition(client.player, dists);
         }
         client.player.reportUpdate = true;
@@ -158,15 +149,17 @@ function errorChecking(dist) {
 }
 
 function findHeading(player, x, y) {
-    let MAG_NORTH = -103.0;
+    let MAG_NORTH = -150.0;
     let heading = Math.atan2(y, x);  // assume pitch, roll are 0
     // heading *= (180 / Math.PI);
-
+    
     //force the 'north' direction to pi/2 (90 deg)
-    heading -= ((MAG_NORTH * Math.PI / 180) + ( Math.PI / 2 ));
+    heading -= (MAG_NORTH * Math.PI / 180);
+    heading *= -1;
+    heading += (Math.PI / 2 );
 
     //do some bounds checking
-    if (heading < -Math.PI ){
+    if (heading < (Math.PI * (-1)) ){
         heading += ( 2 * Math.PI );
     } else if (heading > Math.PI) {
         heading -= ( Math.PI * 2 );
@@ -184,7 +177,7 @@ function update(elapsedTime) {
                     shots[shot].direction, activeUsers[others].player.position)) {
                 console.log("A stupendous shot!!!");
                 //TODO log a hit and health and stuff
-                activeUsers[others].player.stats.health--;
+                activeUsers[others].player.stats.health -= 23;
                 if (activeUsers[others].player.stats.health < 1 && activeUsers[others].player.stats.alive) {
                     activeUsers[others].player.stats.alive = false;
                     activeUsers[others].player.stats.deaths++;
@@ -293,7 +286,7 @@ function updatePlayers(elapsedTime) {
             let update = {
                 userName: name,
                 position: activeUsers[index].player.position,
-                direction: activeUsers[index].player.direction,
+                direction: activeUsers[index].player.direction*(-1),
                 inventory: activeUsers[index].player.inventory,
                 stats: activeUsers[index].player.stats,
                 shotFired: activeUsers[index].player.shotFired,
@@ -513,11 +506,11 @@ function createPlayers() {
     // let p1 = '144.39.192.179';
     // let p1 = '144.39.203.228';
 
-    let p1 = '144.39.192.179';
-    let p2 = '144.39.251.161';
+    let p1 = '144.39.193.243';
+    let p2 = '144.39.253.146';
 
-    let player1 = makePlayer(p1, 'green');
-    let player2 = makePlayer(p2, 'red');
+    let player1 = makePlayer(p1, 'player_green.png');
+    let player2 = makePlayer(p2, 'player_red.png');
     // let player3 = makePlayer(p3, 'blue');
     activeUsers[p1] = {
         userName: 'Tag_1',
@@ -641,18 +634,18 @@ function get_direction(player){
 }
 
 function set_position(player, position){
-    // if (position.x > X_MAX) {
-    //     position.x = X_MAX;
-    // }
-    // if (position.x < 0) {
-    //     position.x = 0;
-    // }
-    // if (position.y > Y_MAX) {
-    //     position.y = Y_MAX;
-    // }
-    // if (position.y < 0) {
-    //     position.y = 0;
-    // }
+    if (position.x > X_MAX) {
+        position.x = X_MAX;
+    }
+    if (position.x < 0) {
+        position.x = 0;
+    }
+    if (position.y > Y_MAX) {
+        position.y = Y_MAX;
+    }
+    if (position.y < 0) {
+        position.y = 0;
+    }
     player.position.x = position.x/X_MAX;
     player.position.y = position.y/Y_MAX;
 }

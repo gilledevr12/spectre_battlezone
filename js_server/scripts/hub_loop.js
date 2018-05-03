@@ -143,8 +143,9 @@ Laser.main_hub = (function (logic, graphics) {
 
         for (let index in otherUsers) {
             if (otherUsers[index].stats.alive){
-                graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position,
-                    otherUsers[index].direction, otherUsers[index].size);
+                graphics.drawMapImage(otherUsers[index].color, otherUsers[index].position, otherUsers[index].size, otherUsers[index].direction)
+                // graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position,
+                //     otherUsers[index].direction, otherUsers[index].size);
                 if (otherUsers[index].shotFired) {
                     graphics.drawLaser(otherUsers[index].position, otherUsers[index].direction);
                 }

@@ -57,8 +57,8 @@ function refresh(){
 	if(new Date().getTime() - time >= 360000){
 		window.location.reload(true);
 	} else {
-		setTimeout(refresh, 5000);
+		setTimeout(refresh, 180000);
 	}
 }
 
-setTimeout(refresh, 5000);
+setTimeout(refresh, 180000);

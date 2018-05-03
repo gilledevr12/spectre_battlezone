@@ -73,13 +73,17 @@ Laser.graphics = (function() {
         context.translate(-(center.x * canvas.width), -(center.y * canvas.height));
     }
 
-    function drawMapImage(texture, center, size) {
+    function drawMapImage(texture, center, size, direction) {
         context.save();
 
         let position = {
             x: center.x,
             y: 1 - center.y
         };
+
+        if (direction !== 'undefined'){
+            rotateCanvas(position, direction);
+        }
 
         context.drawImage(images[texture],
             Math.floor((position.x - (size.width / 2)) * canvas.width),
@@ -202,7 +206,7 @@ Laser.graphics = (function() {
         rotateCanvas(center, orientation);
         context.beginPath();
         context.moveTo(center.x*canvas.width, center.y*canvas.height);
-        context.lineTo(center.x*canvas.width, center.y*canvas.height - canvas.height);
+        context.lineTo(center.x*canvas.width + (canvas.width*2), center.y*canvas.height);
 
         context.closePath();
         context.strokeStyle = 'red';

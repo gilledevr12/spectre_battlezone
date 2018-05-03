@@ -154,9 +154,9 @@ Laser.main = (function(logic, graphics) {
     }
 
     function connectPlayer(data) {
-        otherUsers[data.userName] = logic.Player();
-        otherUsers[data.userName].stats.id = data.userName;
-        otherUsers[data.userName].color = data.color;
+        // otherUsers[data.userName] = logic.Player();
+        // otherUsers[data.userName].stats.id = data.userName;
+        // otherUsers[data.userName].color = data.color;
     }
 
     function connectPlayerSelf(data) {
@@ -190,10 +190,10 @@ Laser.main = (function(logic, graphics) {
         graphics.clear();
         graphics.drawBorder();
 
-        for (let index in otherUsers){
-            graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position, otherUsers[index].direction,
-                otherUsers[index].size);
-        }
+        // for (let index in otherUsers){
+        //     graphics.drawTriangle(otherUsers[index].color, otherUsers[index].position, otherUsers[index].direction,
+        //         otherUsers[index].size);
+        // }
 
         for (let pickup in pickups){
             let position = pickups[pickup].model.position;
@@ -207,7 +207,8 @@ Laser.main = (function(logic, graphics) {
         }
 
         if (myPlayer.model.stats.alive){
-            graphics.drawTriangle(myPlayer.model.color, myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
+            graphics.drawMapImage(myPlayer.model.color, myPlayer.model.position, myPlayer.model.size, myPlayer.model.direction)
+            // graphics.drawTriangle(myPlayer.model.color, myPlayer.model.position, myPlayer.model.direction, myPlayer.model.size);
             if (myPlayer.model.shotFired){
                 graphics.drawLaser(myPlayer.model.position, myPlayer.model.direction);
             }
