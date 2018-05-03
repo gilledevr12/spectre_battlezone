@@ -175,27 +175,35 @@ function update(elapsedTime) {
             if (shots[shot].stats.id !== activeUsers[others].player.stats.id){
                 if (isInTrajectory(shots[shot].stats.id, activeUsers[others].player.stats.id, shots[shot].position,
                     shots[shot].direction, activeUsers[others].player.position)) {
-                console.log("A stupendous shot!!!");
-                //TODO log a hit and health and stuff
-                activeUsers[others].player.stats.health -= 23;
-                if (activeUsers[others].player.stats.health < 1 && activeUsers[others].player.stats.alive) {
-                    activeUsers[others].player.stats.alive = false;
-                    activeUsers[others].player.stats.deaths++;
-                    let deadGuy = {
-                        player: activeUsers[others].player,
-                        userName: activeUsers[others].userName,
-                        id: activeUsers[others].player.stats.id,
-                        time: 7000
+                    console.log("A stupendous shot!!!");
+                    //TODO log a hit and health and stuff
+                    if (activeUsers[others].player.inventory.armor > 0){
+                        activeUsers[others].player.inventory.armor -= 12;
+                        if (activeUsers[others].player.inventory.armor < 0) {
+                            activeUsers[others].player.inventory.armor = 0;
+                        }
+                    } else {
+                        activeUsers[others].player.stats.health -= 23;
                     }
-                    theDead.push(deadGuy);
-                    shots[shot].stats.kills++;
-                    let update = {
-                        shooter: shots[shot].stats.id,
-                        victim: activeUsers[others].player.stats.id
-                    };
-                    updates_messages.push(update);
-                }
-                activeUsers[others].player.reportUpdate = true;
+                    if (activeUsers[others].player.stats.health < 1 && activeUsers[others].player.stats.alive) {
+                        activeUsers[others].player.stats.health = 0;
+                        activeUsers[others].player.stats.alive = false;
+                        activeUsers[others].player.stats.deaths++;
+                        let deadGuy = {
+                            player: activeUsers[others].player,
+                            userName: activeUsers[others].userName,
+                            id: activeUsers[others].player.stats.id,
+                            time: 7000
+                        }
+                        theDead.push(deadGuy);
+                        shots[shot].stats.kills++;
+                        let update = {
+                            shooter: shots[shot].stats.id,
+                            victim: activeUsers[others].player.stats.id
+                        };
+                        updates_messages.push(update);
+                    }
+                    activeUsers[others].player.reportUpdate = true;
 
                 } else {
                     console.log("Missed teribbly");
