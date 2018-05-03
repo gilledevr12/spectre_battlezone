@@ -2,19 +2,19 @@ Laser.main = (function(logic, graphics) {
 
     let socketIO = null;
 
-    let lastTimeStamp, messageId = 1,
+    let lastTimeStamp,
         myPlayer = {},
-        // myPlayer = {
-        //     model: logic.Player(),
-        // },
         jobQueue = logic.createQueue(),
         otherUsers = [],
         gameTime = 10 * 60, //seconds
         pickups = [],
         theDead = [],
-        myId;
+        myId,
+        time = logic.time(),
+        start = time.getTime(),
+        MILLISECONDS_TO_ZERO = 3600000*17;
 
-    let cross = logic.cross, shell = logic.shell, shotgun = logic.shotgun, shield = logic.shield, time = logic.time();
+    let cross = logic.cross, shell = logic.shell, shotgun = logic.shotgun, shield = logic.shield;
 
     function network() {
         socketIO.on(NetworkIds.CONNECT_ACK, data => {
@@ -173,8 +173,9 @@ Laser.main = (function(logic, graphics) {
 
     function update(elapsedTime){
         updateMsgs();
-        var parseTime = (time.getTime()).split(" ");
-        time.text = parseTime[0];
+        var timeNow = time.getTime() - start;
+        var date = new Date(timeNow-MILLISECONDS_TO_ZERO);
+        time.text = (date.toTimeString().split(" "))[0];
         for (let index in theDead){
             theDead[index].time -= elapsedTime;
             if (theDead[index].time < 0){

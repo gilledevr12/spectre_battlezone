@@ -48,7 +48,7 @@ Laser.logic.Player = function () {
 
     let inventory = {
         armor: 0,
-        ammo: 20,
+        ammo: 50,
         weapon: "pea_shooter"
     };
 
@@ -453,7 +453,8 @@ Laser.logic.time = function () {
 
     that.getTime = function () {
         var date = new Date();
-        return date.toTimeString();
+        return date.getTime();
+        // return date.toTimeString();
     };
 
     Object.defineProperty(that, 'fill', {

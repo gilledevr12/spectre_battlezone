@@ -9,7 +9,11 @@ Laser.main_hub = (function (logic, graphics) {
         otherUsers = [],
         gameTime = 10 * 60, //seconds
         pickups = [],
-        theDead = [];
+        theDead = [],
+        time = logic.time(),
+        // start = ((time.getTime()).split(" "))[0];
+        start = time.getTime(),
+        MILLISECONDS_TO_ZERO = 3600000*17;
 
     function network() {
         // socketIO.on(NetworkIds.CONNECT_ACK, data => {
@@ -81,9 +85,6 @@ Laser.main_hub = (function (logic, graphics) {
     }
 
     function updateKill(data) {
-        console.log(data.position.x)
-        console.log(data.position.y)
-
         //do something if me? maybe not needed
         let deadPerson = {
             time: 7000,
@@ -117,6 +118,9 @@ Laser.main_hub = (function (logic, graphics) {
     }
 
     function update(elapsedTime) {
+        var timeNow = time.getTime() - start;
+        var date = new Date(timeNow-MILLISECONDS_TO_ZERO);
+        time.text = (date.toTimeString().split(" "))[0];
         updateMsgs();
         logic.p1HealthText.text = otherUsers['Tag_1'].stats.health;
         logic.p1AmmoText.text = otherUsers['Tag_1'].inventory.ammo;
@@ -180,6 +184,7 @@ Laser.main_hub = (function (logic, graphics) {
         graphics.drawText(logic.p1DeathText);
         graphics.drawText(logic.p2DeathText);
         // graphics.drawText(logic.p3DeathText);
+        graphics.drawText(time);
     }
 
     function gameLoop(time) {

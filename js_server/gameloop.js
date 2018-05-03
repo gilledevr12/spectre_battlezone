@@ -253,7 +253,7 @@ function update(elapsedTime) {
                         pickups.pickupArray[pick].life -= elapsedTime;
                         break;
                     case 3:
-                        activeUsers[index].player.inventory.ammo += 10;
+                        activeUsers[index].player.inventory.ammo += 25;
                         if (activeUsers[index].player.inventory.ammo > 50)
                             activeUsers[index].player.inventory.ammo = 50;
                         pickups.pickupArray[pick].life -= elapsedTime;
@@ -606,12 +606,9 @@ function makePlayer(id, fill){
 
     let inventory = {
         armor: 0,
-        ammo: 20,
+        ammo: 50,
         weapon: "pea_shooter"
     };
-
-    // let weapons = [];
-    // weapons.push("pea_shooter");
 
     let position = {
         x: .2, //spec.position.x,
@@ -628,17 +625,9 @@ function makePlayer(id, fill){
     return that;
 }
 
-function add_weapon(player, weapon){
-    player.weapons.push(weapon);
-}
-
 function set_direction(player, direction){
     // direction *= (Math.PI/180);
     player.direction = direction;
-}
-
-function get_direction(player){
-    return player.direction;
 }
 
 function set_position(player, position){
@@ -656,10 +645,6 @@ function set_position(player, position){
     }
     player.position.x = position.x/X_MAX;
     player.position.y = position.y/Y_MAX;
-}
-
-function get_postion(player){
-    return player.position;
 }
 
 function player_hit(distance, weapon){
@@ -696,7 +681,7 @@ function makePickups(){
     let that = {};
 
     let pickupArray = [],
-        pickupIndex = [ [0.8, 0.5], [0.5, 0.8], [0.1, 0.7], [0.3, 0.2] ],
+        pickupIndex = [ [0.8, 0.5], [0.55, 0.8], [0.35, 0.55], [0.3, 0.2] ],
         Pickups = {
             num: 4
         },
@@ -795,44 +780,3 @@ function testTrajectory(){
     else
         console.log("MISS!");
 }
-
-
-/*#define WEAPON_COUNT    4
-
-//WEAPON CLASS
-#define PEA_SHOOTER     0
-#define SHOTGUN         1
-#define ASSAULT_RIFLE   2
-#define SPECTRE_RIFLE   3
-
-//RELOAD DELAY, FIRE DELAY
-#define FAST            0
-#define AVERAGE         1
-#define SLOW            2
-
-//FIRE WEIGHT (multiplier)
-#define VARIES          0
-#define LOW             0.5
-#define MID             1
-#define HIGH            2
-
-typedef struct {
-  char CLASS;
-  char RELOAD_DELAY;
-  char FIRE_DELAY;
-  char FIRE_WEIGHT;
-  char CLIP_SIZE;
-} WEAPON;
-
-#endif
-#ifndef INVENTORY_H
-#define INVENTORY_H
-#include "rifle_variables.h"
-
-typedef struct {
-    WEAPON WEAPON_NAME;
-    bool EQUIPPED;
-    char AMMO_REMAINING;
-    char MAX_AMMO;
-} INVENTORY_ITEM;
-*/
